@@ -1,0 +1,180 @@
+.disbursement-management {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.disbursement-management .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.disbursement-management .header h1 {
+  margin: 0;
+}
+
+.disbursement-management .form-container {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 20px;
+  margin-bottom: 30px;
+}
+
+.disbursement-management .form-container h2 {
+  margin-top: 0;
+}
+
+.disbursement-management .form-group {
+  margin-bottom: 15px;
+}
+
+.disbursement-management .form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.disbursement-management .form-group input,
+.disbursement-management .form-group textarea,
+.disbursement-management .form-group select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.disbursement-management .form-row {
+  display: flex;
+  gap: 15px;
+}
+
+.disbursement-management .form-row .form-group {
+  flex: 1;
+}
+
+.disbursement-management .form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.disbursement-management .btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.disbursement-management .btn-primary {
+  background-color: #007bff;
+  color: white;
+}
+
+.disbursement-management .btn-primary:hover {
+  background-color: #0056b3;
+}
+
+.disbursement-management .btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.disbursement-management .btn-secondary:hover {
+  background-color: #545b62;
+}
+
+.disbursement-management .btn-danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.disbursement-management .btn-danger:hover {
+  background-color: #bd2130;
+}
+
+.disbursement-management .btn-sm {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.disbursement-management .table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border: 1px solid #dee2e6;
+}
+
+.disbursement-management .table th,
+.disbursement-management .table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.disbursement-management .table th {
+  background-color: #e9ecef;
+  font-weight: bold;
+}
+
+.disbursement-management .table tr:hover {
+  background-color: #f8f9fa;
+}
+
+.disbursement-management .status-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.disbursement-management .status-planned {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.disbursement-management .status-invoiced {
+  background-color: #17a2b8;
+  color: white;
+}
+
+.disbursement-management .status-paid {
+  background-color: #28a745;
+  color: white;
+}
+
+.disbursement-management .status-reconciled {
+  background-color: #6f42c1;
+  color: white;
+}
+
+.disbursement-management .alert {
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.disbursement-management .alert-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+@media (max-width: 768px) {
+  .disbursement-management .form-row {
+    flex-direction: column;
+  }
+  
+  .disbursement-management .table {
+    display: block;
+    overflow-x: auto;
+  }
+}

@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:14
+    container_name: subgrant_db
+    restart: always
+    environment:
+      POSTGRES_DB: subgrant_platform
+      POSTGRES_USER: subgrant_user
+      POSTGRES_PASSWORD: subgrant_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./api/scripts/init-db.js:/docker-entrypoint-initdb.d/init-db.js:ro
+    networks:
+      - subgrant_network
+
+  # API Service
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: subgrant_api
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://subgrant_user:subgrant_password@db:5432/subgrant_platform
+      - JWT_SECRET=your_jwt_secret_here
+      - NODE_ENV=development
+    depends_on:
+      - db
+    networks:
+      - subgrant_network
+    volumes:
+      - ./api:/app
+      - /app/node_modules
+
+  # Web Application
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: subgrant_web
+    restart: always
+    ports:
+      - "3001:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:3000/api
+      - NODE_ENV=development
+    depends_on:
+      - api
+    networks:
+      - subgrant_network
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+
+  # Redis for caching and sessions
+  redis:
+    image: redis:7-alpine
+    container_name: subgrant_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - subgrant_network
+    volumes:
+      - redis_data:/data
+
+networks:
+  subgrant_network:
+    driver: bridge
+
+volumes:
+  db_data:
+  redis_data:

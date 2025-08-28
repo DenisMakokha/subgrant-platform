@@ -1,0 +1,171 @@
+.donor-reporting {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.donor-reporting .dashboard-header h1 {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.donor-reporting .dashboard-header p {
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.donor-reporting .access-denied {
+  text-align: center;
+  padding: 40px;
+}
+
+.donor-reporting .access-denied h2 {
+  color: #e53e3e;
+  margin-bottom: 16px;
+}
+
+.donor-reporting .tabs {
+  display: flex;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.donor-reporting .tab-button {
+  padding: 12px 24px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  color: #718096;
+  transition: all 0.2s;
+}
+
+.donor-reporting .tab-button:hover {
+  color: #4a5568;
+}
+
+.donor-reporting .tab-button.active {
+  color: #3182ce;
+  border-bottom-color: #3182ce;
+}
+
+.donor-reporting .reports-section h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.donor-reporting .reports-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.donor-reporting .report-card {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border: 1px solid #e2e8f0;
+}
+
+.donor-reporting .report-card h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.donor-reporting .report-date,
+.donor-reporting .report-amount,
+.donor-reporting .report-variance {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.donor-reporting .report-status {
+  margin-top: 12px;
+}
+
+.donor-reporting .status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.donor-reporting .status-draft {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.donor-reporting .status-submitted {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.donor-reporting .status-approved {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.donor-reporting .indicators h4 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 16px 0 8px;
+  color: #333;
+}
+
+.donor-reporting .indicators ul {
+  padding-left: 20px;
+  margin: 0;
+}
+
+.donor-reporting .indicators li {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.donor-reporting .no-data {
+  color: #999;
+  font-style: italic;
+  text-align: center;
+  padding: 40px;
+}
+
+.donor-reporting .report-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.donor-reporting .export-button {
+  padding: 6px 12px;
+  background: #f0f4ff;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  color: #333;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.donor-reporting .export-button:hover {
+  background: #e1e8ff;
+  border-color: #a5b4fc;
+}
+
+.donor-reporting.error {
+  color: #e53e3e;
+  background: #fef2f2;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #fecaca;
+}

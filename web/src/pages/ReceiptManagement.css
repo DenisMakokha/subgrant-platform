@@ -1,0 +1,134 @@
+.receipt-management {
+  padding: 20px;
+}
+
+.receipt-management .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.receipt-management .header h1 {
+  margin: 0;
+}
+
+.receipt-management .form-container {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 5px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.receipt-management .form-group {
+  margin-bottom: 15px;
+}
+
+.receipt-management .form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.receipt-management .form-group input,
+.receipt-management .form-group textarea,
+.receipt-management .form-group select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.receipt-management .form-row {
+  display: flex;
+  gap: 15px;
+}
+
+.receipt-management .form-row .form-group {
+  flex: 1;
+}
+
+.receipt-management .form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.receipt-management .file-info {
+  margin-top: 5px;
+  font-size: 0.9em;
+  color: #6c757d;
+}
+
+.receipt-management .table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.receipt-management .table th,
+.receipt-management .table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.receipt-management .table th {
+  background-color: #e9ecef;
+  font-weight: bold;
+}
+
+.receipt-management .btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 0.9em;
+  margin-right: 5px;
+}
+
+.receipt-management .btn-primary {
+  background-color: #007bff;
+  color: #fff;
+}
+
+.receipt-management .btn-secondary {
+  background-color: #6c757d;
+  color: #fff;
+}
+
+.receipt-management .btn-success {
+  background-color: #28a745;
+  color: #fff;
+}
+
+.receipt-management .btn-danger {
+  background-color: #dc3545;
+  color: #fff;
+}
+
+.receipt-management .btn-info {
+  background-color: #17a2b8;
+  color: #fff;
+}
+
+.receipt-management .btn-sm {
+  padding: 4px 8px;
+  font-size: 0.8em;
+}
+
+.receipt-management .alert {
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.receipt-management .alert-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
