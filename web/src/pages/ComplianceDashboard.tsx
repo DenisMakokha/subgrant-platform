@@ -4,22 +4,30 @@ import {
   getComplianceDashboard,
   getComplianceAlerts,
   getAlertHistory,
+  resolveAlert,
+  getAuditLogTrends,
+  getDocumentVersionHistory,
   ComplianceDashboardData,
   ComplianceAlert,
   AlertHistoryItem
 } from '../services/compliance';
 import './ComplianceDashboard.css';
 
-const ComplianceDashboard: React.FC = () => {
+const ComplianceDashboard = () => {
   const { user } = useAuth();
   const [dashboardData, setDashboardData] = useState<ComplianceDashboardData | null>(null);
   const [alerts, setAlerts] = useState<ComplianceAlert[]>([]);
   const [alertHistory, setAlertHistory] = useState<AlertHistoryItem[]>([]);
+  const [auditLogTrends, setAuditLogTrends] = useState<any[]>([]);
+  const [documentVersions, setDocumentVersions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<{entityType: string, entityId: string} | null>(null);
+  const [filterSeverity, setFilterSeverity] = useState<string>('all');
 
   useEffect(() => {
     fetchDashboardData();
+    fetchAuditLogTrends();
   }, []);
 
   const fetchDashboardData = async () => {
@@ -42,6 +50,44 @@ const ComplianceDashboard: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const fetchAuditLogTrends = async () => {
+    try {
+      const trends = await getAuditLogTrends(30);
+      setAuditLogTrends(trends);
+    } catch (err) {
+      console.error('Error fetching audit log trends:', err);
+    }
+  };
+
+  const fetchDocumentVersions = async (entityType: string, entityId: string) => {
+    try {
+      const versions = await getDocumentVersionHistory(entityType, entityId);
+      setDocumentVersions(versions);
+      setSelectedDocument({ entityType, entityId });
+    } catch (err) {
+      console.error('Error fetching document versions:', err);
+    }
+  };
+
+  const handleResolveAlert = async (alertId: number) => {
+    try {
+      await resolveAlert(alertId);
+      // Refresh alerts and alert history
+      const [updatedAlerts, updatedHistory] = await Promise.all([
+        getComplianceAlerts(),
+        getAlertHistory()
+      ]);
+      setAlerts(updatedAlerts);
+      setAlertHistory(updatedHistory);
+    } catch (err) {
+      console.error('Error resolving alert:', err);
+    }
+  };
+
+  const filteredAlerts = filterSeverity === 'all' 
+    ? alerts 
+    : alerts.filter(alert => alert.severity === filterSeverity);
 
   const getSeverityClass = (severity: string) => {
     switch (severity) {
@@ -158,6 +204,28 @@ const ComplianceDashboard: React.FC = () => {
             </div>
           </div>
 
+          {/* Audit Log Trends Chart */}
+          <div className="compliance-section">
+            <h2>Audit Log Trends (Last 30 Days)</h2>
+            <div className="chart-container">
+              {auditLogTrends.length > 0 ? (
+                <div className="bar-chart">
+                  {auditLogTrends.map((trend, index) => (
+                    <div key={index} className="bar-chart-item">
+                      <div 
+                        className="bar" 
+                        style={{ height: `${(trend.count / 60) * 100}%` }}
+                      ></div>
+                      <div className="bar-label">{trend.date.split('-')[2]}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="no-data">No trend data available</p>
+              )}
+            </div>
+          </div>
+
           {/* Upcoming Deadlines */}
           <div className="compliance-section">
             <h2>Upcoming Deadlines</h2>
@@ -184,10 +252,25 @@ const ComplianceDashboard: React.FC = () => {
 
           {/* Active Alerts */}
           <div className="compliance-section">
-            <h2>Active Alerts</h2>
-            {alerts && alerts.length > 0 ? (
+            <div className="section-header">
+              <h2>Active Alerts</h2>
+              <div className="alert-filters">
+                <label htmlFor="severity-filter">Filter by severity:</label>
+                <select 
+                  id="severity-filter"
+                  value={filterSeverity}
+                  onChange={(e) => setFilterSeverity(e.target.value)}
+                >
+                  <option value="all">All</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+              </div>
+            </div>
+            {filteredAlerts && filteredAlerts.length > 0 ? (
               <div className="alerts-list">
-                {alerts.map(alert => (
+                {filteredAlerts.map(alert => (
                   <div key={alert.id} className={`alert-item ${getSeverityClass(alert.severity)}`}>
                     <div className="alert-header">
                       <span className="alert-title">{alert.title}</span>
@@ -208,6 +291,14 @@ const ComplianceDashboard: React.FC = () => {
                         {new Date(alert.created_at).toLocaleDateString()}
                       </span>
                     </div>
+                    <div className="alert-actions">
+                      <button 
+                        className="resolve-button"
+                        onClick={() => handleResolveAlert(alert.id)}
+                      >
+                        Resolve
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -222,7 +313,7 @@ const ComplianceDashboard: React.FC = () => {
             {alertHistory && alertHistory.length > 0 ? (
               <div className="alert-history-list">
                 {alertHistory.map(alert => (
-                  <div key={alert.id} className={`alert-history-item ${alert.resolved ? 'resolved' : ''}`}>
+                  <div key={alert.id} className={`alert-history-item ${alert.resolved ? 'resolved' : ''} ${getSeverityClass(alert.severity)}`}>
                     <div className="alert-history-header">
                       <span className="alert-history-title">{alert.title}</span>
                       <span className={`alert-history-severity ${getSeverityClass(alert.severity)}`}>
@@ -252,6 +343,82 @@ const ComplianceDashboard: React.FC = () => {
               </div>
             ) : (
               <p className="no-data">No alert history</p>
+            )}
+          </div>
+
+          {/* Document Version History */}
+          <div className="compliance-section">
+            <h2>Document Version History</h2>
+            <div className="document-version-controls">
+              <div className="form-group">
+                <label htmlFor="entity-type">Entity Type:</label>
+                <select 
+                  id="entity-type"
+                  value={selectedDocument?.entityType || ''}
+                  onChange={(e) => setSelectedDocument(prev => ({ 
+                    entityType: e.target.value,
+                    entityId: prev?.entityId || ''
+                  }))}
+                >
+                  <option value="">Select entity type</option>
+                  <option value="budget">Budget</option>
+                  <option value="contract">Contract</option>
+                  <option value="report">Report</option>
+                  <option value="receipt">Receipt</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label htmlFor="entity-id">Entity ID:</label>
+                <input 
+                  type="text" 
+                  id="entity-id"
+                  value={selectedDocument?.entityId || ''}
+                  onChange={(e) => setSelectedDocument(prev => ({ 
+                    entityType: prev?.entityType || '',
+                    entityId: e.target.value
+                  }))}
+                  placeholder="Enter entity ID"
+                />
+              </div>
+              <button 
+                onClick={() => selectedDocument?.entityType && selectedDocument?.entityId && 
+                  fetchDocumentVersions(selectedDocument.entityType, selectedDocument.entityId)}
+                disabled={!selectedDocument?.entityType || !selectedDocument?.entityId}
+              >
+                Load Versions
+              </button>
+            </div>
+            
+            {documentVersions.length > 0 ? (
+              <div className="document-versions-list">
+                <h3>Versions for {selectedDocument?.entityType} {selectedDocument?.entityId}</h3>
+                <table className="versions-table">
+                  <thead>
+                    <tr>
+                      <th>Version</th>
+                      <th>Title</th>
+                      <th>Document Name</th>
+                      <th>Uploaded By</th>
+                      <th>Date</th>
+                      <th>Checksum</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {documentVersions.map(version => (
+                      <tr key={version.id}>
+                        <td>{version.version}</td>
+                        <td>{version.title}</td>
+                        <td>{version.document_name}</td>
+                        <td>{version.uploaded_by}</td>
+                        <td>{new Date(version.created_at).toLocaleDateString()}</td>
+                        <td>{version.checksum?.substring(0, 8) || 'N/A'}...</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="no-data">No document versions loaded. Select an entity to view versions.</p>
             )}
           </div>
         </div>

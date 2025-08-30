@@ -1,6 +1,7 @@
 const FinancialReport = require('../models/financialReport');
 const Receipt = require('../models/receipt');
 const { validateFinancialReport } = require('../middleware/validation');
+const auditLogger = require('../middleware/auditLogger');
 
 class FinancialReportController {
   // Create a new financial report
@@ -19,6 +20,23 @@ class FinancialReportController {
       }
 
       const financialReport = await FinancialReport.create(financialReportData);
+      
+      // Log the financial report creation
+      try {
+        await auditLogger.create({
+          actor_id: req.user.id,
+          action: 'CREATE_FINANCIAL_REPORT',
+          entity_type: 'financial_report',
+          entity_id: financialReport.id,
+          before_state: null,
+          after_state: financialReport,
+          ip_address: req.ip || req.connection.remoteAddress,
+          user_agent: req.get('User-Agent')
+        });
+      } catch (auditError) {
+        console.error('Error creating audit log:', auditError);
+      }
+      
       res.status(201).json(financialReport);
     } catch (err) {
       next(err);
@@ -106,6 +124,23 @@ class FinancialReportController {
       };
 
       const updatedFinancialReport = await financialReport.update(updateData);
+      
+      // Log the financial report update
+      try {
+        await auditLogger.create({
+          actor_id: req.user.id,
+          action: 'UPDATE_FINANCIAL_REPORT',
+          entity_type: 'financial_report',
+          entity_id: id,
+          before_state: financialReport,
+          after_state: updatedFinancialReport,
+          ip_address: req.ip || req.connection.remoteAddress,
+          user_agent: req.get('User-Agent')
+        });
+      } catch (auditError) {
+        console.error('Error creating audit log:', auditError);
+      }
+      
       res.json(updatedFinancialReport);
     } catch (err) {
       next(err);
@@ -116,10 +151,28 @@ class FinancialReportController {
   static async deleteFinancialReport(req, res, next) {
     try {
       const { id } = req.params;
-      const financialReport = await FinancialReport.deleteById(id);
+      const financialReport = await FinancialReport.findById(id);
 
       if (!financialReport) {
         return res.status(404).json({ error: 'Financial report not found' });
+      }
+
+      await FinancialReport.deleteById(id);
+      
+      // Log the financial report deletion
+      try {
+        await auditLogger.create({
+          actor_id: req.user.id,
+          action: 'DELETE_FINANCIAL_REPORT',
+          entity_type: 'financial_report',
+          entity_id: id,
+          before_state: financialReport,
+          after_state: null,
+          ip_address: req.ip || req.connection.remoteAddress,
+          user_agent: req.get('User-Agent')
+        });
+      } catch (auditError) {
+        console.error('Error creating audit log:', auditError);
       }
 
       res.json({ message: 'Financial report deleted successfully' });
@@ -142,6 +195,23 @@ class FinancialReportController {
         status: 'submitted',
         submitted_at: new Date()
       });
+      
+      // Log the financial report submission
+      try {
+        await auditLogger.create({
+          actor_id: req.user.id,
+          action: 'SUBMIT_FINANCIAL_REPORT',
+          entity_type: 'financial_report',
+          entity_id: id,
+          before_state: financialReport,
+          after_state: updatedFinancialReport,
+          ip_address: req.ip || req.connection.remoteAddress,
+          user_agent: req.get('User-Agent')
+        });
+      } catch (auditError) {
+        console.error('Error creating audit log:', auditError);
+      }
+      
       res.json(updatedFinancialReport);
     } catch (err) {
       next(err);
@@ -163,6 +233,23 @@ class FinancialReportController {
         approved_at: new Date(),
         approved_by: req.user.id
       });
+      
+      // Log the financial report approval
+      try {
+        await auditLogger.create({
+          actor_id: req.user.id,
+          action: 'APPROVE_FINANCIAL_REPORT',
+          entity_type: 'financial_report',
+          entity_id: id,
+          before_state: financialReport,
+          after_state: updatedFinancialReport,
+          ip_address: req.ip || req.connection.remoteAddress,
+          user_agent: req.get('User-Agent')
+        });
+      } catch (auditError) {
+        console.error('Error creating audit log:', auditError);
+      }
+      
       res.json(updatedFinancialReport);
     } catch (err) {
       next(err);
@@ -190,11 +277,31 @@ class FinancialReportController {
         return res.status(404).json({ error: 'Financial report not found' });
       }
       
+      // Log the financial report export
+      try {
+        await auditLogger.create({
+          actor_id: req.user.id,
+          action: 'EXPORT_FINANCIAL_REPORT_PDF',
+          entity_type: 'financial_report',
+          entity_id: id,
+          before_state: null,
+          after_state: { id, format: 'pdf' },
+          ip_address: req.ip || req.connection.remoteAddress,
+          user_agent: req.get('User-Agent')
+        });
+      } catch (auditError) {
+        console.error('Error creating audit log:', auditError);
+      }
+      
       // In a real implementation, you would generate a PDF file here
-      // For now, we'll just send a placeholder response
+      // For example, using a library like pdfkit or puppeteer
+      // const pdfBuffer = await generateFinancialReportPdf(financialReport);
+      // res.send(pdfBuffer);
+      
+      // For now, we'll send a placeholder response indicating where the real implementation would go
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="financial-report-${id}.pdf"`);
-      res.send(`PDF content for financial report ${id}`);
+      res.send(`PDF content for financial report ${id} would be generated here in a real implementation.`);
     } catch (err) {
       next(err);
     }
@@ -210,11 +317,31 @@ class FinancialReportController {
         return res.status(404).json({ error: 'Financial report not found' });
       }
       
+      // Log the financial report export
+      try {
+        await auditLogger.create({
+          actor_id: req.user.id,
+          action: 'EXPORT_FINANCIAL_REPORT_EXCEL',
+          entity_type: 'financial_report',
+          entity_id: id,
+          before_state: null,
+          after_state: { id, format: 'excel' },
+          ip_address: req.ip || req.connection.remoteAddress,
+          user_agent: req.get('User-Agent')
+        });
+      } catch (auditError) {
+        console.error('Error creating audit log:', auditError);
+      }
+      
       // In a real implementation, you would generate an Excel file here
-      // For now, we'll just send a placeholder response
+      // For example, using a library like exceljs or xlsx
+      // const excelBuffer = await generateFinancialReportExcel(financialReport);
+      // res.send(excelBuffer);
+      
+      // For now, we'll send a placeholder response indicating where the real implementation would go
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename="financial-report-${id}.xlsx"`);
-      res.send(`Excel content for financial report ${id}`);
+      res.send(`Excel content for financial report ${id} would be generated here in a real implementation.`);
     } catch (err) {
       next(err);
     }

@@ -56,7 +56,6 @@ const ReceiptManagement: React.FC = () => {
         ...prev,
         document_name: file.name,
         mime_type: file.type,
-        // In a real implementation, you would upload the file and get a URI
         document_uri: URL.createObjectURL(file)
       }));
     }

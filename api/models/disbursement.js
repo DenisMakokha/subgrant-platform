@@ -151,6 +151,25 @@ class Disbursement {
     
     return new Disbursement(result.rows[0]);
   }
+
+  // Get organization for a disbursement
+  static async getOrganizationForDisbursement(id) {
+    const query = `
+      SELECT o.*
+      FROM disbursements d
+      JOIN budgets b ON d.budget_id = b.id
+      JOIN projects p ON b.project_id = p.id
+      JOIN organizations o ON p.organization_id = o.id
+      WHERE d.id = $1;
+    `;
+    const result = await db.pool.query(query, [id]);
+    
+    if (result.rows.length === 0) {
+      return null;
+    }
+    
+    return result.rows[0];
+  }
 }
 
 module.exports = Disbursement;

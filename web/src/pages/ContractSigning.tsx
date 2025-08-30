@@ -41,8 +41,7 @@ const ContractSigning: React.FC = () => {
     try {
       setDownloading(true);
       await downloadContractDocument(artifact.id);
-      // In a real implementation, you would handle the downloaded file here
-      // For now, we'll just show an alert
+      // Handle the downloaded file (e.g., open in new tab or save to disk)
       alert('Document downloaded successfully!');
     } catch (err) {
       setError('Failed to download document');

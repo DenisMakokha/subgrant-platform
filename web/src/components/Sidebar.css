@@ -1,75 +1,72 @@
 .sidebar {
+  background-color: #ecf0f1;
   width: 250px;
-  background-color: #ffffff;
-  border-right: 1px solid #e0e0e0;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
   padding: 1rem 0;
-  height: calc(100vh - 120px); /* Adjust based on header and footer height */
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
   overflow-y: auto;
 }
 
-.sidebar nav ul {
-  list-style: none;
+.sidebar ul {
+  list-style-type: none;
   padding: 0;
   margin: 0;
 }
 
-.sidebar nav li {
-  margin-bottom: 0.25rem;
+.sidebar li {
+  margin: 0;
 }
 
-.sidebar nav a {
+.sidebar a {
   display: block;
-  padding: 0.75rem 1rem;
-  color: #333;
+  padding: 1rem 1.5rem;
+  color: #2c3e50;
   text-decoration: none;
   transition: background-color 0.3s, color 0.3s;
-  border-left: 3px solid transparent;
+  border-left: 4px solid transparent;
 }
 
-.sidebar nav a:hover {
-  background-color: #f5f5f5;
-  border-left: 3px solid #3f51b5;
+.sidebar a:hover {
+  background-color: #d5dbdb;
+  color: #3498db;
+  border-left: 4px solid #3498db;
 }
 
-.sidebar nav a.active {
-  background-color: #e8eaf6;
-  border-left: 3px solid #3f51b5;
-  color: #3f51b5;
-  font-weight: 500;
+.sidebar a.active {
+  background-color: #d5dbdb;
+  color: #3498db;
+  border-left: 4px solid #3498db;
 }
 
 @media (max-width: 768px) {
   .sidebar {
     width: 100%;
     height: auto;
-    border-right: none;
-    border-bottom: 1px solid #e0e0e0;
+    position: relative;
   }
   
-  .sidebar nav ul {
+  .sidebar ul {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
   }
   
-  .sidebar nav li {
-    margin-bottom: 0;
+  .sidebar li {
+    flex: 1 1 auto;
   }
   
-  .sidebar nav a {
-    padding: 0.5rem;
+  .sidebar a {
+    padding: 0.5rem 1rem;
     border-left: none;
-    border-bottom: 2px solid transparent;
+    border-bottom: 4px solid transparent;
     text-align: center;
   }
   
-  .sidebar nav a:hover {
+  .sidebar a:hover,
+  .sidebar a.active {
     border-left: none;
-    border-bottom: 2px solid #3f51b5;
-  }
-  
-  .sidebar nav a.active {
-    border-left: none;
-    border-bottom: 2px solid #3f51b5;
+    border-bottom: 4px solid #3498db;
   }
 }

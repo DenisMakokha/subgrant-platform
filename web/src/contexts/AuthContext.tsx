@@ -33,21 +33,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const token = getToken();
     if (token) {
       setIsAuth(true);
-      // In a real app, you would fetch user data from the API
-      // For now, we'll just set a placeholder user
-      // setUser(parsedUser);
+      // Try to get user data from localStorage
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch (e) {
+          console.error('Failed to parse user data from localStorage', e);
+        }
+      }
     }
   }, []);
 
-  const login = (userData: User) => {
-    setUser(userData);
+  const login = (userData: any) => {
+    // Map backend user object to frontend user object
+    const mappedUser: User = {
+      id: userData.id,
+      firstName: userData.first_name || userData.firstName,
+      lastName: userData.last_name || userData.lastName,
+      email: userData.email,
+      role: userData.role,
+      organization: userData.organization
+    };
+    
+    setUser(mappedUser);
     setIsAuth(true);
+    // Store user data in localStorage
+    localStorage.setItem('user', JSON.stringify(mappedUser));
   };
 
   const logout = () => {
     setUser(null);
     setIsAuth(false);
     removeToken();
+    // Remove user data from localStorage
+    localStorage.removeItem('user');
   };
 
   return (

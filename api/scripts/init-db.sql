@@ -287,6 +287,7 @@ CREATE TABLE IF NOT EXISTS documents (
     document_uri VARCHAR(500) NOT NULL,
     document_name VARCHAR(255) NOT NULL,
     mime_type VARCHAR(100) NOT NULL,
+    file_size INTEGER, -- File size in bytes
     version INTEGER NOT NULL DEFAULT 1,
     checksum VARCHAR(64),
     uploaded_by UUID NOT NULL,
@@ -297,3 +298,61 @@ CREATE TABLE IF NOT EXISTS documents (
 -- Create indexes
 CREATE INDEX IF NOT EXISTS idx_documents_entity ON documents(entity_type, entity_id);
 CREATE INDEX IF NOT EXISTS idx_documents_uploaded_by ON documents(uploaded_by);
+
+-- Create compliance_document_types table
+CREATE TABLE IF NOT EXISTS compliance_document_types (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    organization_type VARCHAR(50), -- e.g., 'local', 'international', 'government'
+    is_required BOOLEAN DEFAULT TRUE,
+    is_active BOOLEAN DEFAULT TRUE,
+    allowed_mime_types TEXT, -- JSON array of allowed mime types
+    max_file_size INTEGER, -- Maximum file size in bytes
+    required_fields TEXT, -- JSON array of required fields in the document
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by UUID,
+    updated_by UUID
+);
+
+-- Create compliance_document_templates table
+CREATE TABLE IF NOT EXISTS compliance_document_templates (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    document_type_id UUID NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    template_uri VARCHAR(500),
+    template_name VARCHAR(255),
+    mime_type VARCHAR(100),
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by UUID,
+    updated_by UUID
+);
+
+-- Create organization_compliance_documents table (linking table)
+CREATE TABLE IF NOT EXISTS organization_compliance_documents (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL,
+    document_type_id UUID NOT NULL,
+    document_id UUID, -- Reference to the actual document in the documents table
+    status VARCHAR(50) NOT NULL DEFAULT 'pending', -- pending, submitted, approved, rejected
+    submitted_at TIMESTAMP,
+    approved_at TIMESTAMP,
+    approved_by UUID,
+    rejection_reason TEXT,
+    due_date DATE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes
+CREATE INDEX IF NOT EXISTS idx_compliance_document_types_org_type ON compliance_document_types(organization_type);
+CREATE INDEX IF NOT EXISTS idx_compliance_document_types_active ON compliance_document_types(is_active);
+CREATE INDEX IF NOT EXISTS idx_compliance_document_templates_type ON compliance_document_templates(document_type_id);
+CREATE INDEX IF NOT EXISTS idx_compliance_document_templates_active ON compliance_document_templates(is_active);
+CREATE INDEX IF NOT EXISTS idx_org_compliance_docs_org ON organization_compliance_documents(organization_id);
+CREATE INDEX IF NOT EXISTS idx_org_compliance_docs_type ON organization_compliance_documents(document_type_id);
+CREATE INDEX IF NOT EXISTS idx_org_compliance_docs_status ON organization_compliance_documents(status);

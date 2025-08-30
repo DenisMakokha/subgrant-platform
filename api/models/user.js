@@ -53,28 +53,28 @@ class User {
   // Find user by ID
   static async findById(id) {
     const query = 'SELECT * FROM users WHERE id = $1';
-    const result = await db.query(query, [id]);
+    const result = await db.pool.query(query, [id]);
     return result.rows.length ? new User(result.rows[0]) : null;
   }
 
   // Find user by email
   static async findByEmail(email) {
     const query = 'SELECT * FROM users WHERE email = $1';
-    const result = await db.query(query, [email]);
+    const result = await db.pool.query(query, [email]);
     return result.rows.length ? new User(result.rows[0]) : null;
   }
 
   // Find all users
   static async findAll() {
     const query = 'SELECT * FROM users ORDER BY created_at DESC';
-    const result = await db.query(query);
+    const result = await db.pool.query(query);
     return result.rows.map(user => new User(user));
   }
 
   // Find users by organization
   static async findByOrganization(organizationId) {
     const query = 'SELECT * FROM users WHERE organization_id = $1 ORDER BY created_at DESC';
-    const result = await db.query(query, [organizationId]);
+    const result = await db.pool.query(query, [organizationId]);
     return result.rows.map(user => new User(user));
   }
 
@@ -108,14 +108,14 @@ class User {
 
     values.push(id);
     const query = `UPDATE users SET ${fields.join(', ')}, updated_at = NOW() WHERE id = $${index} RETURNING *`;
-    const result = await db.query(query, values);
+    const result = await db.pool.query(query, values);
     return result.rows.length ? new User(result.rows[0]) : null;
   }
 
   // Delete user
   static async delete(id) {
     const query = 'DELETE FROM users WHERE id = $1 RETURNING *';
-    const result = await db.query(query, [id]);
+    const result = await db.pool.query(query, [id]);
     return result.rows.length ? new User(result.rows[0]) : null;
   }
 

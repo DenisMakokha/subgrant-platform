@@ -1,5 +1,6 @@
 const Project = require('../models/project');
 const BudgetCategory = require('../models/budgetCategory');
+const auditLogger = require('../middleware/auditLogger');
 
 // Create a new project
 exports.createProject = async (req, res) => {
@@ -32,6 +33,23 @@ exports.createProject = async (req, res) => {
     };
 
     const project = await Project.create(projectData);
+    
+    // Log the project creation
+    try {
+      await auditLogger.create({
+        actor_id: userId,
+        action: 'CREATE_PROJECT',
+        entity_type: 'project',
+        entity_id: project.id,
+        before_state: null,
+        after_state: project,
+        ip_address: req.ip || req.connection.remoteAddress,
+        user_agent: req.get('User-Agent')
+      });
+    } catch (auditError) {
+      console.error('Error creating audit log:', auditError);
+    }
+    
     res.status(201).json(project);
   } catch (error) {
     console.error('Error creating project:', error);
@@ -108,6 +126,22 @@ exports.updateProject = async (req, res) => {
       return res.status(404).json({ error: 'Project not found' });
     }
     
+    // Log the project update
+    try {
+      await auditLogger.create({
+        actor_id: userId,
+        action: 'UPDATE_PROJECT',
+        entity_type: 'project',
+        entity_id: id,
+        before_state: existingProject,
+        after_state: project,
+        ip_address: req.ip || req.connection.remoteAddress,
+        user_agent: req.get('User-Agent')
+      });
+    } catch (auditError) {
+      console.error('Error creating audit log:', auditError);
+    }
+    
     res.json(project);
   } catch (error) {
     console.error('Error updating project:', error);
@@ -129,6 +163,22 @@ exports.deleteProject = async (req, res) => {
     const project = await Project.delete(id);
     if (!project) {
       return res.status(404).json({ error: 'Project not found' });
+    }
+    
+    // Log the project deletion
+    try {
+      await auditLogger.create({
+        actor_id: req.user.id,
+        action: 'DELETE_PROJECT',
+        entity_type: 'project',
+        entity_id: id,
+        before_state: existingProject,
+        after_state: null,
+        ip_address: req.ip || req.connection.remoteAddress,
+        user_agent: req.get('User-Agent')
+      });
+    } catch (auditError) {
+      console.error('Error creating audit log:', auditError);
     }
     
     res.json({ message: 'Project deleted successfully' });
@@ -182,6 +232,23 @@ exports.addBudgetCategory = async (req, res) => {
     };
 
     const category = await BudgetCategory.create(categoryData);
+    
+    // Log the budget category creation
+    try {
+      await auditLogger.create({
+        actor_id: userId,
+        action: 'CREATE_BUDGET_CATEGORY',
+        entity_type: 'budget_category',
+        entity_id: category.id,
+        before_state: null,
+        after_state: category,
+        ip_address: req.ip || req.connection.remoteAddress,
+        user_agent: req.get('User-Agent')
+      });
+    } catch (auditError) {
+      console.error('Error creating audit log:', auditError);
+    }
+    
     res.status(201).json(category);
   } catch (error) {
     console.error('Error adding budget category:', error);
@@ -231,6 +298,22 @@ exports.archiveProject = async (req, res) => {
       return res.status(404).json({ error: 'Project not found' });
     }
     
+    // Log the project archiving
+    try {
+      await auditLogger.create({
+        actor_id: userId,
+        action: 'ARCHIVE_PROJECT',
+        entity_type: 'project',
+        entity_id: id,
+        before_state: existingProject,
+        after_state: project,
+        ip_address: req.ip || req.connection.remoteAddress,
+        user_agent: req.get('User-Agent')
+      });
+    } catch (auditError) {
+      console.error('Error creating audit log:', auditError);
+    }
+    
     res.json({ message: 'Project archived successfully', project });
   } catch (error) {
     console.error('Error archiving project:', error);
@@ -259,6 +342,22 @@ exports.closeProject = async (req, res) => {
     const project = await Project.close(id);
     if (!project) {
       return res.status(404).json({ error: 'Project not found' });
+    }
+    
+    // Log the project closing
+    try {
+      await auditLogger.create({
+        actor_id: userId,
+        action: 'CLOSE_PROJECT',
+        entity_type: 'project',
+        entity_id: id,
+        before_state: existingProject,
+        after_state: project,
+        ip_address: req.ip || req.connection.remoteAddress,
+        user_agent: req.get('User-Agent')
+      });
+    } catch (auditError) {
+      console.error('Error creating audit log:', auditError);
     }
     
     res.json({ message: 'Project closed successfully', project });

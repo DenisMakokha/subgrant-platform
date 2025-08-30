@@ -1,761 +1,406 @@
-# Data Model Specification
+# Data Model
 
-## 1. Core Entities
+## 1. Overview
 
-### 1.1 Organization (Partner)
+The Sub-Grant Management Platform data model is designed to support the complete sub-grant lifecycle from partner onboarding through project closure and archival. The model emphasizes data integrity, auditability, and compliance with financial regulations.
 
-```sql
-CREATE TABLE organizations (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(255) NOT NULL,
-    legal_name VARCHAR(255),
-    registration_number VARCHAR(100),
-    tax_id VARCHAR(100),
-    address TEXT,
-    country VARCHAR(100),
-    phone VARCHAR(20),
-    email VARCHAR(255),
-    website VARCHAR(255),
-    description TEXT,
-    status VARCHAR(50) NOT NULL DEFAULT 'pending',
-    compliance_status VARCHAR(50) DEFAULT 'pending',
-    due_diligence_completed BOOLEAN DEFAULT FALSE,
-    due_diligence_date TIMESTAMP,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by UUID REFERENCES users(id),
-    updated_by UUID REFERENCES users(id)
-);
+## 2. Core Entities
 
--- Indexes
-CREATE INDEX idx_organizations_status ON organizations(status);
-CREATE INDEX idx_organizations_compliance ON organizations(compliance_status);
-```
+### 2.1 Organizations
+Represents partner organizations that receive sub-grants.
 
 **Fields:**
-- `id`: Unique identifier
-- `name`: Organization display name
-- `legal_name`: Legal entity name
-- `registration_number`: Business registration number
-- `tax_id`: Tax identification number
-- `address`: Physical address
-- `country`: Country of operation
-- `phone`: Contact phone number
-- `email`: Contact email
-- `website`: Organization website
-- `description`: Brief description of the organization
-- `status`: Current status (pending, active, inactive, suspended)
-- `compliance_status`: Compliance verification status
-- `due_diligence_completed`: Flag indicating if due diligence is complete
-- `due_diligence_date`: Date when due diligence was completed
-- `created_at`: Record creation timestamp
-- `updated_at`: Record last update timestamp
-- `created_by`: User who created the record
-- `updated_by`: User who last updated the record
+- id (UUID, PK)
+- name (VARCHAR)
+- legal_name (VARCHAR)
+- registration_number (VARCHAR)
+- tax_id (VARCHAR)
+- address (TEXT)
+- country (VARCHAR)
+- phone (VARCHAR)
+- email (VARCHAR)
+- website (VARCHAR)
+- description (TEXT)
+- status (VARCHAR) - pending, active, inactive, suspended
+- compliance_status (VARCHAR) - pending, approved, rejected
+- due_diligence_completed (BOOLEAN)
+- due_diligence_date (TIMESTAMP)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+- created_by (UUID, FK to users)
+- updated_by (UUID, FK to users)
 
-### 1.2 User
-
-```sql
-CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organization_id UUID REFERENCES organizations(id),
-    first_name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    phone VARCHAR(20),
-    role VARCHAR(50) NOT NULL,
-    status VARCHAR(50) NOT NULL DEFAULT 'active',
-    mfa_enabled BOOLEAN DEFAULT FALSE,
-    mfa_secret VARCHAR(255),
-    password_hash VARCHAR(255) NOT NULL,
-    last_login TIMESTAMP,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
--- Indexes
-CREATE INDEX idx_users_organization ON users(organization_id);
-CREATE INDEX idx_users_role ON users(role);
-CREATE INDEX idx_users_status ON users(status);
-CREATE INDEX idx_users_email ON users(email);
-```
+### 2.2 Users
+Represents system users including administrators, approvers, and partner representatives.
 
 **Fields:**
-- `id`: Unique identifier
-- `organization_id`: Link to organization (NULL for HQ users)
-- `first_name`: User's first name
-- `last_name`: User's last name
-- `email`: Unique email address
-- `phone`: Contact phone number
-- `role`: User role (admin, accountant, budget_holder, finance_manager, partner_user, auditor)
-- `status`: Account status (active, inactive, suspended)
-- `mfa_enabled`: Multi-factor authentication enabled
-- `mfa_secret`: Secret key for MFA
-- `password_hash`: Hashed password
-- `last_login`: Timestamp of last login
-- `created_at`: Record creation timestamp
-- `updated_at`: Record last update timestamp
+- id (UUID, PK)
+- organization_id (UUID, FK to organizations)
+- first_name (VARCHAR)
+- last_name (VARCHAR)
+- email (VARCHAR, unique)
+- phone (VARCHAR)
+- role (VARCHAR) - system_administrator, admin, accountant, budget_holder, finance_manager, m&e_officer, donor, partner_user
+- status (VARCHAR) - active, inactive, suspended
+- mfa_enabled (BOOLEAN)
+- mfa_secret (VARCHAR)
+- password_hash (VARCHAR)
+- last_login (TIMESTAMP)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
 
-### 1.3 Project/Call
-
-```sql
-CREATE TABLE projects (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    open_date TIMESTAMP NOT NULL,
-    close_date TIMESTAMP NOT NULL,
-    currency VARCHAR(3) NOT NULL DEFAULT 'USD',
-    status VARCHAR(50) NOT NULL DEFAULT 'draft',
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by UUID REFERENCES users(id) NOT NULL,
-    updated_by UUID REFERENCES users(id)
-);
-
--- Indexes
-CREATE INDEX idx_projects_status ON projects(status);
-CREATE INDEX idx_projects_dates ON projects(open_date, close_date);
-```
+### 2.3 Projects
+Represents funding initiatives or calls for proposals.
 
 **Fields:**
-- `id`: Unique identifier
-- `name`: Project/call name
-- `description`: Detailed description
-- `open_date`: Submission window open date
-- `close_date`: Submission window close date
-- `currency`: Default currency for the project
-- `status`: Project status (draft, open, closed, archived)
-- `created_at`: Record creation timestamp
-- `updated_at`: Record last update timestamp
-- `created_by`: User who created the project
-- `updated_by`: User who last updated the project
+- id (UUID, PK)
+- name (VARCHAR)
+- description (TEXT)
+- open_date (TIMESTAMP)
+- close_date (TIMESTAMP)
+- currency (VARCHAR)
+- status (VARCHAR) - draft, open, closed, archived
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+- created_by (UUID, FK to users)
+- updated_by (UUID, FK to users)
 
-### 1.4 Budget Category
-
-```sql
-CREATE TABLE budget_categories (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    project_id UUID REFERENCES projects(id) NOT NULL,
-    name VARCHAR(100) NOT NULL,
-    description TEXT,
-    cap_amount DECIMAL(15, 2),
-    cap_percentage DECIMAL(5, 2),
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by UUID REFERENCES users(id) NOT NULL,
-    updated_by UUID REFERENCES users(id)
-);
-
--- Indexes
-CREATE INDEX idx_budget_categories_project ON budget_categories(project_id);
-CREATE INDEX idx_budget_categories_active ON budget_categories(is_active);
-```
+### 2.4 Budget Categories
+Defines spending categories for project budgets.
 
 **Fields:**
-- `id`: Unique identifier
-- `project_id`: Link to project
-- `name`: Category name
-- `description`: Category description
-- `cap_amount`: Maximum amount allowed for this category
-- `cap_percentage`: Maximum percentage of total budget
-- `is_active`: Whether category is currently available
-- `created_at`: Record creation timestamp
-- `updated_at`: Record last update timestamp
-- `created_by`: User who created the category
-- `updated_by`: User who last updated the category
+- id (UUID, PK)
+- project_id (UUID, FK to projects)
+- name (VARCHAR)
+- description (TEXT)
+- cap_amount (DECIMAL)
+- cap_percentage (DECIMAL)
+- is_active (BOOLEAN)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+- created_by (UUID, FK to users)
+- updated_by (UUID, FK to users)
 
-### 1.5 Budget
-
-```sql
-CREATE TABLE budgets (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organization_id UUID REFERENCES organizations(id) NOT NULL,
-    project_id UUID REFERENCES projects(id) NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    total_amount DECIMAL(15, 2) NOT NULL,
-    currency VARCHAR(3) NOT NULL DEFAULT 'USD',
-    status VARCHAR(50) NOT NULL DEFAULT 'draft',
-    submitted_at TIMESTAMP,
-    approved_at TIMESTAMP,
-    approved_by UUID REFERENCES users(id),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by UUID REFERENCES users(id) NOT NULL,
-    updated_by UUID REFERENCES users(id)
-);
-
--- Indexes
-CREATE INDEX idx_budgets_organization ON budgets(organization_id);
-CREATE INDEX idx_budgets_project ON budgets(project_id);
-CREATE INDEX idx_budgets_status ON budgets(status);
-```
+### 2.5 Budgets
+Represents financial plans submitted by partner organizations.
 
 **Fields:**
-- `id`: Unique identifier
-- `organization_id`: Link to organization submitting budget
-- `project_id`: Link to project/call
-- `title`: Budget title
-- `description`: Budget description
-- `total_amount`: Total budget amount
-- `currency`: Currency of the budget
-- `status`: Budget status (draft, submitted, revise_requested, approved)
-- `submitted_at`: Timestamp when submitted
-- `approved_at`: Timestamp when approved
-- `approved_by`: User who approved the budget
-- `created_at`: Record creation timestamp
-- `updated_at`: Record last update timestamp
-- `created_by`: User who created the budget
-- `updated_by`: User who last updated the budget
+- id (UUID, PK)
+- organization_id (UUID, FK to organizations)
+- project_id (UUID, FK to projects)
+- title (VARCHAR)
+- description (TEXT)
+- total_amount (DECIMAL)
+- currency (VARCHAR)
+- status (VARCHAR) - draft, submitted, approved, rejected, revised
+- submitted_at (TIMESTAMP)
+- approved_at (TIMESTAMP)
+- approved_by (UUID, FK to users)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+- created_by (UUID, FK to users)
+- updated_by (UUID, FK to users)
 
-### 1.6 Budget Line
-
-```sql
-CREATE TABLE budget_lines (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    budget_id UUID REFERENCES budgets(id) NOT NULL,
-    category_id UUID REFERENCES budget_categories(id) NOT NULL,
-    description VARCHAR(255) NOT NULL,
-    unit VARCHAR(50),
-    quantity DECIMAL(10, 2),
-    unit_cost DECIMAL(15, 2),
-    total_cost DECIMAL(15, 2) NOT NULL,
-    notes TEXT,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
--- Indexes
-CREATE INDEX idx_budget_lines_budget ON budget_lines(budget_id);
-CREATE INDEX idx_budget_lines_category ON budget_lines(category_id);
-```
+### 2.6 Budget Lines
+Represents individual line items within a budget.
 
 **Fields:**
-- `id`: Unique identifier
-- `budget_id`: Link to budget
-- `category_id`: Link to budget category
-- `description`: Line item description
-- `unit`: Unit of measurement
-- `quantity`: Quantity of units
-- `unit_cost`: Cost per unit
-- `total_cost`: Total cost for this line (quantity × unit_cost)
-- `notes`: Additional notes
-- `created_at`: Record creation timestamp
-- `updated_at`: Record last update timestamp
+- id (UUID, PK)
+- budget_id (UUID, FK to budgets)
+- category_id (UUID, FK to budget_categories)
+- description (VARCHAR)
+- unit (VARCHAR)
+- quantity (DECIMAL)
+- unit_cost (DECIMAL)
+- total_cost (DECIMAL)
+- notes (TEXT)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
 
-### 1.7 Contract
-
-```sql
-CREATE TABLE contracts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    budget_id UUID REFERENCES budgets(id) NOT NULL,
-    template_id VARCHAR(100) NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    envelope_id VARCHAR(100),
-    status VARCHAR(50) NOT NULL DEFAULT 'ready',
-    sent_at TIMESTAMP,
-    completed_at TIMESTAMP,
-    filed_at TIMESTAMP,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by UUID REFERENCES users(id) NOT NULL,
-    updated_by UUID REFERENCES users(id)
-);
-
--- Indexes
-CREATE INDEX idx_contracts_budget ON contracts(budget_id);
-CREATE INDEX idx_contracts_status ON contracts(status);
-CREATE INDEX idx_contracts_envelope ON contracts(envelope_id);
-```
+### 2.7 Contracts
+Represents legal agreements between the organization and partners.
 
 **Fields:**
-- `id`: Unique identifier
-- `budget_id`: Link to approved budget
-- `template_id`: DocuSign template identifier
-- `title`: Contract title
-- `description`: Contract description
-- `envelope_id`: DocuSign envelope identifier
-- `status`: Contract status (ready, sent, partially_signed, completed, filed)
-- `sent_at`: Timestamp when sent for signing
-- `completed_at`: Timestamp when fully signed
-- `filed_at`: Timestamp when filed/archived
-- `created_at`: Record creation timestamp
-- `updated_at`: Record last update timestamp
-- `created_by`: User who created the contract
-- `updated_by`: User who last updated the contract
+- id (UUID, PK)
+- budget_id (UUID, FK to budgets)
+- template_id (VARCHAR)
+- title (VARCHAR)
+- description (TEXT)
+- envelope_id (VARCHAR)
+- status (VARCHAR) - ready, sent, partially_signed, completed, filed, declined, voided
+- sent_at (TIMESTAMP)
+- completed_at (TIMESTAMP)
+- filed_at (TIMESTAMP)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+- created_by (UUID, FK to users)
+- updated_by (UUID, FK to users)
 
-### 1.8 Contract Artifact
-
-```sql
-CREATE TABLE contract_artifacts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    contract_id UUID REFERENCES contracts(id) NOT NULL,
-    document_uri VARCHAR(500) NOT NULL,
-    document_name VARCHAR(255) NOT NULL,
-    mime_type VARCHAR(100) NOT NULL,
-    version INTEGER NOT NULL DEFAULT 1,
-    checksum VARCHAR(64),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
--- Indexes
-CREATE INDEX idx_contract_artifacts_contract ON contract_artifacts(contract_id);
-```
+### 2.8 Contract Artifacts
+Stores contract documents and their versions.
 
 **Fields:**
-- `id`: Unique identifier
-- `contract_id`: Link to contract
-- `document_uri`: URI to document storage
-- `document_name`: Name of the document
-- `mime_type`: MIME type of the document
-- `version`: Document version number
-- `checksum`: Document checksum for integrity verification
-- `created_at`: Record creation timestamp
+- id (UUID, PK)
+- contract_id (UUID, FK to contracts)
+- document_uri (VARCHAR)
+- document_name (VARCHAR)
+- mime_type (VARCHAR)
+- version (INTEGER)
+- checksum (VARCHAR)
+- created_at (TIMESTAMP)
 
-### 1.9 Disbursement
-
-```sql
-CREATE TABLE disbursements (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    budget_id UUID REFERENCES budgets(id) NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    tranche_number INTEGER NOT NULL,
-    amount DECIMAL(15, 2) NOT NULL,
-    currency VARCHAR(3) NOT NULL DEFAULT 'USD',
-    planned_date DATE NOT NULL,
-    status VARCHAR(50) NOT NULL DEFAULT 'planned',
-    invoice_id VARCHAR(100),
-    bill_id VARCHAR(100),
-    paid_at TIMESTAMP,
-    reconciled_at TIMESTAMP,
-    reconciled_by UUID REFERENCES users(id),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by UUID REFERENCES users(id) NOT NULL,
-    updated_by UUID REFERENCES users(id)
-);
-
--- Indexes
-CREATE INDEX idx_disbursements_budget ON disbursements(budget_id);
-CREATE INDEX idx_disbursements_status ON disbursements(status);
-CREATE INDEX idx_disbursements_dates ON disbursements(planned_date);
-```
+### 2.9 Disbursements
+Represents fund transfers to partner organizations.
 
 **Fields:**
-- `id`: Unique identifier
-- `budget_id`: Link to budget
-- `title`: Disbursement title
-- `description`: Disbursement description
-- `tranche_number`: Tranche sequence number
-- `amount`: Disbursement amount
-- `currency`: Currency of disbursement
-- `planned_date`: Planned disbursement date
-- `status`: Disbursement status (planned, invoiced, paid, reconciled)
-- `invoice_id`: Xero invoice identifier
-- `bill_id`: Xero bill identifier
-- `paid_at`: Timestamp when paid
-- `reconciled_at`: Timestamp when reconciled
-- `reconciled_by`: User who reconciled
-- `created_at`: Record creation timestamp
-- `updated_at`: Record last update timestamp
-- `created_by`: User who created the disbursement
-- `updated_by`: User who last updated the disbursement
+- id (UUID, PK)
+- budget_id (UUID, FK to budgets)
+- title (VARCHAR)
+- description (TEXT)
+- tranche_number (INTEGER)
+- amount (DECIMAL)
+- currency (VARCHAR)
+- planned_date (DATE)
+- status (VARCHAR) - planned, processing, paid, reconciled, cancelled
+- invoice_id (VARCHAR)
+- bill_id (VARCHAR)
+- paid_at (TIMESTAMP)
+- reconciled_at (TIMESTAMP)
+- reconciled_by (UUID, FK to users)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+- created_by (UUID, FK to users)
+- updated_by (UUID, FK to users)
 
-### 1.10 M&E Report
-
-```sql
-CREATE TABLE me_reports (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    budget_id UUID REFERENCES budgets(id) NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    report_date DATE NOT NULL,
-    indicators JSONB,
-    status VARCHAR(50) NOT NULL DEFAULT 'draft',
-    submitted_at TIMESTAMP,
-    approved_at TIMESTAMP,
-    approved_by UUID REFERENCES users(id),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by UUID REFERENCES users(id) NOT NULL,
-    updated_by UUID REFERENCES users(id)
-);
-
--- Indexes
-CREATE INDEX idx_me_reports_budget ON me_reports(budget_id);
-CREATE INDEX idx_me_reports_status ON me_reports(status);
-CREATE INDEX idx_me_reports_date ON me_reports(report_date);
-```
+### 2.10 ME Reports
+Represents monitoring and evaluation reports submitted by partners.
 
 **Fields:**
-- `id`: Unique identifier
-- `budget_id`: Link to budget
-- `title`: Report title
-- `description`: Report description
-- `report_date`: Date of the reporting period
-- `indicators`: JSONB field containing KPI indicators
-- `status`: Report status (draft, submitted, corrections, approved)
-- `submitted_at`: Timestamp when submitted
-- `approved_at`: Timestamp when approved
-- `approved_by`: User who approved the report
-- `created_at`: Record creation timestamp
-- `updated_at`: Record last update timestamp
-- `created_by`: User who created the report
-- `updated_by`: User who last updated the report
+- id (UUID, PK)
+- budget_id (UUID, FK to budgets)
+- title (VARCHAR)
+- description (TEXT)
+- report_date (DATE)
+- indicators (JSONB)
+- status (VARCHAR) - draft, submitted, approved, rejected
+- submitted_at (TIMESTAMP)
+- approved_at (TIMESTAMP)
+- approved_by (UUID, FK to users)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+- created_by (UUID, FK to users)
+- updated_by (UUID, FK to users)
 
-### 1.11 Financial Report
-
-```sql
-CREATE TABLE financial_reports (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    budget_id UUID REFERENCES budgets(id) NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    report_date DATE NOT NULL,
-    total_spent DECIMAL(15, 2) NOT NULL DEFAULT 0,
-    variance DECIMAL(15, 2) NOT NULL DEFAULT 0,
-    status VARCHAR(50) NOT NULL DEFAULT 'draft',
-    submitted_at TIMESTAMP,
-    approved_at TIMESTAMP,
-    approved_by UUID REFERENCES users(id),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by UUID REFERENCES users(id) NOT NULL,
-    updated_by UUID REFERENCES users(id)
-);
-
--- Indexes
-CREATE INDEX idx_financial_reports_budget ON financial_reports(budget_id);
-CREATE INDEX idx_financial_reports_status ON financial_reports(status);
-```
+### 2.11 Financial Reports
+Represents financial reporting submissions.
 
 **Fields:**
-- `id`: Unique identifier
-- `budget_id`: Link to budget
-- `title`: Report title
-- `description`: Report description
-- `report_date`: Date of the reporting period
-- `total_spent`: Total amount spent
-- `variance`: Variance from budget
-- `status`: Report status (draft, submitted, corrections, approved)
-- `submitted_at`: Timestamp when submitted
-- `approved_at`: Timestamp when approved
-- `approved_by`: User who approved the report
-- `created_at`: Record creation timestamp
-- `updated_at`: Record last update timestamp
-- `created_by`: User who created the report
-- `updated_by`: User who last updated the report
+- id (UUID, PK)
+- budget_id (UUID, FK to budgets)
+- title (VARCHAR)
+- description (TEXT)
+- report_date (DATE)
+- total_spent (DECIMAL)
+- variance (DECIMAL)
+- status (VARCHAR) - draft, submitted, approved, rejected
+- submitted_at (TIMESTAMP)
+- approved_at (TIMESTAMP)
+- approved_by (UUID, FK to users)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+- created_by (UUID, FK to users)
+- updated_by (UUID, FK to users)
 
-### 1.12 Receipt
-
-```sql
-CREATE TABLE receipts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    financial_report_id UUID REFERENCES financial_reports(id) NOT NULL,
-    budget_line_id UUID REFERENCES budget_lines(id),
-    amount DECIMAL(15, 2) NOT NULL,
-    currency VARCHAR(3) NOT NULL DEFAULT 'USD',
-    description VARCHAR(255),
-    document_uri VARCHAR(500) NOT NULL,
-    document_name VARCHAR(255) NOT NULL,
-    mime_type VARCHAR(100) NOT NULL,
-    checksum VARCHAR(64),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by UUID REFERENCES users(id) NOT NULL
-);
-
--- Indexes
-CREATE INDEX idx_receipts_financial_report ON receipts(financial_report_id);
-CREATE INDEX idx_receipts_budget_line ON receipts(budget_line_id);
-```
+### 2.12 Receipts
+Represents proof of expenditure documents.
 
 **Fields:**
-- `id`: Unique identifier
-- `financial_report_id`: Link to financial report
-- `budget_line_id`: Link to budget line (optional)
-- `amount`: Receipt amount
-- `currency`: Currency of receipt
-- `description`: Description of expense
-- `document_uri`: URI to document storage
-- `document_name`: Name of the document
-- `mime_type`: MIME type of the document
-- `checksum`: Document checksum for integrity verification
-- `created_at`: Record creation timestamp
-- `created_by`: User who created the receipt
+- id (UUID, PK)
+- financial_report_id (UUID, FK to financial_reports)
+- budget_line_id (UUID, FK to budget_lines)
+- amount (DECIMAL)
+- currency (VARCHAR)
+- description (VARCHAR)
+- document_uri (VARCHAR)
+- document_name (VARCHAR)
+- mime_type (VARCHAR)
+- checksum (VARCHAR)
+- created_at (TIMESTAMP)
+- created_by (UUID, FK to users)
 
-### 1.13 Document
-
-```sql
-CREATE TABLE documents (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    entity_type VARCHAR(50) NOT NULL,
-    entity_id UUID NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    document_uri VARCHAR(500) NOT NULL,
-    document_name VARCHAR(255) NOT NULL,
-    mime_type VARCHAR(100) NOT NULL,
-    version INTEGER NOT NULL DEFAULT 1,
-    checksum VARCHAR(64),
-    uploaded_by UUID REFERENCES users(id) NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
--- Indexes
-CREATE INDEX idx_documents_entity ON documents(entity_type, entity_id);
-CREATE INDEX idx_documents_uploaded_by ON documents(uploaded_by);
-```
+### 2.13 Audit Logs
+Records all system activities for compliance and security purposes.
 
 **Fields:**
-- `id`: Unique identifier
-- `entity_type`: Type of entity the document is attached to
-- `entity_id`: ID of the entity the document is attached to
-- `title`: Document title
-- `description`: Document description
-- `document_uri`: URI to document storage
-- `document_name`: Name of the document
-- `mime_type`: MIME type of the document
-- `version`: Document version number
-- `checksum`: Document checksum for integrity verification
-- `uploaded_by`: User who uploaded the document
-- `created_at`: Record creation timestamp
-- `updated_at`: Record last update timestamp
+- id (UUID, PK)
+- actor_id (UUID, FK to users)
+- action (VARCHAR)
+- entity_type (VARCHAR)
+- entity_id (UUID)
+- before_state (JSONB)
+- after_state (JSONB)
+- ip_address (VARCHAR)
+- user_agent (TEXT)
+- created_at (TIMESTAMP)
 
-### 1.14 Notification
-
-```sql
-CREATE TABLE notifications (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    type VARCHAR(50) NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    message TEXT NOT NULL,
-    priority VARCHAR(20) DEFAULT 'normal',
-    audience_type VARCHAR(50) NOT NULL, -- user, role, organization, all
-    audience_id UUID, -- specific user/organization ID or NULL for all
-    related_entity_type VARCHAR(50),
-    related_entity_id UUID,
-    scheduled_at TIMESTAMP,
-    sent_at TIMESTAMP,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by UUID REFERENCES users(id)
-);
-
--- Indexes
-CREATE INDEX idx_notifications_audience ON notifications(audience_type, audience_id);
-CREATE INDEX idx_notifications_type ON notifications(type);
-CREATE INDEX idx_notifications_scheduled ON notifications(scheduled_at);
-```
+### 2.14 Documents
+Stores all documents with version control capabilities.
 
 **Fields:**
-- `id`: Unique identifier
-- `type`: Notification type (deadline, approval, contract, payment, etc.)
-- `title`: Notification title
-- `message`: Notification message content
-- `priority`: Priority level (low, normal, high, urgent)
-- `audience_type`: Audience type (user, role, organization, all)
-- `audience_id`: Specific audience identifier
-- `related_entity_type`: Type of related entity
-- `related_entity_id`: ID of related entity
-- `scheduled_at`: Scheduled send time
-- `sent_at`: Actual send time
-- `created_at`: Record creation timestamp
-- `created_by`: User who created the notification
+- id (UUID, PK)
+- entity_type (VARCHAR) - budget, contract, disbursement, project, report
+- entity_id (UUID)
+- title (VARCHAR)
+- description (TEXT)
+- document_uri (VARCHAR)
+- document_name (VARCHAR)
+- mime_type (VARCHAR)
+- version (INTEGER)
+- checksum (VARCHAR)
+- uploaded_by (UUID, FK to users)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
 
-### 1.15 Notification Delivery
-
-```sql
-CREATE TABLE notification_deliveries (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    notification_id UUID REFERENCES notifications(id) NOT NULL,
-    user_id UUID REFERENCES users(id) NOT NULL,
-    channel VARCHAR(20) NOT NULL, -- email, in_app
-    status VARCHAR(20) NOT NULL DEFAULT 'pending', -- pending, sent, failed
-    delivered_at TIMESTAMP,
-    failure_reason TEXT,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
--- Indexes
-CREATE INDEX idx_notification_deliveries_notification ON notification_deliveries(notification_id);
-CREATE INDEX idx_notification_deliveries_user ON notification_deliveries(user_id);
-CREATE INDEX idx_notification_deliveries_status ON notification_deliveries(status);
-```
+### 2.15 Review Comments
+Stores comments and feedback during review processes.
 
 **Fields:**
-- `id`: Unique identifier
-- `notification_id`: Link to notification
-- `user_id`: Target user
-- `channel`: Delivery channel (email, in_app)
-- `status`: Delivery status (pending, sent, failed)
-- `delivered_at`: Timestamp when delivered
-- `failure_reason`: Reason for delivery failure
-- `created_at`: Record creation timestamp
+- id (UUID, PK)
+- entity_type (VARCHAR) - budget, contract, report
+- entity_id (UUID)
+- parent_id (UUID, FK to review_comments)
+- author_id (UUID, FK to users)
+- content (TEXT)
+- is_resolved (BOOLEAN)
+- resolved_at (TIMESTAMP)
+- resolved_by (UUID, FK to users)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
 
-### 1.16 Audit Log
+## 3. Relationships
 
-```sql
-CREATE TABLE audit_logs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    actor_id UUID REFERENCES users(id),
-    action VARCHAR(100) NOT NULL,
-    entity_type VARCHAR(50) NOT NULL,
-    entity_id UUID NOT NULL,
-    before_state JSONB,
-    after_state JSONB,
-    ip_address VARCHAR(45),
-    user_agent TEXT,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
+### 3.1 Organization-User Relationship
+- One-to-many relationship between Organizations and Users
+- Each user belongs to exactly one organization
+- Organizations can have multiple users
 
--- Indexes
-CREATE INDEX idx_audit_logs_actor ON audit_logs(actor_id);
-CREATE INDEX idx_audit_logs_entity ON audit_logs(entity_type, entity_id);
-CREATE INDEX idx_audit_logs_action ON audit_logs(action);
-CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at);
-```
+### 3.2 Project-Budget Relationship
+- One-to-many relationship between Projects and Budgets
+- Each budget belongs to exactly one project
+- Projects can have multiple budgets
 
-**Fields:**
-- `id`: Unique identifier
-- `actor_id`: User who performed the action
-- `action`: Action performed (create, update, delete, approve, etc.)
-- `entity_type`: Type of entity affected
-- `entity_id`: ID of entity affected
-- `before_state`: JSON representation of entity before change
-- `after_state`: JSON representation of entity after change
-- `ip_address`: IP address of the request
-- `user_agent`: User agent string
-- `created_at`: Timestamp of the action
+### 3.3 Budget-Budget Line Relationship
+- One-to-many relationship between Budgets and Budget Lines
+- Each budget line belongs to exactly one budget
+- Budgets can have multiple budget lines
 
-### 1.17 Review Comment
+### 3.4 Budget-Contract Relationship
+- One-to-one relationship between Budgets and Contracts
+- Each contract is associated with exactly one budget
+- Each budget can have at most one contract
 
-```sql
-CREATE TABLE review_comments (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    entity_type VARCHAR(50) NOT NULL, -- budget, contract, report, etc.
-    entity_id UUID NOT NULL,
-    parent_id UUID REFERENCES review_comments(id), -- for threaded comments
-    author_id UUID REFERENCES users(id) NOT NULL,
-    content TEXT NOT NULL,
-    is_resolved BOOLEAN DEFAULT FALSE,
-    resolved_at TIMESTAMP,
-    resolved_by UUID REFERENCES users(id),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
+### 3.5 Budget-Disbursement Relationship
+- One-to-many relationship between Budgets and Disbursements
+- Each disbursement belongs to exactly one budget
+- Budgets can have multiple disbursements
 
--- Indexes
-CREATE INDEX idx_review_comments_entity ON review_comments(entity_type, entity_id);
-CREATE INDEX idx_review_comments_author ON review_comments(author_id);
-CREATE INDEX idx_review_comments_parent ON review_comments(parent_id);
-```
+### 3.6 Budget-ME Report Relationship
+- One-to-many relationship between Budgets and ME Reports
+- Each ME report belongs to exactly one budget
+- Budgets can have multiple ME reports
 
-**Fields:**
-- `id`: Unique identifier
-- `entity_type`: Type of entity being commented on
-- `entity_id`: ID of entity being commented on
-- `parent_id`: Parent comment ID for threaded discussions
-- `author_id`: User who created the comment
-- `content`: Comment content
-- `is_resolved`: Whether the comment has been addressed
-- `resolved_at`: Timestamp when resolved
-- `resolved_by`: User who resolved the comment
-- `created_at`: Record creation timestamp
-- `updated_at`: Record last update timestamp
+### 3.7 Budget-Financial Report Relationship
+- One-to-many relationship between Budgets and Financial Reports
+- Each financial report belongs to exactly one budget
+- Budgets can have multiple financial reports
 
-## 2. Relationships
-
-### 2.1 Organization Relationships
-- An organization can have multiple users
-- An organization can submit multiple budgets
-- An organization can sign multiple contracts
-- An organization can receive multiple disbursements
-- An organization can submit multiple reports
-
-### 2.2 User Relationships
-- A user belongs to one organization (or HQ for admin users)
-- A user can create multiple budgets, contracts, disbursements, reports
-- A user can approve budgets, contracts, disbursements, reports
-- A user can generate audit logs
-- A user can receive notifications
-
-### 2.3 Project Relationships
-- A project can have multiple budget categories
-- A project can have multiple budgets submitted by different organizations
-
-### 2.4 Budget Relationships
-- A budget belongs to one organization and one project
-- A budget can have multiple budget lines
-- A budget can have one contract (after approval)
-- A budget can have multiple disbursements
-- A budget can have multiple M&E reports
-- A budget can have multiple financial reports
-
-### 2.5 Contract Relationships
-- A contract belongs to one budget
-- A contract can have multiple artifacts (versions)
-
-### 2.6 Disbursement Relationships
-- A disbursement belongs to one budget
-- A disbursement can be linked to Xero invoices/bills
-
-### 2.7 Report Relationships
-- Both M&E and financial reports belong to one budget
+### 3.8 Financial Report-Receipt Relationship
+- One-to-many relationship between Financial Reports and Receipts
+- Each receipt belongs to exactly one financial report
 - Financial reports can have multiple receipts
 
-## 3. Constraints and Validation Rules
+### 3.9 Document Versioning
+- Documents are versioned by entity_type and entity_id
+- Each new version increments the version number
+- All versions of a document are stored with their checksums
+- The latest version can be retrieved by entity_type and entity_id
 
-### 3.1 Budget Validation
-- Total budget amount must equal sum of budget lines
-- Each budget line must belong to a valid category for the project
-- Budget line amounts must not exceed category caps
-- Budget line amounts must not exceed percentage caps
+## 4. Indexes
 
-### 3.2 Date Validation
-- Project close date must be after open date
-- Disbursement planned date must be within project dates
-- Report dates must be within project dates
+### 4.1 Performance Indexes
+- organizations_status_idx ON organizations(status)
+- organizations_compliance_idx ON organizations(compliance_status)
+- users_organization_idx ON users(organization_id)
+- users_role_idx ON users(role)
+- users_status_idx ON users(status)
+- users_email_idx ON users(email)
+- projects_status_idx ON projects(status)
+- projects_dates_idx ON projects(open_date, close_date)
+- budget_categories_project_idx ON budget_categories(project_id)
+- budget_categories_active_idx ON budget_categories(is_active)
+- budgets_organization_idx ON budgets(organization_id)
+- budgets_project_idx ON budgets(project_id)
+- budgets_status_idx ON budgets(status)
+- budget_lines_budget_idx ON budget_lines(budget_id)
+- budget_lines_category_idx ON budget_lines(category_id)
+- contracts_budget_idx ON contracts(budget_id)
+- contracts_status_idx ON contracts(status)
+- contracts_envelope_idx ON contracts(envelope_id)
+- contract_artifacts_contract_idx ON contract_artifacts(contract_id)
+- disbursements_budget_idx ON disbursements(budget_id)
+- disbursements_status_idx ON disbursements(status)
+- disbursements_dates_idx ON disbursements(planned_date)
+- me_reports_budget_idx ON me_reports(budget_id)
+- me_reports_status_idx ON me_reports(status)
+- me_reports_date_idx ON me_reports(report_date)
+- financial_reports_budget_idx ON financial_reports(budget_id)
+- financial_reports_status_idx ON financial_reports(status)
+- receipts_financial_report_idx ON receipts(financial_report_id)
+- receipts_budget_line_idx ON receipts(budget_line_id)
+- audit_logs_actor_idx ON audit_logs(actor_id)
+- audit_logs_entity_idx ON audit_logs(entity_type, entity_id)
+- audit_logs_action_idx ON audit_logs(action)
+- audit_logs_created_at_idx ON audit_logs(created_at)
+- documents_entity_idx ON documents(entity_type, entity_id)
+- documents_uploaded_by_idx ON documents(uploaded_by)
 
-### 3.3 Status Transitions
-- Budget: draft → submitted → revise_requested → approved
-- Contract: ready → sent → partially_signed → completed → filed
-- Disbursement: planned → invoiced → paid → reconciled
-- Reports: draft → submitted → corrections → approved
+### 4.2 Document Versioning Indexes
+- documents_version_idx ON documents(entity_type, entity_id, version)
+- documents_checksum_idx ON documents(checksum)
 
-### 3.4 Financial Validation
-- Total disbursements cannot exceed approved budget
-- Receipt amounts in financial reports must match uploaded documents
-- Financial report variance must equal budget minus actual spend
+## 5. Constraints
 
-## 4. Indexing Strategy
+### 5.1 Primary Keys
+All tables have UUID primary keys generated using gen_random_uuid()
 
-### 4.1 Primary Indexes
-- All primary keys (id fields) are indexed by default
+### 5.2 Foreign Keys
+All foreign key relationships are enforced with ON DELETE RESTRICT
 
-### 4.2 Foreign Key Indexes
-- All foreign key relationships have supporting indexes
+### 5.3 Unique Constraints
+- users.email (unique)
+- contracts.envelope_id (unique)
 
-### 4.3 Query Performance Indexes
-- Status fields for filtering active/inactive records
-- Date fields for time-based queries
-- Type fields for entity-specific queries
-- User fields for access control queries
+### 5.4 Check Constraints
+- budget_lines.total_cost = budget_lines.quantity * budget_lines.unit_cost
+- disbursements.amount >= 0
+- budgets.total_amount >= 0
 
-## 5. Data Integrity
+## 6. Data Integrity
 
-### 5.1 Referential Integrity
-- All foreign key relationships enforce referential integrity
-- Cascading deletes are used sparingly and only where appropriate
+### 6.1 Document Version Control
+- Automatic version incrementing when creating new versions of documents
+- Checksum verification for document integrity
+- Immutable storage of all document versions
+- Version history tracking
 
-### 5.2 Business Rule Enforcement
-- Database constraints enforce critical business rules
-- Application-level validation handles complex business logic
+### 6.2 Audit Trail
+- Comprehensive logging of all system activities
+- Before and after state recording for data changes
+- User identification and IP tracking
+- Immutable audit log storage
 
-### 5.3 Audit Trail
-- All significant changes are logged in audit_logs table
-- Before/after states are captured for all changes
-- Immutable audit records with no update capability
+### 6.3 Data Validation
+- Input validation at the application level
+- Database constraints for critical data integrity
+- Regular data consistency checks
+- Backup and recovery procedures

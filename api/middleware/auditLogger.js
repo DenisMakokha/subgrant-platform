@@ -93,4 +93,64 @@ async function createAuditLogEntry(actorId, action, entityType, entityId, before
   }
 }
 
+// Direct function to create audit log entry (for manual logging)
+auditLogger.create = async function(auditData) {
+  try {
+    return await AuditLog.create(auditData);
+  } catch (error) {
+    console.error('Error creating audit log entry:', error);
+    throw error;
+  }
+};
+
+// Function to get audit logs for an entity
+auditLogger.getAuditLogsForEntity = async function(entityType, entityId) {
+  try {
+    return await AuditLog.findByEntity(entityType, entityId);
+  } catch (error) {
+    console.error('Error fetching audit logs for entity:', error);
+    throw error;
+  }
+};
+
+// Function to get audit logs for an actor
+auditLogger.getAuditLogsForActor = async function(actorId) {
+  try {
+    return await AuditLog.findByActor(actorId);
+  } catch (error) {
+    console.error('Error fetching audit logs for actor:', error);
+    throw error;
+  }
+};
+
+// Function to get audit logs by action
+auditLogger.getAuditLogsByAction = async function(action) {
+  try {
+    return await AuditLog.findByAction(action);
+  } catch (error) {
+    console.error('Error fetching audit logs by action:', error);
+    throw error;
+  }
+};
+
+// Function to get all audit logs with filters
+auditLogger.getAllAuditLogs = async function(filters = {}, limit = 50, offset = 0) {
+  try {
+    return await AuditLog.findAll(filters, limit, offset);
+  } catch (error) {
+    console.error('Error fetching audit logs:', error);
+    throw error;
+  }
+};
+
+// Function to get audit log count with filters
+auditLogger.getAuditLogCount = async function(filters = {}) {
+  try {
+    return await AuditLog.getCount(filters);
+  } catch (error) {
+    console.error('Error fetching audit log count:', error);
+    throw error;
+  }
+};
+
 module.exports = auditLogger;

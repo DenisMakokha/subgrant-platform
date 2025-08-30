@@ -31,6 +31,9 @@ const Header: React.FC = () => {
                     <Link to="/me-reports" className="nav-link">ME Reports</Link>
                     <Link to="/financial-reports" className="nav-link">Financial Reports</Link>
                     <Link to="/receipts" className="nav-link">Receipts</Link>
+{(user.role === 'admin' || user.role === 'auditor') && (
+                      <Link to="/compliance-dashboard" className="nav-link">Compliance Dashboard</Link>
+                    )}
                     <Link to="/profile" className="nav-link">Profile</Link>
                   </>
                 )}

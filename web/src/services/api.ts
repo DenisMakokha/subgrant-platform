@@ -385,6 +385,26 @@ export const healthApi = {
   },
 };
 
+// Renewal Alerts API functions
+export const renewalAlertsApi = {
+  // Get renewal alerts for the current user
+  getRenewalAlerts: async () => {
+    return fetchWithAuth('/renewal-alerts');
+  },
+  
+  // Send renewal alerts (admin only)
+  sendRenewalAlerts: async () => {
+    return fetchWithAuth('/renewal-alerts/send', {
+      method: 'POST',
+    });
+  },
+  
+  // Check for renewal alerts (for testing)
+  checkRenewalAlerts: async () => {
+    return fetchWithAuth('/renewal-alerts/check');
+  },
+};
+
 // Create a combined API object for easier imports
 const api = {
   auth: authApi,
@@ -397,6 +417,7 @@ const api = {
   reviewComments: reviewCommentApi,
   notifications: notificationApi,
   health: healthApi,
+  renewalAlerts: renewalAlertsApi,
   fetchWithAuth,
 };
 

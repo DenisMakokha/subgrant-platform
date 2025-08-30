@@ -10,7 +10,8 @@ const rolePermissions = {
     budgets: ['create', 'read', 'update', 'delete'],
     budget_lines: ['create', 'read', 'update', 'delete'],
     review_comments: ['create', 'read', 'update', 'delete'],
-    contracts: ['create', 'read', 'update', 'delete']
+    contracts: ['create', 'read', 'update', 'delete'],
+    audit_logs: ['read']
   },
   accountant: {
     organizations: ['read'],
@@ -20,7 +21,8 @@ const rolePermissions = {
     budgets: ['create', 'read', 'update'],
     budget_lines: ['create', 'read', 'update'],
     review_comments: ['create', 'read', 'update'],
-    contracts: ['read']
+    contracts: ['read'],
+    audit_logs: ['read']
   },
   budget_holder: {
     organizations: ['read'],
@@ -30,7 +32,8 @@ const rolePermissions = {
     budgets: ['create', 'read', 'update'],
     budget_lines: ['create', 'read', 'update'],
     review_comments: ['create', 'read', 'update'],
-    contracts: ['read']
+    contracts: ['read'],
+    audit_logs: ['read']
   },
   finance_manager: {
     organizations: ['read'],
@@ -40,7 +43,8 @@ const rolePermissions = {
     budgets: ['create', 'read', 'update', 'delete'],
     budget_lines: ['create', 'read', 'update', 'delete'],
     review_comments: ['create', 'read', 'update', 'delete'],
-    contracts: ['create', 'read', 'update', 'delete']
+    contracts: ['create', 'read', 'update', 'delete'],
+    audit_logs: ['read']
   },
   partner_user: {
     organizations: ['read'],
@@ -50,7 +54,8 @@ const rolePermissions = {
     budgets: ['create', 'read', 'update'],
     budget_lines: ['create', 'read', 'update'],
     review_comments: ['create', 'read', 'update'],
-    contracts: ['read']
+    contracts: ['read'],
+    audit_logs: ['read']
   },
   auditor: {
     organizations: ['read'],
@@ -60,7 +65,8 @@ const rolePermissions = {
     budgets: ['read'],
     budget_lines: ['read'],
     review_comments: ['read'],
-    contracts: ['read']
+    contracts: ['read'],
+    audit_logs: ['read']
   },
   donor: {
     organizations: ['read'],
@@ -72,7 +78,30 @@ const rolePermissions = {
     review_comments: ['read'],
     contracts: ['read'],
     me_reports: ['read'],
-    financial_reports: ['read']
+    financial_reports: ['read'],
+    audit_logs: ['read']
+  },
+  system_administrator: {
+    organizations: ['create', 'read', 'update', 'delete'],
+    users: ['create', 'read', 'update', 'delete'],
+    projects: ['create', 'read', 'update', 'delete'],
+    budget_categories: ['create', 'read', 'update', 'delete'],
+    budgets: ['create', 'read', 'update', 'delete'],
+    budget_lines: ['create', 'read', 'update', 'delete'],
+    review_comments: ['create', 'read', 'update', 'delete'],
+    contracts: ['create', 'read', 'update', 'delete'],
+    audit_logs: ['read', 'export']
+  },
+  compliance_officer: {
+    organizations: ['read'],
+    users: ['read'],
+    projects: ['read'],
+    budget_categories: ['read'],
+    budgets: ['read'],
+    budget_lines: ['read'],
+    review_comments: ['read'],
+    contracts: ['read'],
+    audit_logs: ['read', 'export']
   }
 };
 

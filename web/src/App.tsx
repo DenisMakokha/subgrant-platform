@@ -15,6 +15,7 @@ import DonorReporting from './pages/DonorReporting';
 import MeReportManagement from './pages/MeReportManagement';
 import FinancialReportManagement from './pages/FinancialReportManagement';
 import ReceiptManagement from './pages/ReceiptManagement';
+import ComplianceDashboard from './pages/ComplianceDashboard';
 import NotFound from './pages/NotFound';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -41,6 +42,7 @@ const App: React.FC = () => {
               <Route path="/me-reports" element={<MeReportManagement />} />
               <Route path="/financial-reports" element={<FinancialReportManagement />} />
               <Route path="/receipts" element={<ReceiptManagement />} />
+              <Route path="/compliance-dashboard" element={<ComplianceDashboard />} />
               <Route path="/profile" element={<Profile user={null} />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

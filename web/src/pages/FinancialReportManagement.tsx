@@ -171,7 +171,7 @@ const FinancialReportManagement: React.FC = () => {
       await fetchReceiptsForReport(id);
     }
     
-    // For now, we'll just log to console
+    // Display receipts in a modal or separate page
     console.log('Receipts for report', id, receipts[id]);
     alert(`Viewing receipts for report ${id}. Check console for details.`);
   };

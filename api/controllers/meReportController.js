@@ -1,5 +1,6 @@
 const MeReport = require('../models/meReport');
 const { validateMeReport } = require('../middleware/validation');
+const auditLogger = require('../middleware/auditLogger');
 
 class MeReportController {
   // Create a new ME report
@@ -18,6 +19,23 @@ class MeReportController {
       }
 
       const meReport = await MeReport.create(meReportData);
+      
+      // Log the ME report creation
+      try {
+        await auditLogger.create({
+          actor_id: req.user.id,
+          action: 'CREATE_ME_REPORT',
+          entity_type: 'me_report',
+          entity_id: meReport.id,
+          before_state: null,
+          after_state: meReport,
+          ip_address: req.ip || req.connection.remoteAddress,
+          user_agent: req.get('User-Agent')
+        });
+      } catch (auditError) {
+        console.error('Error creating audit log:', auditError);
+      }
+      
       res.status(201).json(meReport);
     } catch (err) {
       next(err);
@@ -105,6 +123,23 @@ class MeReportController {
       };
 
       const updatedMeReport = await meReport.update(updateData);
+      
+      // Log the ME report update
+      try {
+        await auditLogger.create({
+          actor_id: req.user.id,
+          action: 'UPDATE_ME_REPORT',
+          entity_type: 'me_report',
+          entity_id: id,
+          before_state: meReport,
+          after_state: updatedMeReport,
+          ip_address: req.ip || req.connection.remoteAddress,
+          user_agent: req.get('User-Agent')
+        });
+      } catch (auditError) {
+        console.error('Error creating audit log:', auditError);
+      }
+      
       res.json(updatedMeReport);
     } catch (err) {
       next(err);
@@ -115,10 +150,28 @@ class MeReportController {
   static async deleteMeReport(req, res, next) {
     try {
       const { id } = req.params;
-      const meReport = await MeReport.deleteById(id);
+      const meReport = await MeReport.findById(id);
 
       if (!meReport) {
         return res.status(404).json({ error: 'ME report not found' });
+      }
+
+      await MeReport.deleteById(id);
+      
+      // Log the ME report deletion
+      try {
+        await auditLogger.create({
+          actor_id: req.user.id,
+          action: 'DELETE_ME_REPORT',
+          entity_type: 'me_report',
+          entity_id: id,
+          before_state: meReport,
+          after_state: null,
+          ip_address: req.ip || req.connection.remoteAddress,
+          user_agent: req.get('User-Agent')
+        });
+      } catch (auditError) {
+        console.error('Error creating audit log:', auditError);
       }
 
       res.json({ message: 'ME report deleted successfully' });
@@ -141,6 +194,23 @@ class MeReportController {
         status: 'submitted',
         submitted_at: new Date()
       });
+      
+      // Log the ME report submission
+      try {
+        await auditLogger.create({
+          actor_id: req.user.id,
+          action: 'SUBMIT_ME_REPORT',
+          entity_type: 'me_report',
+          entity_id: id,
+          before_state: meReport,
+          after_state: updatedMeReport,
+          ip_address: req.ip || req.connection.remoteAddress,
+          user_agent: req.get('User-Agent')
+        });
+      } catch (auditError) {
+        console.error('Error creating audit log:', auditError);
+      }
+      
       res.json(updatedMeReport);
     } catch (err) {
       next(err);
@@ -162,6 +232,23 @@ class MeReportController {
         approved_at: new Date(),
         approved_by: req.user.id
       });
+      
+      // Log the ME report approval
+      try {
+        await auditLogger.create({
+          actor_id: req.user.id,
+          action: 'APPROVE_ME_REPORT',
+          entity_type: 'me_report',
+          entity_id: id,
+          before_state: meReport,
+          after_state: updatedMeReport,
+          ip_address: req.ip || req.connection.remoteAddress,
+          user_agent: req.get('User-Agent')
+        });
+      } catch (auditError) {
+        console.error('Error creating audit log:', auditError);
+      }
+      
       res.json(updatedMeReport);
     } catch (err) {
       next(err);
@@ -178,11 +265,31 @@ class MeReportController {
         return res.status(404).json({ error: 'ME report not found' });
       }
       
+      // Log the ME report export
+      try {
+        await auditLogger.create({
+          actor_id: req.user.id,
+          action: 'EXPORT_ME_REPORT_PDF',
+          entity_type: 'me_report',
+          entity_id: id,
+          before_state: null,
+          after_state: { id, format: 'pdf' },
+          ip_address: req.ip || req.connection.remoteAddress,
+          user_agent: req.get('User-Agent')
+        });
+      } catch (auditError) {
+        console.error('Error creating audit log:', auditError);
+      }
+      
       // In a real implementation, you would generate a PDF file here
-      // For now, we'll just send a placeholder response
+      // For example, using a library like pdfkit or puppeteer
+      // const pdfBuffer = await generateMeReportPdf(meReport);
+      // res.send(pdfBuffer);
+      
+      // For now, we'll send a placeholder response indicating where the real implementation would go
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="me-report-${id}.pdf"`);
-      res.send(`PDF content for ME report ${id}`);
+      res.send(`PDF content for ME report ${id} would be generated here in a real implementation.`);
     } catch (err) {
       next(err);
     }
@@ -198,11 +305,31 @@ class MeReportController {
         return res.status(404).json({ error: 'ME report not found' });
       }
       
+      // Log the ME report export
+      try {
+        await auditLogger.create({
+          actor_id: req.user.id,
+          action: 'EXPORT_ME_REPORT_EXCEL',
+          entity_type: 'me_report',
+          entity_id: id,
+          before_state: null,
+          after_state: { id, format: 'excel' },
+          ip_address: req.ip || req.connection.remoteAddress,
+          user_agent: req.get('User-Agent')
+        });
+      } catch (auditError) {
+        console.error('Error creating audit log:', auditError);
+      }
+      
       // In a real implementation, you would generate an Excel file here
-      // For now, we'll just send a placeholder response
+      // For example, using a library like exceljs or xlsx
+      // const excelBuffer = await generateMeReportExcel(meReport);
+      // res.send(excelBuffer);
+      
+      // For now, we'll send a placeholder response indicating where the real implementation would go
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename="me-report-${id}.xlsx"`);
-      res.send(`Excel content for ME report ${id}`);
+      res.send(`Excel content for ME report ${id} would be generated here in a real implementation.`);
     } catch (err) {
       next(err);
     }

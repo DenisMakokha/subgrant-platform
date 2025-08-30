@@ -15,6 +15,7 @@ const Sidebar: React.FC = () => {
           <li><a href="/contracts">Contracts</a></li>
           <li><a href="/disbursements">Disbursements</a></li>
           <li><a href="/reports">Reports</a></li>
+<li><a href="/compliance-dashboard">Compliance Dashboard</a></li>
           <li><a href="/documents">Documents</a></li>
         </ul>
       </nav>

@@ -58,9 +58,18 @@ class RenewalAlertService {
   // Get renewal alerts for a specific user
   static async getRenewalAlertsForUser(userId) {
     try {
-      // For now, we'll return all renewal alerts
-      // In a real implementation, you might filter by user's projects
-      return await this.checkForRenewalAlerts();
+      // Get projects for the user
+      const userProjects = await Project.findByUserId(userId);
+      
+      // Get all renewal alerts
+      const allAlerts = await this.checkForRenewalAlerts();
+      
+      // Filter alerts to only include those for the user's projects
+      const userAlerts = allAlerts.filter(alert =>
+        userProjects.some(project => project.id === alert.projectId)
+      );
+      
+      return userAlerts;
     } catch (error) {
       console.error('Error getting renewal alerts for user:', error);
       return [];

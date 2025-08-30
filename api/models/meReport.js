@@ -154,4 +154,19 @@ class MeReport {
   }
 }
 
+  // Get overdue ME reports
+  static async getOverdueReports() {
+    const query = `
+      SELECT *
+      FROM me_reports
+      WHERE status != 'approved'
+        AND report_date < CURRENT_DATE
+      ORDER BY report_date ASC
+    `;
+    
+    const result = await db.pool.query(query);
+    return result.rows.map(row => new MeReport(row));
+  }
+}
+
 module.exports = MeReport;

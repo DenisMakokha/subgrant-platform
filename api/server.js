@@ -31,11 +31,13 @@ const xeroWebhookRoutes = require('./routes/xeroWebhooks');
 const auditLogRoutes = require('./routes/auditLogs');
 const documentRoutes = require('./routes/documents');
 const complianceRoutes = require('./routes/compliance');
+const complianceDocumentTemplateRoutes = require('./routes/complianceDocumentTemplates');
 const renewalAlertRoutes = require('./routes/renewalAlerts');
 const meReportRoutes = require('./routes/meReports');
 const financialReportRoutes = require('./routes/financialReports');
 const receiptRoutes = require('./routes/receipts');
 const kpiRoutes = require('./routes/kpi');
+const healthRoutes = require('./routes/health');
 
 // Base route
 app.get('/', (req, res) => {
@@ -60,11 +62,13 @@ app.use('/api/xero', xeroWebhookRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/compliance', complianceRoutes);
+app.use('/api/compliance-document-templates', complianceDocumentTemplateRoutes);
 app.use('/api/renewal-alerts', renewalAlertRoutes);
 app.use('/api/me-reports', meReportRoutes);
 app.use('/api/financial-reports', financialReportRoutes);
 app.use('/api/receipts', receiptRoutes);
 app.use('/api/kpi', kpiRoutes);
+app.use('/api/health', healthRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

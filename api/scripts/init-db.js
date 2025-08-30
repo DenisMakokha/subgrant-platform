@@ -2,13 +2,14 @@
 // This script creates the necessary tables for the application
 
 const { Client } = require('pg');
+require('dotenv').config();
 
 // Database connection configuration
 const client = new Client({
-  user: process.env.DB_USER || 'postgres',
+  user: process.env.DB_USER || 'subgrant_user',
   host: process.env.DB_HOST || 'localhost',
   database: process.env.DB_NAME || 'subgrant_platform',
-  password: process.env.DB_PASSWORD || 'postgres',
+  password: process.env.DB_PASSWORD || 'subgrant_password',
   port: process.env.DB_PORT || 5432,
 });
 

@@ -108,6 +108,57 @@ class Organization {
     const result = await db.query(query, [id]);
     return result.rows.length ? new Organization(result.rows[0]) : null;
   }
+
+  // Get required compliance documents for this organization type
+  static async getRequiredComplianceDocuments(organizationId) {
+    try {
+      // First, get the organization to determine its type
+      const organization = await Organization.findById(organizationId);
+      if (!organization) {
+        throw new Error('Organization not found');
+      }
+      
+      // Get required compliance document types for this organization type
+      const ComplianceDocumentType = require('./complianceDocumentType');
+      const requiredDocumentTypes = await ComplianceDocumentType.findRequiredByOrganizationType(organization.country);
+      
+      // Get existing compliance documents for this organization
+      const OrganizationComplianceDocument = require('./organizationComplianceDocument');
+      const existingComplianceDocs = await OrganizationComplianceDocument.findByOrganization(organizationId);
+      
+      // Combine the required document types with existing compliance documents
+      const result = requiredDocumentTypes.map(type => {
+        const existingDoc = existingComplianceDocs.find(doc => doc.document_type_id === type.id);
+        return {
+          ...type,
+          compliance_document: existingDoc || null
+        };
+      });
+      
+      return result;
+    } catch (error) {
+      console.error('Error getting required compliance documents:', error);
+      throw error;
+    }
+  }
+
+  // Check if all required compliance documents have been submitted
+  static async hasCompletedCompliance(organizationId) {
+    try {
+      // Get required compliance documents for this organization
+      const requiredDocs = await Organization.getRequiredComplianceDocuments(organizationId);
+      
+      // Check if all required documents have been submitted (approved status)
+      const allSubmitted = requiredDocs.every(doc =>
+        doc.compliance_document && doc.compliance_document.status === 'approved'
+      );
+      
+      return allSubmitted;
+    } catch (error) {
+      console.error('Error checking compliance completion:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = Organization;

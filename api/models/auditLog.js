@@ -159,4 +159,21 @@ class AuditLog {
   }
 }
 
+  // Get audit logs with unusual patterns (multiple actions in short time period)
+  static async getAnomalyLogs() {
+    const query = `
+      SELECT *
+      FROM audit_logs
+      WHERE action IN ('DELETE_BUDGET', 'DELETE_PROJECT', 'DELETE_ORGANIZATION')
+        AND created_at >= CURRENT_DATE - INTERVAL '1 hour'
+      GROUP BY actor_id, action, entity_type, entity_id,
+               before_state, after_state, ip_address, user_agent, created_at, id
+      HAVING COUNT(*) > 5
+    `;
+    
+    const result = await db.pool.query(query);
+    return result.rows.map(row => new AuditLog(row));
+  }
+}
+
 module.exports = AuditLog;

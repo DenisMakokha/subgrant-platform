@@ -34,28 +34,28 @@ class Project {
       projectData.updated_by || projectData.created_by
     ];
     
-    const result = await db.query(query, values);
+    const result = await db.pool.query(query, values);
     return new Project(result.rows[0]);
   }
 
   // Find all projects
   static async findAll() {
     const query = 'SELECT * FROM projects ORDER BY created_at DESC';
-    const result = await db.query(query);
+    const result = await db.pool.query(query);
     return result.rows.map(row => new Project(row));
   }
 
   // Find project by ID
   static async findById(id) {
     const query = 'SELECT * FROM projects WHERE id = $1';
-    const result = await db.query(query, [id]);
+    const result = await db.pool.query(query, [id]);
     return result.rows.length ? new Project(result.rows[0]) : null;
   }
 
   // Find projects by status
   static async findByStatus(status) {
     const query = 'SELECT * FROM projects WHERE status = $1 ORDER BY created_at DESC';
-    const result = await db.query(query, [status]);
+    const result = await db.pool.query(query, [status]);
     return result.rows.map(row => new Project(row));
   }
 
@@ -67,7 +67,7 @@ class Project {
       WHERE id = $1 AND status != 'archived'
       RETURNING *
     `;
-    const result = await db.query(query, [id]);
+    const result = await db.pool.query(query, [id]);
     return result.rows.length ? new Project(result.rows[0]) : null;
   }
 
@@ -79,21 +79,21 @@ class Project {
       WHERE id = $1 AND status != 'closed' AND status != 'archived'
       RETURNING *
     `;
-    const result = await db.query(query, [id]);
+    const result = await db.pool.query(query, [id]);
     return result.rows.length ? new Project(result.rows[0]) : null;
   }
 
   // Find archived projects
   static async findArchived() {
     const query = 'SELECT * FROM projects WHERE status = $1 ORDER BY updated_at DESC';
-    const result = await db.query(query, ['archived']);
+    const result = await db.pool.query(query, ['archived']);
     return result.rows.map(row => new Project(row));
   }
 
   // Find closed projects
   static async findClosed() {
     const query = 'SELECT * FROM projects WHERE status = $1 ORDER BY updated_at DESC';
-    const result = await db.query(query, ['closed']);
+    const result = await db.pool.query(query, ['closed']);
     return result.rows.map(row => new Project(row));
   }
 
@@ -104,7 +104,7 @@ class Project {
       WHERE name ILIKE $1 OR description ILIKE $1
       ORDER BY created_at DESC
     `;
-    const result = await db.query(query, [`%${searchTerm}%`]);
+    const result = await db.pool.query(query, [`%${searchTerm}%`]);
     return result.rows.map(row => new Project(row));
   }
 
@@ -128,22 +128,37 @@ class Project {
       id
     ];
     
-    const result = await db.query(query, values);
+    const result = await db.pool.query(query, values);
     return result.rows.length ? new Project(result.rows[0]) : null;
   }
 
   // Delete project
   static async delete(id) {
     const query = 'DELETE FROM projects WHERE id = $1 RETURNING *';
-    const result = await db.query(query, [id]);
+    const result = await db.pool.query(query, [id]);
     return result.rows.length ? new Project(result.rows[0]) : null;
   }
 
   // Get all budget categories for a project
   static async getBudgetCategories(projectId) {
     const query = 'SELECT * FROM budget_categories WHERE project_id = $1 ORDER BY created_at DESC';
-    const result = await db.query(query, [projectId]);
+    const result = await db.pool.query(query, [projectId]);
     return result.rows;
+  }
+
+  // Find projects by user ID
+  static async findByUserId(userId) {
+    const query = `
+      SELECT p.*
+      FROM projects p
+      JOIN budgets b ON p.id = b.project_id
+      JOIN budget_lines bl ON b.id = bl.budget_id
+      WHERE bl.created_by = $1
+      GROUP BY p.id
+      ORDER BY p.created_at DESC
+    `;
+    const result = await db.pool.query(query, [userId]);
+    return result.rows.map(row => new Project(row));
   }
 }
 

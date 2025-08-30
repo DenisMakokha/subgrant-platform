@@ -1,0 +1,143 @@
+.renewal-alerts-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.renewal-alerts-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+}
+
+.renewal-alerts-header {
+  margin-bottom: 24px;
+}
+
+.renewal-alerts-header h1 {
+  color: #333;
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.renewal-alerts-header p {
+  color: #666;
+  font-size: 16px;
+}
+
+.no-alerts {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+}
+
+.no-alerts p {
+  margin: 10px 0;
+}
+
+.alerts-list h2 {
+  color: #333;
+  font-size: 20px;
+  margin-bottom: 16px;
+}
+
+.alerts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+}
+
+.alert-item {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  background: #fafafa;
+  transition: all 0.2s ease;
+}
+
+.alert-item:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.alert-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.alert-title {
+  font-weight: 600;
+  color: #333;
+  font-size: 18px;
+}
+
+.alert-severity {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.severity-high {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.severity-medium {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.severity-critical {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.alert-description {
+  color: #555;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.alert-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #777;
+}
+
+.alert-type {
+  background: #e9ecef;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.alert-days {
+  font-weight: 600;
+}
+
+.error-message {
+  color: #dc3545;
+  text-align: center;
+  padding: 20px;
+}
+
+@media (max-width: 768px) {
+  .renewal-alerts-container {
+    padding: 10px;
+  }
+  
+  .alerts-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .alert-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}

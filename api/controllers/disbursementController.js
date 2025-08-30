@@ -2,6 +2,7 @@ const Disbursement = require('../models/disbursement');
 const { validateDisbursement } = require('../middleware/validation');
 const currencyService = require('../services/currencyService');
 const xeroService = require('../services/xeroService');
+const auditLogger = require('../middleware/auditLogger');
 
 class DisbursementController {
   // Create a new disbursement
@@ -20,6 +21,23 @@ class DisbursementController {
       }
 
       const disbursement = await Disbursement.create(disbursementData);
+      
+      // Log the disbursement creation
+      try {
+        await auditLogger.create({
+          actor_id: req.user.id,
+          action: 'CREATE_DISBURSEMENT',
+          entity_type: 'disbursement',
+          entity_id: disbursement.id,
+          before_state: null,
+          after_state: disbursement,
+          ip_address: req.ip || req.connection.remoteAddress,
+          user_agent: req.get('User-Agent')
+        });
+      } catch (auditError) {
+        console.error('Error creating audit log:', auditError);
+      }
+      
       res.status(201).json(disbursement);
     } catch (err) {
       next(err);
@@ -88,6 +106,23 @@ class DisbursementController {
       };
 
       const updatedDisbursement = await disbursement.update(updateData);
+      
+      // Log the disbursement update
+      try {
+        await auditLogger.create({
+          actor_id: req.user.id,
+          action: 'UPDATE_DISBURSEMENT',
+          entity_type: 'disbursement',
+          entity_id: id,
+          before_state: disbursement,
+          after_state: updatedDisbursement,
+          ip_address: req.ip || req.connection.remoteAddress,
+          user_agent: req.get('User-Agent')
+        });
+      } catch (auditError) {
+        console.error('Error creating audit log:', auditError);
+      }
+      
       res.json(updatedDisbursement);
     } catch (err) {
       next(err);
@@ -98,10 +133,28 @@ class DisbursementController {
   static async deleteDisbursement(req, res, next) {
     try {
       const { id } = req.params;
-      const disbursement = await Disbursement.deleteById(id);
+      const disbursement = await Disbursement.findById(id);
 
       if (!disbursement) {
         return res.status(404).json({ error: 'Disbursement not found' });
+      }
+
+      await Disbursement.deleteById(id);
+      
+      // Log the disbursement deletion
+      try {
+        await auditLogger.create({
+          actor_id: req.user.id,
+          action: 'DELETE_DISBURSEMENT',
+          entity_type: 'disbursement',
+          entity_id: id,
+          before_state: disbursement,
+          after_state: null,
+          ip_address: req.ip || req.connection.remoteAddress,
+          user_agent: req.get('User-Agent')
+        });
+      } catch (auditError) {
+        console.error('Error creating audit log:', auditError);
       }
 
       res.json({ message: 'Disbursement deleted successfully' });
@@ -124,11 +177,13 @@ class DisbursementController {
       // If status is changing to 'invoiced', create Xero invoice
       if (status === 'invoiced' && disbursement.status !== 'invoiced') {
         try {
-          // In a real implementation, we would need to get the organization details
-          // For now, we'll just log that we would create an invoice
-          console.log(`Would create Xero invoice for disbursement ${disbursement.id}`);
-          // const xeroResponse = await xeroService.createDisbursementInvoice(disbursement, organization);
-          // updateData.invoice_id = xeroResponse.InvoiceID;
+          // Get organization details for the disbursement
+          // This would typically come from the project or budget associated with the disbursement
+          const organization = await Disbursement.getOrganizationForDisbursement(id);
+          
+          // Create Xero invoice
+          const xeroResponse = await xeroService.createDisbursementInvoice(disbursement, organization);
+          updateData.invoice_id = xeroResponse.InvoiceID;
         } catch (xeroError) {
           console.error('Error creating Xero invoice:', xeroError);
           // Depending on requirements, we might want to continue or fail here
@@ -147,7 +202,31 @@ class DisbursementController {
         }
       }
       
-      const updatedDisbursement = await disbursement.update({ status });
+      const updateData = { status };
+      
+      // If we created a Xero invoice, include the invoice_id in the update
+      if (xeroResponse && xeroResponse.InvoiceID) {
+        updateData.invoice_id = xeroResponse.InvoiceID;
+      }
+      
+      const updatedDisbursement = await disbursement.update(updateData);
+      
+      // Log the status update
+      try {
+        await auditLogger.create({
+          actor_id: req.user.id,
+          action: 'UPDATE_DISBURSEMENT_STATUS',
+          entity_type: 'disbursement',
+          entity_id: id,
+          before_state: disbursement,
+          after_state: updatedDisbursement,
+          ip_address: req.ip || req.connection.remoteAddress,
+          user_agent: req.get('User-Agent')
+        });
+      } catch (auditError) {
+        console.error('Error creating audit log:', auditError);
+      }
+      
       res.json(updatedDisbursement);
     } catch (err) {
       next(err);
@@ -168,9 +247,8 @@ class DisbursementController {
       // Reconcile with Xero before marking as paid
       if (disbursement.invoice_id) {
         try {
-          // In a real implementation, we would reconcile with Xero
-          console.log(`Would reconcile Xero payment for disbursement ${disbursement.id}`);
-          // const xeroResponse = await xeroService.reconcilePayment(disbursement.invoice_id);
+          // Reconcile with Xero
+          const xeroResponse = await xeroService.reconcilePayment(disbursement.invoice_id);
         } catch (xeroError) {
           console.error('Error reconciling Xero payment:', xeroError);
           // Depending on requirements, we might want to continue or fail here
@@ -183,6 +261,23 @@ class DisbursementController {
       };
       
       const updatedDisbursement = await disbursement.update(updateData);
+      
+      // Log the payment marking
+      try {
+        await auditLogger.create({
+          actor_id: req.user.id,
+          action: 'MARK_DISBURSEMENT_AS_PAID',
+          entity_type: 'disbursement',
+          entity_id: id,
+          before_state: disbursement,
+          after_state: updatedDisbursement,
+          ip_address: req.ip || req.connection.remoteAddress,
+          user_agent: req.get('User-Agent')
+        });
+      } catch (auditError) {
+        console.error('Error creating audit log:', auditError);
+      }
+      
       res.json(updatedDisbursement);
     } catch (err) {
       next(err);
@@ -202,9 +297,8 @@ class DisbursementController {
       // Reconcile with Xero before marking as reconciled
       if (disbursement.invoice_id) {
         try {
-          // In a real implementation, we would reconcile with Xero
-          console.log(`Would reconcile Xero payment for disbursement ${disbursement.id}`);
-          // const xeroResponse = await xeroService.reconcilePayment(disbursement.invoice_id);
+          // Reconcile with Xero
+          const xeroResponse = await xeroService.reconcilePayment(disbursement.invoice_id);
         } catch (xeroError) {
           console.error('Error reconciling Xero payment:', xeroError);
           // Depending on requirements, we might want to continue or fail here
@@ -218,6 +312,23 @@ class DisbursementController {
       };
       
       const updatedDisbursement = await disbursement.update(updateData);
+      
+      // Log the reconciliation
+      try {
+        await auditLogger.create({
+          actor_id: req.user.id,
+          action: 'MARK_DISBURSEMENT_AS_RECONCILED',
+          entity_type: 'disbursement',
+          entity_id: id,
+          before_state: disbursement,
+          after_state: updatedDisbursement,
+          ip_address: req.ip || req.connection.remoteAddress,
+          user_agent: req.get('User-Agent')
+        });
+      } catch (auditError) {
+        console.error('Error creating audit log:', auditError);
+      }
+      
       res.json(updatedDisbursement);
     } catch (err) {
       next(err);

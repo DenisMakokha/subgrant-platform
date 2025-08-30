@@ -13,8 +13,8 @@ async function testProjectArchive() {
       close_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
       currency: 'USD',
       status: 'active',
-      created_by: 'test-user-id',
-      updated_by: 'test-user-id'
+      created_by: '123e4567-e89b-12d3-a456-426614174000', // Valid UUID
+      updated_by: '123e4567-e89b-12d3-a456-426614174000'  // Valid UUID
     };
     
     const project = await Project.create(projectData);
@@ -50,8 +50,8 @@ async function testProjectArchive() {
       close_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       currency: 'USD',
       status: 'active',
-      created_by: 'test-user-id',
-      updated_by: 'test-user-id'
+      created_by: '123e4567-e89b-12d3-a456-426614174000', // Valid UUID
+      updated_by: '123e4567-e89b-12d3-a456-426614174000'  // Valid UUID
     };
     
     const project2 = await Project.create(projectData2);

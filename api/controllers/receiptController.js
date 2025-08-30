@@ -1,5 +1,6 @@
 const Receipt = require('../models/receipt');
 const { validateReceipt } = require('../middleware/validation');
+const auditLogger = require('../middleware/auditLogger');
 
 class ReceiptController {
   // Create a new receipt
@@ -17,6 +18,23 @@ class ReceiptController {
       }
 
       const receipt = await Receipt.create(receiptData);
+      
+      // Log the receipt creation
+      try {
+        await auditLogger.create({
+          actor_id: req.user.id,
+          action: 'CREATE_RECEIPT',
+          entity_type: 'receipt',
+          entity_id: receipt.id,
+          before_state: null,
+          after_state: receipt,
+          ip_address: req.ip || req.connection.remoteAddress,
+          user_agent: req.get('User-Agent')
+        });
+      } catch (auditError) {
+        console.error('Error creating audit log:', auditError);
+      }
+      
       res.status(201).json(receipt);
     } catch (err) {
       next(err);
@@ -95,6 +113,23 @@ class ReceiptController {
       };
 
       const updatedReceipt = await receipt.update(updateData);
+      
+      // Log the receipt update
+      try {
+        await auditLogger.create({
+          actor_id: req.user.id,
+          action: 'UPDATE_RECEIPT',
+          entity_type: 'receipt',
+          entity_id: id,
+          before_state: receipt,
+          after_state: updatedReceipt,
+          ip_address: req.ip || req.connection.remoteAddress,
+          user_agent: req.get('User-Agent')
+        });
+      } catch (auditError) {
+        console.error('Error creating audit log:', auditError);
+      }
+      
       res.json(updatedReceipt);
     } catch (err) {
       next(err);
@@ -105,10 +140,28 @@ class ReceiptController {
   static async deleteReceipt(req, res, next) {
     try {
       const { id } = req.params;
-      const receipt = await Receipt.deleteById(id);
+      const receipt = await Receipt.findById(id);
 
       if (!receipt) {
         return res.status(404).json({ error: 'Receipt not found' });
+      }
+
+      await Receipt.deleteById(id);
+      
+      // Log the receipt deletion
+      try {
+        await auditLogger.create({
+          actor_id: req.user.id,
+          action: 'DELETE_RECEIPT',
+          entity_type: 'receipt',
+          entity_id: id,
+          before_state: receipt,
+          after_state: null,
+          ip_address: req.ip || req.connection.remoteAddress,
+          user_agent: req.get('User-Agent')
+        });
+      } catch (auditError) {
+        console.error('Error creating audit log:', auditError);
       }
 
       res.json({ message: 'Receipt deleted successfully' });

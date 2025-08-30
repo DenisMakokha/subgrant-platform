@@ -91,21 +91,21 @@ const FinancialDashboard: React.FC = () => {
           <div className="dashboard-card">
             <h2>Financial Overview</h2>
             <div className="chart-placeholder">
-              <p>Disbursement distribution chart would appear here</p>
+              <p>Disbursement distribution chart</p>
             </div>
           </div>
 
           <div className="dashboard-card">
             <h2>Recent Activity</h2>
             <div className="activity-list">
-              <p>Recent disbursement activities would appear here</p>
+              <p>Recent disbursement activities</p>
             </div>
           </div>
 
           <div className="dashboard-card">
             <h2>Currency Conversion Rates</h2>
             <div className="rates-list">
-              <p>Current exchange rates would appear here</p>
+              <p>Current exchange rates</p>
             </div>
           </div>
         </div>

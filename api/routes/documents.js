@@ -30,6 +30,9 @@ router.delete('/:id', authorizeRole(['admin']), documentController.deleteDocumen
 // Get version history for a document entity
 router.get('/history/:entityType/:entityId', authorizeRole(['admin', 'auditor']), documentController.getVersionHistory);
 
+// Get the latest version of a document for a specific entity
+router.get('/latest/:entityType/:entityId', authorizeRole(['admin', 'auditor', 'partner_user']), documentController.getLatestVersion);
+
 // Verify document checksum
 router.post('/:id/verify', authorizeRole(['admin', 'auditor']), documentController.verifyChecksum);
 
