@@ -152,7 +152,6 @@ class MeReport {
     
     return new MeReport(result.rows[0]);
   }
-}
 
   // Get overdue ME reports
   static async getOverdueReports() {

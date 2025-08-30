@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { authApi } from '../services/api';
 import { saveToken } from '../utils/auth';
 import './Login.css';
@@ -14,6 +15,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,11 +30,15 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       // Save the token
       saveToken(response.token);
       
+      // Update auth context
+      login(response.user);
+      
       // Call the onLogin callback with user data
       onLogin(response.user);
       
-      // Redirect to dashboard
-      navigate('/dashboard');
+      // Redirect to intended destination or dashboard
+      const from = location.state?.from?.pathname || '/dashboard';
+      navigate(from, { replace: true });
     } catch (err: any) {
       setError(err.message || 'An error occurred during login');
     } finally {

@@ -157,7 +157,6 @@ class AuditLog {
     const result = await db.pool.query(query, values);
     return parseInt(result.rows[0].count);
   }
-}
 
   // Get audit logs with unusual patterns (multiple actions in short time period)
   static async getAnomalyLogs() {

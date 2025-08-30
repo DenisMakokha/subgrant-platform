@@ -2,7 +2,37 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import { formatCurrency } from '../utils/format';
-import './BudgetCreation.css';
+
+// SVG Icons
+const CurrencyDollarIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+  </svg>
+);
+
+const PlusIcon: React.FC<{ className?: string }> = ({ className = "w-5 h-5" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+  </svg>
+);
+
+const TrashIcon: React.FC<{ className?: string }> = ({ className = "w-5 h-5" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+  </svg>
+);
+
+const DocumentTextIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+  </svg>
+);
+
+const CalculatorIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+  </svg>
+);
 
 interface BudgetForm {
   title: string;
@@ -223,54 +253,120 @@ const BudgetCreation: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="budget-creation">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    );
   }
 
+  const totalBudget = calculateTotal();
+
   return (
-    <div className="budget-creation">
-      <div className="page-header">
-        <h1>Create New Budget</h1>
-        <p>Fill in the details below to create a new budget</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="glass-card p-6">
+        <div className="flex items-center gap-4">
+          <div className="p-3 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+            <DocumentTextIcon className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Create New Budget</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              Fill in the details below to create a comprehensive project budget
+            </p>
+          </div>
+        </div>
       </div>
-      
-      {error && <div className="alert alert-danger">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
-      
-      <form onSubmit={handleSubmit} className="budget-form">
-        <div className="form-section">
-          <h2>Budget Information</h2>
-          
-          <div className="form-group">
-            <label htmlFor="title">Budget Title *</label>
-            <input
-              type="text"
-              id="title"
-              name="title"
-              value={budgetForm.title}
-              onChange={handleFormChange}
-              required
-            />
+
+      {/* Budget Summary */}
+      <div className="glass-card p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <CalculatorIcon className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Budget</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {formatCurrency(totalBudget, budgetForm.currency)}
+              </p>
+            </div>
           </div>
-          
-          <div className="form-group">
-            <label htmlFor="description">Description</label>
-            <textarea
-              id="description"
-              name="description"
-              value={budgetForm.description}
-              onChange={handleFormChange}
-              rows={3}
-            />
+          <div className="text-right">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {budgetLines.length} budget line{budgetLines.length !== 1 ? 's' : ''}
+            </p>
           </div>
+        </div>
+      </div>
+
+      {/* Error/Success Messages */}
+      {error && (
+        <div className="glass-card p-4 border-l-4 border-red-500">
+          <div className="flex">
+            <div className="ml-3">
+              <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {success && (
+        <div className="glass-card p-4 border-l-4 border-green-500">
+          <div className="flex">
+            <div className="ml-3">
+              <p className="text-sm text-green-700 dark:text-green-300">{success}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Budget Information */}
+        <div className="glass-card p-6">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Budget Information</h2>
           
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="project_id">Project *</label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="md:col-span-2">
+              <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Budget Title *
+              </label>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                value={budgetForm.title}
+                onChange={handleFormChange}
+                className="input-field"
+                placeholder="Enter budget title..."
+                required
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Description
+              </label>
+              <textarea
+                id="description"
+                name="description"
+                value={budgetForm.description}
+                onChange={handleFormChange}
+                rows={3}
+                className="input-field resize-none"
+                placeholder="Describe the budget purpose and scope..."
+              />
+            </div>
+
+            <div>
+              <label htmlFor="project_id" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Project *
+              </label>
               <select
                 id="project_id"
                 name="project_id"
                 value={budgetForm.project_id}
                 onChange={handleFormChange}
+                className="input-field"
                 required
               >
                 <option value="">Select a project</option>
@@ -281,14 +377,17 @@ const BudgetCreation: React.FC = () => {
                 ))}
               </select>
             </div>
-            
-            <div className="form-group">
-              <label htmlFor="currency">Currency</label>
+
+            <div>
+              <label htmlFor="currency" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Currency
+              </label>
               <select
                 id="currency"
                 name="currency"
                 value={budgetForm.currency}
                 onChange={handleFormChange}
+                className="input-field"
               >
                 <option value="USD">USD</option>
                 <option value="EUR">EUR</option>
@@ -299,125 +398,155 @@ const BudgetCreation: React.FC = () => {
           </div>
         </div>
         
-        <div className="form-section">
-          <div className="section-header">
-            <h2>Budget Lines</h2>
-            <button type="button" className="btn btn-secondary" onClick={addBudgetLine}>
+        {/* Budget Lines */}
+        <div className="glass-card p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Budget Lines</h2>
+            <button 
+              type="button" 
+              className="btn-secondary flex items-center gap-2"
+              onClick={addBudgetLine}
+            >
+              <PlusIcon />
               Add Line
             </button>
           </div>
           
-          {budgetLines.map((line, index) => (
-            <div key={index} className="budget-line">
-              <div className="line-header">
-                <h3>Budget Line {index + 1}</h3>
-                {budgetLines.length > 1 && (
-                  <button 
-                    type="button" 
-                    className="btn btn-danger btn-sm"
-                    onClick={() => removeBudgetLine(index)}
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-              
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor={`description-${index}`}>Description *</label>
-                  <input
-                    type="text"
-                    id={`description-${index}`}
-                    value={line.description}
-                    onChange={(e) => handleLineChange(index, 'description', e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor={`category-${index}`}>Category *</label>
-                  <select
-                    id={`category-${index}`}
-                    value={line.category_id}
-                    onChange={(e) => handleLineChange(index, 'category_id', e.target.value)}
-                    required
-                  >
-                    <option value="">Select a category</option>
-                    {categories.map(category => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor={`unit-${index}`}>Unit</label>
-                  <input
-                    type="text"
-                    id={`unit-${index}`}
-                    value={line.unit}
-                    onChange={(e) => handleLineChange(index, 'unit', e.target.value)}
-                  />
+          <div className="space-y-6">
+            {budgetLines.map((line, index) => (
+              <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-gray-50 dark:bg-gray-800/50">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                    Budget Line {index + 1}
+                  </h3>
+                  {budgetLines.length > 1 && (
+                    <button 
+                      type="button" 
+                      className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      onClick={() => removeBudgetLine(index)}
+                      title="Remove budget line"
+                    >
+                      <TrashIcon />
+                    </button>
+                  )}
                 </div>
                 
-                <div className="form-group">
-                  <label htmlFor={`quantity-${index}`}>Quantity *</label>
-                  <input
-                    type="number"
-                    id={`quantity-${index}`}
-                    value={line.quantity}
-                    onChange={(e) => handleLineChange(index, 'quantity', parseFloat(e.target.value) || 0)}
-                    min="0"
-                    step="0.01"
-                    required
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="md:col-span-2">
+                    <label htmlFor={`description-${index}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Description *
+                    </label>
+                    <input
+                      type="text"
+                      id={`description-${index}`}
+                      value={line.description}
+                      onChange={(e) => handleLineChange(index, 'description', e.target.value)}
+                      className="input-field"
+                      placeholder="Enter budget line description..."
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor={`category-${index}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Category *
+                    </label>
+                    <select
+                      id={`category-${index}`}
+                      value={line.category_id}
+                      onChange={(e) => handleLineChange(index, 'category_id', e.target.value)}
+                      className="input-field"
+                      required
+                    >
+                      <option value="">Select a category</option>
+                      {categories.map(category => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor={`unit-${index}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Unit
+                    </label>
+                    <input
+                      type="text"
+                      id={`unit-${index}`}
+                      value={line.unit}
+                      onChange={(e) => handleLineChange(index, 'unit', e.target.value)}
+                      className="input-field"
+                      placeholder="e.g., hours, pieces, months"
+                    />
+                  </div>
                 </div>
-                
-                <div className="form-group">
-                  <label htmlFor={`unit_cost-${index}`}>Unit Cost *</label>
-                  <input
-                    type="number"
-                    id={`unit_cost-${index}`}
-                    value={line.unit_cost}
-                    onChange={(e) => handleLineChange(index, 'unit_cost', parseFloat(e.target.value) || 0)}
-                    min="0"
-                    step="0.01"
-                    required
-                  />
-                </div>
-                
-                <div className="form-group">
-                  <label>Total Cost</label>
-                  <input
-                    type="text"
-                    value={formatCurrency(line.total_cost, budgetForm.currency)}
-                    readOnly
-                  />
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label htmlFor={`quantity-${index}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Quantity *
+                    </label>
+                    <input
+                      type="number"
+                      id={`quantity-${index}`}
+                      value={line.quantity}
+                      onChange={(e) => handleLineChange(index, 'quantity', parseFloat(e.target.value) || 0)}
+                      min="0"
+                      step="0.01"
+                      className="input-field"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor={`unit_cost-${index}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Unit Cost *
+                    </label>
+                    <input
+                      type="number"
+                      id={`unit_cost-${index}`}
+                      value={line.unit_cost}
+                      onChange={(e) => handleLineChange(index, 'unit_cost', parseFloat(e.target.value) || 0)}
+                      min="0"
+                      step="0.01"
+                      className="input-field"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Total Cost
+                    </label>
+                    <div className="input-field bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-medium">
+                      {formatCurrency(line.total_cost, budgetForm.currency)}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-          
-          <div className="total-section">
-            <div className="total-row">
-              <span>Total Budget Amount:</span>
-              <span className="total-amount">{formatCurrency(calculateTotal(), budgetForm.currency)}</span>
-            </div>
+            ))}
           </div>
         </div>
         
-        <div className="form-actions">
-          <button type="submit" className="btn btn-primary">
-            Create Budget
-          </button>
-          <button type="button" className="btn btn-secondary" onClick={() => window.location.reload()}>
-            Reset Form
-          </button>
+        {/* Submit Actions */}
+        <div className="glass-card p-6">
+          <div className="flex justify-end space-x-3">
+            <button 
+              type="button" 
+              className="btn-secondary"
+              onClick={() => window.location.reload()}
+            >
+              Reset Form
+            </button>
+            <button 
+              type="submit" 
+              className="btn-primary flex items-center gap-2"
+            >
+              <CurrencyDollarIcon className="w-5 h-5" />
+              Create Budget
+            </button>
+          </div>
         </div>
       </form>
     </div>
