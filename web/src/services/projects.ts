@@ -1,32 +1,7 @@
 import api from './api';
+import { Project, BudgetCategory } from '../types/projects';
 
-export interface Project {
-  id: string;
-  name: string;
-  description: string;
-  open_date: string;
-  close_date: string;
-  currency: string;
-  status: 'draft' | 'active' | 'closed' | 'archived';
-  created_at: string;
-  updated_at: string;
-  created_by: string;
-  updated_by: string;
-}
-
-export interface BudgetCategory {
-  id: string;
-  project_id: string;
-  name: string;
-  description: string;
-  cap_amount: number | null;
-  cap_percentage: number | null;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  created_by: string;
-  updated_by: string;
-}
+export type { Project, BudgetCategory };
 
 // Get all projects
 export const getProjects = async (): Promise<Project[]> => {

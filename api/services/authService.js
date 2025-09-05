@@ -55,7 +55,7 @@ class AuthService {
 
   // Login user
   async login(email, password) {
-    // Find user by email
+    // Find user by email in database
     const user = await User.findByEmail(email);
     if (!user) {
       throw new Error('Invalid credentials');

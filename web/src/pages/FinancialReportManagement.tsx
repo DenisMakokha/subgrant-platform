@@ -48,7 +48,7 @@ const ExclamationTriangleIcon: React.FC<{ className?: string }> = ({ className =
 
 const PencilIcon: React.FC<{ className?: string }> = ({ className = "w-5 h-5" }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
   </svg>
 );
 
@@ -58,9 +58,9 @@ const TrashIcon: React.FC<{ className?: string }> = ({ className = "w-5 h-5" }) 
   </svg>
 );
 
-const PaperAirplaneIcon: React.FC<{ className?: string }> = ({ className = "w-5 h-5" }) => (
+const ChartBarIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
   </svg>
 );
 
@@ -70,281 +70,254 @@ const ReceiptPercentIcon: React.FC<{ className?: string }> = ({ className = "w-5
   </svg>
 );
 
-const ChartBarIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) => (
+const PaperAirplaneIcon: React.FC<{ className?: string }> = ({ className = "w-5 h-5" }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
   </svg>
 );
 
 const FinancialReportManagement: React.FC = () => {
   const { user } = useAuth();
   const [financialReports, setFinancialReports] = useState<FinancialReport[]>([]);
-  const [receipts, setReceipts] = useState<Record<string, Receipt[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingFinancialReport, setEditingFinancialReport] = useState<FinancialReport | null>(null);
   const [formData, setFormData] = useState<FinancialReportFormData>({
-    budget_id: '',
     title: '',
     description: '',
-    report_date: new Date().toISOString().split('T')[0],
+    budget_id: '',
     total_spent: 0,
-    variance: 0
+    variance: 0,
+    report_date: new Date().toISOString().split('T')[0],
+    status: 'draft'
   });
 
-  // Fetch financial reports
-  useEffect(() => {
-    const fetchFinancialReports = async () => {
-      try {
-        setLoading(true);
-        const data = await getFinancialReports();
-        setFinancialReports(data);
-      } catch (err) {
-        setError('Failed to fetch financial reports');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchFinancialReports();
-  }, []);
-
-  // Fetch receipts for a financial report
-  const fetchReceiptsForReport = async (reportId: string) => {
-    try {
-      const reportReceipts = await getReceiptsForFinancialReport(reportId);
-      setReceipts(prev => ({
-        ...prev,
-        [reportId]: reportReceipts
-      }));
-    } catch (err) {
-      console.error('Failed to fetch receipts for report:', err);
-    }
-  };
-
-  // Handle form input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'total_spent' || name === 'variance' ? Number(value) : value
-    }));
-  };
-
-  // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      if (editingFinancialReport) {
-        // Update existing financial report
-        const updatedFinancialReport = await updateFinancialReport(editingFinancialReport.id, formData);
-        setFinancialReports(prev => 
-          prev.map(r => r.id === editingFinancialReport.id ? updatedFinancialReport : r)
-        );
-      } else {
-        // Create new financial report
-        const newFinancialReport = await createFinancialReport(formData);
-        setFinancialReports(prev => [...prev, newFinancialReport]);
-      }
-      
-      // Reset form
-      setFormData({
-        budget_id: '',
-        title: '',
-        description: '',
-        report_date: new Date().toISOString().split('T')[0],
-        total_spent: 0,
-        variance: 0
-      });
-      setShowForm(false);
-      setEditingFinancialReport(null);
-    } catch (err) {
-      setError('Failed to save financial report');
-      console.error(err);
-    }
-  };
-
-  // Handle edit financial report
-  const handleEdit = (financialReport: FinancialReport) => {
-    setEditingFinancialReport(financialReport);
-    setFormData({
-      budget_id: financialReport.budget_id,
-      title: financialReport.title,
-      description: financialReport.description,
-      report_date: financialReport.report_date.split('T')[0],
-      total_spent: financialReport.total_spent,
-      variance: financialReport.variance
-    });
-    setShowForm(true);
-  };
-
-  // Handle delete financial report
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this financial report?')) {
-      return;
-    }
-    
-    try {
-      await deleteFinancialReport(id);
-      setFinancialReports(prev => prev.filter(r => r.id !== id));
-      // Remove receipts for this report
-      setReceipts(prev => {
-        const newReceipts = { ...prev };
-        delete newReceipts[id];
-        return newReceipts;
-      });
-    } catch (err) {
-      setError('Failed to delete financial report');
-      console.error(err);
-    }
-  };
-
-  // Handle submit financial report
-  const handleSubmitReport = async (id: string) => {
-    if (!window.confirm('Are you sure you want to submit this financial report?')) {
-      return;
-    }
-    
-    try {
-      const submittedFinancialReport = await submitFinancialReport(id);
-      setFinancialReports(prev => 
-        prev.map(r => r.id === id ? submittedFinancialReport : r)
-      );
-    } catch (err) {
-      setError('Failed to submit financial report');
-      console.error(err);
-    }
-  };
-
-  // Handle approve financial report
-  const handleApprove = async (id: string) => {
-    if (!window.confirm('Are you sure you want to approve this financial report?')) {
-      return;
-    }
-    
-    try {
-      const approvedFinancialReport = await approveFinancialReport(id);
-      setFinancialReports(prev => 
-        prev.map(r => r.id === id ? approvedFinancialReport : r)
-      );
-    } catch (err) {
-      setError('Failed to approve financial report');
-      console.error(err);
-    }
-  };
-
-  // Handle view receipts
-  const handleViewReceipts = async (id: string) => {
-    // Fetch receipts if not already loaded
-    if (!receipts[id]) {
-      await fetchReceiptsForReport(id);
-    }
-    
-    // Display receipts in a modal or separate page
-    console.log('Receipts for report', id, receipts[id]);
-    alert(`Viewing receipts for report ${id}. Check console for details.`);
-  };
-
-  // Cancel form
-  const handleCancel = () => {
-    setShowForm(false);
-    setEditingFinancialReport(null);
-    setFormData({
-      budget_id: '',
-      title: '',
-      description: '',
-      report_date: new Date().toISOString().split('T')[0],
-      total_spent: 0,
-      variance: 0
-    });
-  };
-
-  // Format currency
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
+  // Utility functions
+  const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: currency
+      currency: 'USD'
     }).format(amount);
   };
 
-  // Format date
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
-  // Get status badge
   const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { bg: string; text: string; icon: React.ReactNode }> = {
-      draft: { 
-        bg: 'bg-gray-100 dark:bg-gray-900/30', 
-        text: 'text-gray-800 dark:text-gray-300',
-        icon: <DocumentTextIcon className="w-4 h-4" />
-      },
-      submitted: { 
-        bg: 'bg-blue-100 dark:bg-blue-900/30', 
-        text: 'text-blue-800 dark:text-blue-300',
-        icon: <PaperAirplaneIcon className="w-4 h-4" />
-      },
-      under_review: { 
-        bg: 'bg-yellow-100 dark:bg-yellow-900/30', 
-        text: 'text-yellow-800 dark:text-yellow-300',
-        icon: <ClockIcon className="w-4 h-4" />
-      },
-      approved: { 
-        bg: 'bg-green-100 dark:bg-green-900/30', 
-        text: 'text-green-800 dark:text-green-300',
-        icon: <CheckCircleIcon className="w-4 h-4" />
-      },
-      rejected: { 
-        bg: 'bg-red-100 dark:bg-red-900/30', 
-        text: 'text-red-800 dark:text-red-300',
-        icon: <ExclamationTriangleIcon className="w-4 h-4" />
-      },
+    const statusConfig = {
+      draft: { color: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300', icon: DocumentTextIcon },
+      submitted: { color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300', icon: ClockIcon },
+      approved: { color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300', icon: CheckCircleIcon },
+      rejected: { color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300', icon: ExclamationTriangleIcon }
     };
-    
-    const config = statusConfig[status] || statusConfig.draft;
-    
+
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.draft;
+    const Icon = config.icon;
+
     return (
-      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
-        {config.icon}
-        {status.replace('_', ' ')}
+      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}>
+        <Icon className="w-3 h-3" />
+        {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     );
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    );
-  }
+  // Load financial reports
+  useEffect(() => {
+    loadFinancialReports();
+  }, []);
+
+  const loadFinancialReports = async () => {
+    try {
+      setLoading(true);
+      const data = await getFinancialReports();
+      setFinancialReports(data);
+    } catch (err) {
+      setError('Failed to load financial reports');
+      console.error('Error loading financial reports:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Form handlers
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'number' ? parseFloat(value) || 0 : value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingFinancialReport) {
+        await updateFinancialReport(editingFinancialReport.id, formData);
+      } else {
+        await createFinancialReport(formData);
+      }
+      setShowForm(false);
+      setEditingFinancialReport(null);
+      resetForm();
+      loadFinancialReports();
+    } catch (err) {
+      setError('Failed to save financial report');
+      console.error('Error saving financial report:', err);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      description: '',
+      budget_id: '',
+      total_spent: 0,
+      variance: 0,
+      report_date: new Date().toISOString().split('T')[0],
+      status: 'draft'
+    });
+  };
+
+  const handleEdit = (report: FinancialReport) => {
+    setEditingFinancialReport(report);
+    setFormData({
+      title: report.title,
+      description: report.description || '',
+      budget_id: report.budget_id,
+      total_spent: report.total_spent,
+      variance: report.variance,
+      report_date: report.report_date.split('T')[0],
+      status: report.status
+    });
+    setShowForm(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this financial report?')) {
+      try {
+        await deleteFinancialReport(id);
+        loadFinancialReports();
+      } catch (err) {
+        setError('Failed to delete financial report');
+        console.error('Error deleting financial report:', err);
+      }
+    }
+  };
+
+  const handleSubmitReport = async (id: string) => {
+    try {
+      await submitFinancialReport(id);
+      loadFinancialReports();
+    } catch (err) {
+      setError('Failed to submit financial report');
+      console.error('Error submitting financial report:', err);
+    }
+  };
+
+  const handleApprove = async (id: string) => {
+    try {
+      await approveFinancialReport(id);
+      loadFinancialReports();
+    } catch (err) {
+      setError('Failed to approve financial report');
+      console.error('Error approving financial report:', err);
+    }
+  };
+
+  const handleViewReceipts = async (id: string) => {
+    try {
+      const receipts = await getReceiptsForFinancialReport(id);
+      console.log('Receipts for report:', receipts);
+    } catch (err) {
+      setError('Failed to load receipts');
+      console.error('Error loading receipts:', err);
+    }
+  };
 
   // Calculate metrics
   const totalReports = financialReports.length;
   const totalSpent = financialReports.reduce((sum, report) => sum + report.total_spent, 0);
-  const draftCount = financialReports.filter(r => r.status === 'draft').length;
-  const approvedCount = financialReports.filter(r => r.status === 'approved').length;
+  const draftCount = financialReports.filter(report => report.status === 'draft').length;
+  const approvedCount = financialReports.filter(report => report.status === 'approved').length;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-6">
+          {/* Header with Gradient */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-2xl shadow-xl">
+        <div className="absolute inset-0 bg-black/20"></div>
+        <div className="relative p-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <CurrencyDollarIcon className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-white">
+                  Financial Report Management
+                </h1>
+                <p className="text-blue-100 mt-1">
+                  Create and manage financial reports with expense tracking
+                </p>
+              </div>
+            </div>
+            <div className="hidden sm:block">
+              <div className="text-right">
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
+                  <p className="text-sm text-blue-100 font-medium">
+                    {new Date().toLocaleDateString('en-US', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </p>
+                  <p className="text-xs text-blue-200 mt-1">
+                    {new Date().toLocaleTimeString('en-US', { 
+                      hour: '2-digit', 
+                      minute: '2-digit'
+                    })}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+        <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-32 h-32 bg-purple-400/20 rounded-full blur-2xl"></div>
+      </div>
+
+      {/* Action Section */}
       <div className="glass-card p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Financial Report Management</h1>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Report Management</h2>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Create and manage financial reports with expense tracking
+              Manage your financial reports and track expenses
             </p>
           </div>
           <button
             onClick={() => setShowForm(true)}
             className="btn-primary flex items-center gap-2"
           >
-            <PlusIcon />
+            <PlusIcon className="w-4 h-4" />
             Create Financial Report
           </button>
         </div>
@@ -404,63 +377,142 @@ const FinancialReportManagement: React.FC = () => {
       {/* Error Message */}
       {error && (
         <div className="glass-card p-4 border-l-4 border-red-500">
-          <div className="flex">
-            <div className="ml-3">
-              <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
-            </div>
+          <div className="flex items-center">
+            <ExclamationTriangleIcon className="w-5 h-5 text-red-500 mr-2" />
+            <p className="text-red-700 dark:text-red-400">{error}</p>
+            <button
+              onClick={() => setError(null)}
+              className="ml-auto text-red-500 hover:text-red-700"
+            >
+              <XMarkIcon className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
 
       {/* Form Modal */}
       {showForm && (
-        <div className="glass-card p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              {editingFinancialReport ? 'Edit Financial Report' : 'Create New Financial Report'}
-            </h2>
-            <button
-              onClick={handleCancel}
-              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              <XMarkIcon />
-            </button>
-          </div>
-          
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="budget_id" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Budget ID *
-                </label>
-                <input
-                  type="text"
-                  id="budget_id"
-                  name="budget_id"
-                  value={formData.budget_id}
-                  onChange={handleInputChange}
-                  className="input-field"
-                  required
-                />
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="glass-card p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                {editingFinancialReport ? 'Edit Financial Report' : 'Create Financial Report'}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowForm(false);
+                  setEditingFinancialReport(null);
+                  resetForm();
+                }}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Report Title *
+                  </label>
+                  <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleInputChange}
+                    required
+                    className="input-field"
+                    placeholder="Enter report title"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="budget_id" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Budget ID *
+                  </label>
+                  <input
+                    type="text"
+                    id="budget_id"
+                    name="budget_id"
+                    value={formData.budget_id}
+                    onChange={handleInputChange}
+                    required
+                    className="input-field"
+                    placeholder="Enter budget ID"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="total_spent" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Total Spent *
+                  </label>
+                  <input
+                    type="number"
+                    id="total_spent"
+                    name="total_spent"
+                    value={formData.total_spent}
+                    onChange={handleInputChange}
+                    required
+                    min="0"
+                    step="0.01"
+                    className="input-field"
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="variance" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Variance
+                  </label>
+                  <input
+                    type="number"
+                    id="variance"
+                    name="variance"
+                    value={formData.variance}
+                    onChange={handleInputChange}
+                    step="0.01"
+                    className="input-field"
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="report_date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Report Date *
+                  </label>
+                  <input
+                    type="date"
+                    id="report_date"
+                    name="report_date"
+                    value={formData.report_date}
+                    onChange={handleInputChange}
+                    required
+                    className="input-field"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="status" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Status
+                  </label>
+                  <select
+                    id="status"
+                    name="status"
+                    value={formData.status}
+                    onChange={handleInputChange}
+                    className="input-field"
+                  >
+                    <option value="draft">Draft</option>
+                    <option value="submitted">Submitted</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
               </div>
 
               <div>
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Report Title *
-                </label>
-                <input
-                  type="text"
-                  id="title"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleInputChange}
-                  className="input-field"
-                  placeholder="Enter report title..."
-                  required
-                />
-              </div>
-
-              <div className="md:col-span-2">
                 <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Description
                 </label>
@@ -470,77 +522,32 @@ const FinancialReportManagement: React.FC = () => {
                   value={formData.description}
                   onChange={handleInputChange}
                   rows={4}
-                  className="input-field resize-none"
-                  placeholder="Describe the financial report content..."
-                />
-              </div>
-
-              <div>
-                <label htmlFor="report_date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Report Date *
-                </label>
-                <input
-                  type="date"
-                  id="report_date"
-                  name="report_date"
-                  value={formData.report_date}
-                  onChange={handleInputChange}
                   className="input-field"
-                  required
+                  placeholder="Enter report description..."
                 />
               </div>
 
-              <div>
-                <label htmlFor="total_spent" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Total Spent *
-                </label>
-                <input
-                  type="number"
-                  id="total_spent"
-                  name="total_spent"
-                  value={formData.total_spent}
-                  onChange={handleInputChange}
-                  className="input-field"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  required
-                />
+              <div className="flex justify-end gap-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForm(false);
+                    setEditingFinancialReport(null);
+                    resetForm();
+                  }}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary"
+                >
+                  {editingFinancialReport ? 'Update Report' : 'Create Report'}
+                </button>
               </div>
-
-              <div>
-                <label htmlFor="variance" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Variance
-                </label>
-                <input
-                  type="number"
-                  id="variance"
-                  name="variance"
-                  value={formData.variance}
-                  onChange={handleInputChange}
-                  className="input-field"
-                  step="0.01"
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="btn-secondary"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn-primary"
-              >
-                {editingFinancialReport ? 'Update Report' : 'Create Report'}
-              </button>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
       )}
 
@@ -562,7 +569,7 @@ const FinancialReportManagement: React.FC = () => {
                 onClick={() => setShowForm(true)}
                 className="btn-primary flex items-center gap-2 mx-auto"
               >
-                <PlusIcon />
+                <PlusIcon className="w-4 h-4" />
                 Create Financial Report
               </button>
             </div>
@@ -637,7 +644,7 @@ const FinancialReportManagement: React.FC = () => {
                           className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
                           title="View receipts"
                         >
-                          <ReceiptPercentIcon />
+                          <ReceiptPercentIcon className="w-4 h-4" />
                         </button>
                         {report.status === 'draft' && (
                           <>
@@ -646,14 +653,14 @@ const FinancialReportManagement: React.FC = () => {
                               className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
                               title="Edit report"
                             >
-                              <PencilIcon />
+                              <PencilIcon className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleSubmitReport(report.id)}
                               className="p-2 text-gray-400 hover:text-green-600 dark:hover:text-green-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
                               title="Submit report"
                             >
-                              <PaperAirplaneIcon />
+                              <PaperAirplaneIcon className="w-4 h-4" />
                             </button>
                           </>
                         )}
@@ -663,7 +670,7 @@ const FinancialReportManagement: React.FC = () => {
                             className="p-2 text-gray-400 hover:text-green-600 dark:hover:text-green-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
                             title="Approve report"
                           >
-                            <CheckCircleIcon />
+                            <CheckCircleIcon className="w-4 h-4" />
                           </button>
                         )}
                         <button
@@ -671,7 +678,7 @@ const FinancialReportManagement: React.FC = () => {
                           className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
                           title="Delete report"
                         >
-                          <TrashIcon />
+                          <TrashIcon className="w-4 h-4" />
                         </button>
                       </div>
                     </td>
@@ -681,6 +688,8 @@ const FinancialReportManagement: React.FC = () => {
             </table>
           </div>
         )}
+          </div>
+        </div>
       </div>
     </div>
   );

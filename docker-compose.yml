@@ -29,6 +29,11 @@ services:
       - "3000:3000"
     environment:
       - DATABASE_URL=postgresql://subgrant_user:subgrant_password@db:5432/subgrant_platform
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=subgrant_platform
+      - DB_USER=subgrant_user
+      - DB_PASSWORD=subgrant_password
       - JWT_SECRET=your_jwt_secret_here
       - NODE_ENV=development
     depends_on:
@@ -50,14 +55,11 @@ services:
       - "3001:3000"
     environment:
       - REACT_APP_API_URL=http://localhost:3000/api
-      - NODE_ENV=development
+      - NODE_ENV=production
     depends_on:
       - api
     networks:
       - subgrant_network
-    volumes:
-      - ./web:/app
-      - /app/node_modules
 
   # Redis for caching and sessions
   redis:

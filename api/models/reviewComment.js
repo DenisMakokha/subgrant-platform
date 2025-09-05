@@ -33,35 +33,35 @@ class ReviewComment {
       commentData.resolved_by || null
     ];
     
-    const result = await db.query(query, values);
+    const result = await db.pool.query(query, values);
     return new ReviewComment(result.rows[0]);
   }
 
   // Find all review comments
   static async findAll() {
     const query = 'SELECT * FROM review_comments ORDER BY created_at DESC';
-    const result = await db.query(query);
+    const result = await db.pool.query(query);
     return result.rows.map(row => new ReviewComment(row));
   }
 
   // Find review comment by ID
   static async findById(id) {
     const query = 'SELECT * FROM review_comments WHERE id = $1';
-    const result = await db.query(query, [id]);
+    const result = await db.pool.query(query, [id]);
     return result.rows.length ? new ReviewComment(result.rows[0]) : null;
   }
 
   // Find review comments by entity type and ID
   static async findByEntity(entityType, entityId) {
     const query = 'SELECT * FROM review_comments WHERE entity_type = $1 AND entity_id = $2 ORDER BY created_at DESC';
-    const result = await db.query(query, [entityType, entityId]);
+    const result = await db.pool.query(query, [entityType, entityId]);
     return result.rows.map(row => new ReviewComment(row));
   }
 
   // Find review comments by author ID
   static async findByAuthorId(authorId) {
     const query = 'SELECT * FROM review_comments WHERE author_id = $1 ORDER BY created_at DESC';
-    const result = await db.query(query, [authorId]);
+    const result = await db.pool.query(query, [authorId]);
     return result.rows.map(row => new ReviewComment(row));
   }
 
@@ -82,14 +82,14 @@ class ReviewComment {
       id
     ];
     
-    const result = await db.query(query, values);
+    const result = await db.pool.query(query, values);
     return result.rows.length ? new ReviewComment(result.rows[0]) : null;
   }
 
   // Delete review comment
   static async delete(id) {
     const query = 'DELETE FROM review_comments WHERE id = $1 RETURNING *';
-    const result = await db.query(query, [id]);
+    const result = await db.pool.query(query, [id]);
     return result.rows.length ? new ReviewComment(result.rows[0]) : null;
   }
 
@@ -102,7 +102,7 @@ class ReviewComment {
       RETURNING *
     `;
     
-    const result = await db.query(query, [id, userId]);
+    const result = await db.pool.query(query, [id, userId]);
     return result.rows.length ? new ReviewComment(result.rows[0]) : null;
   }
 }

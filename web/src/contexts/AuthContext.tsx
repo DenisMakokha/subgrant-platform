@@ -40,6 +40,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(JSON.parse(storedUser));
         } catch (e) {
           console.error('Failed to parse user data from localStorage', e);
+          // If stored user data is corrupted, clear it
+          localStorage.removeItem('user');
+          setIsAuth(false);
         }
       }
     }
@@ -53,13 +56,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       lastName: userData.last_name || userData.lastName,
       email: userData.email,
       role: userData.role,
-      organization: userData.organization
+      organization: userData.organization || {
+        id: userData.org_id || 'default-org',
+        name: userData.organization_name || 'Default Organization',
+        status: 'active',
+        complianceStatus: 'compliant'
+      }
     };
     
     setUser(mappedUser);
     setIsAuth(true);
     // Store user data in localStorage
     localStorage.setItem('user', JSON.stringify(mappedUser));
+    console.log('User logged in successfully:', mappedUser);
   };
 
   const logout = () => {

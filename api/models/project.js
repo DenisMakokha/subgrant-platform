@@ -160,6 +160,25 @@ class Project {
     const result = await db.pool.query(query, [userId]);
     return result.rows.map(row => new Project(row));
   }
+
+  // KPI Methods
+  static async countActive() {
+    const query = 'SELECT COUNT(*) as count FROM projects WHERE status IN ($1, $2)';
+    const result = await db.pool.query(query, ['active', 'open']);
+    return parseInt(result.rows[0].count);
+  }
+
+  static async countAll() {
+    const query = 'SELECT COUNT(*) as count FROM projects';
+    const result = await db.pool.query(query);
+    return parseInt(result.rows[0].count);
+  }
+
+  static async countByStatus(status) {
+    const query = 'SELECT COUNT(*) as count FROM projects WHERE status = $1';
+    const result = await db.pool.query(query, [status]);
+    return parseInt(result.rows[0].count);
+  }
 }
 
 module.exports = Project;

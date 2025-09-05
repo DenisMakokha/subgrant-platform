@@ -53,28 +53,28 @@ class Organization {
       organizationData.updated_by
     ];
     
-    const result = await db.query(query, values);
+    const result = await db.pool.query(query, values);
     return new Organization(result.rows[0]);
   }
 
   // Find organization by ID
   static async findById(id) {
     const query = 'SELECT * FROM organizations WHERE id = $1';
-    const result = await db.query(query, [id]);
+    const result = await db.pool.query(query, [id]);
     return result.rows.length ? new Organization(result.rows[0]) : null;
   }
 
   // Find organization by email
   static async findByEmail(email) {
     const query = 'SELECT * FROM organizations WHERE email = $1';
-    const result = await db.query(query, [email]);
+    const result = await db.pool.query(query, [email]);
     return result.rows.length ? new Organization(result.rows[0]) : null;
   }
 
   // Find all organizations
   static async findAll() {
     const query = 'SELECT * FROM organizations ORDER BY created_at DESC';
-    const result = await db.query(query);
+    const result = await db.pool.query(query);
     return result.rows.map(org => new Organization(org));
   }
 
@@ -98,14 +98,14 @@ class Organization {
 
     values.push(id);
     const query = `UPDATE organizations SET ${fields.join(', ')}, updated_at = NOW() WHERE id = $${index} RETURNING *`;
-    const result = await db.query(query, values);
+    const result = await db.pool.query(query, values);
     return result.rows.length ? new Organization(result.rows[0]) : null;
   }
 
   // Delete organization
   static async delete(id) {
     const query = 'DELETE FROM organizations WHERE id = $1 RETURNING *';
-    const result = await db.query(query, [id]);
+    const result = await db.pool.query(query, [id]);
     return result.rows.length ? new Organization(result.rows[0]) : null;
   }
 

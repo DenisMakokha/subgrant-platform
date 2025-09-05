@@ -4,12 +4,16 @@ const BudgetCategory = require('../models/budgetCategory');
 exports.createCategory = async (req, res) => {
   try {
     const { project_id, name, description, cap_amount, cap_percentage, is_active } = req.body;
-    const userId = req.user.id;
+    const userId = req.user?.sub || req.user?.id || null;
+
+    console.log('Request body:', req.body);
+    console.log('User from request:', req.user);
+    console.log('User ID:', userId);
 
     // Validate required fields
-    if (!project_id || !name) {
+    if (!name) {
       return res.status(400).json({ 
-        error: 'Project ID and name are required' 
+        error: 'Name is required' 
       });
     }
 

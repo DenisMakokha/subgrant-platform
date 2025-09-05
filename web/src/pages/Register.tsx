@@ -5,7 +5,7 @@ import { saveToken } from '../utils/auth';
 import './Register.css';
 
 interface RegisterProps {
-  onRegister: (user: any) => void;
+  onRegister?: (user: any) => void;
 }
 
 const Register: React.FC<RegisterProps> = ({ onRegister }) => {
@@ -45,8 +45,10 @@ const Register: React.FC<RegisterProps> = ({ onRegister }) => {
       // Save the token
       saveToken(response.token);
       
-      // Call the onRegister callback with user data
-      onRegister(response.user);
+      // Call the onRegister callback with user data if provided
+      if (onRegister) {
+        onRegister(response.user);
+      }
       
       // Redirect to dashboard
       navigate('/dashboard');

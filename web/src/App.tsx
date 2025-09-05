@@ -10,21 +10,25 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
-import ContractManagement from './pages/ContractManagement';
+import ContractManagementTabs from './pages/ContractManagementTabs';
 import ContractSigning from './pages/ContractSigning';
 import DisbursementManagement from './pages/DisbursementManagement';
 import PartnerOnboarding from './pages/PartnerOnboarding';
+import PartnerManagementTabs from './pages/PartnerManagementTabs';
 import ComplianceManagement from './pages/ComplianceManagement';
-import BudgetCreation from './pages/BudgetCreation';
-import BudgetReview from './pages/BudgetReview';
-import BudgetApproval from './pages/BudgetApproval';
-import FinancialDashboard from './pages/FinancialDashboard';
+import BudgetManagementTabs from './pages/BudgetManagementTabs';
+import FinancialManagementTabs from './pages/FinancialManagementTabs';
 import KpiDashboard from './pages/KpiDashboard';
 import DonorReporting from './pages/DonorReporting';
 import MeReportManagement from './pages/MeReportManagement';
 import FinancialReportManagement from './pages/FinancialReportManagement';
 import ReceiptManagement from './pages/ReceiptManagement';
 import ComplianceDashboard from './pages/ComplianceDashboard';
+import ProjectManagementTabs from './pages/ProjectManagementTabs';
+import MEReportsTabs from './pages/MEReportsTabs';
+import ReportingAnalyticsTabs from './pages/ReportingAnalyticsTabs';
+import DocumentsManagementTabs from './pages/DocumentsManagementTabs';
+import NotificationsManagementTabs from './pages/NotificationsManagementTabs';
 import NotFound from './pages/NotFound';
 
 const App: React.FC = () => {
@@ -80,7 +84,7 @@ const App: React.FC = () => {
                 setSidebarOpen={setSidebarOpen}
               />
               <main className="flex-1">
-                <Login onLogin={() => {}} />
+                <Login />
               </main>
               <Footer />
             </div>
@@ -94,7 +98,7 @@ const App: React.FC = () => {
                 setSidebarOpen={setSidebarOpen}
               />
               <main className="flex-1">
-                <Register onRegister={() => {}} />
+                <Register />
               </main>
               <Footer />
             </div>
@@ -106,21 +110,56 @@ const App: React.FC = () => {
               <Layout>
                 <Routes>
                   <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/projects" element={<ProjectManagementTabs />} />
+                  <Route path="/projects/create" element={<ProjectManagementTabs />} />
+                  <Route path="/projects/timeline" element={<ProjectManagementTabs />} />
+                  <Route path="/projects/categories" element={<ProjectManagementTabs />} />
+                  <Route path="/partners" element={<PartnerManagementTabs />} />
+                  <Route path="/partners/onboarding" element={<PartnerManagementTabs />} />
+                  <Route path="/partners/due-diligence" element={<PartnerManagementTabs />} />
+                  <Route path="/partners/compliance" element={<PartnerManagementTabs />} />
+                  <Route path="/contracts" element={<ContractManagementTabs />} />
+                  <Route path="/contracts/templates" element={<ContractManagementTabs />} />
+                  <Route path="/contract-signing" element={<ProtectedRoute><ContractSigning /></ProtectedRoute>} />
+                  <Route path="/contracts/signing" element={<ContractManagementTabs />} />
+                  <Route path="/contracts/compliance" element={<ContractManagementTabs />} />
                   <Route path="/kpi-dashboard" element={<KpiDashboard />} />
                   <Route path="/donor-reporting" element={<DonorReporting />} />
-                  <Route path="/contracts" element={<ContractManagement />} />
-                  <Route path="/contracts/:id/sign" element={<ContractSigning />} />
                   <Route path="/disbursements" element={<DisbursementManagement />} />
-                  <Route path="/partner-onboarding" element={<PartnerOnboarding />} />
                   <Route path="/organizations/:organizationId/compliance" element={<ComplianceManagement />} />
-                  <Route path="/budgets/create" element={<BudgetCreation />} />
-                  <Route path="/budgets/review" element={<BudgetReview />} />
-                  <Route path="/budgets/approval" element={<BudgetApproval />} />
-                  <Route path="/financial-dashboard" element={<FinancialDashboard />} />
-                  <Route path="/me-reports" element={<MeReportManagement />} />
+                  <Route path="/budgets" element={<BudgetManagementTabs />} />
+                  <Route path="/budgets/create" element={<BudgetManagementTabs />} />
+                  <Route path="/budgets/review" element={<BudgetManagementTabs />} />
+                  <Route path="/budgets/approval" element={<BudgetManagementTabs />} />
+                  <Route path="/budgets/tracking" element={<BudgetManagementTabs />} />
+                  <Route path="/financial-dashboard" element={<FinancialManagementTabs />} />
+                  <Route path="/financial/retirement" element={<FinancialManagementTabs />} />
+                  <Route path="/financial/reconciliation" element={<FinancialManagementTabs />} />
+                  <Route path="/financial/reports" element={<FinancialManagementTabs />} />
+                  <Route path="/financial/analytics" element={<FinancialManagementTabs />} />
+                  <Route path="/monitoring/kpi" element={<MEReportsTabs />} />
+                  <Route path="/monitoring/risks" element={<MEReportsTabs />} />
+                  <Route path="/monitoring/milestones" element={<MEReportsTabs />} />
+                  <Route path="/me-reports" element={<MEReportsTabs />} />
+                  <Route path="/me-reports-management" element={<MeReportManagement />} />
                   <Route path="/financial-reports" element={<FinancialReportManagement />} />
                   <Route path="/receipts" element={<ReceiptManagement />} />
                   <Route path="/compliance-dashboard" element={<ComplianceDashboard />} />
+                  <Route path="/reporting-analytics" element={<ReportingAnalyticsTabs />} />
+                  <Route path="/reporting/dashboards" element={<ReportingAnalyticsTabs />} />
+                  <Route path="/reporting/insights" element={<ReportingAnalyticsTabs />} />
+                  <Route path="/reporting/exports" element={<ReportingAnalyticsTabs />} />
+                  <Route path="/reporting/settings" element={<ReportingAnalyticsTabs />} />
+                  <Route path="/documents" element={<DocumentsManagementTabs />} />
+                  <Route path="/documents/versions" element={<DocumentsManagementTabs />} />
+                  <Route path="/documents/audit" element={<DocumentsManagementTabs />} />
+                  <Route path="/documents/templates" element={<DocumentsManagementTabs />} />
+                  <Route path="/documents/settings" element={<DocumentsManagementTabs />} />
+                  <Route path="/notifications" element={<NotificationsManagementTabs />} />
+                  <Route path="/notifications/settings" element={<NotificationsManagementTabs />} />
+                  <Route path="/notifications/deadlines" element={<NotificationsManagementTabs />} />
+                  <Route path="/notifications/escalation" element={<NotificationsManagementTabs />} />
+                  <Route path="/notifications/templates" element={<NotificationsManagementTabs />} />
                   <Route path="/profile" element={<Profile user={null} />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>

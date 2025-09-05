@@ -75,6 +75,18 @@ interface SidebarProps {
   setIsOpen: (open: boolean) => void;
 }
 
+interface NavigationSection {
+  id: string;
+  name: string;
+  icon: React.ComponentType;
+  path?: string;
+  items: Array<{
+    name: string;
+    path: string;
+    icon: React.ComponentType;
+  }>;
+}
+
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
   const [expandedSections, setExpandedSections] = useState<string[]>(['dashboard']);
@@ -92,19 +104,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       id: 'dashboard',
       name: 'Dashboard',
       icon: DashboardIcon,
-      items: [
-        { name: 'Overview', path: '/dashboard', icon: DashboardIcon },
-        { name: 'KPI Dashboard', path: '/kpi-dashboard', icon: ChartIcon },
-        { name: 'Donor Reporting', path: '/donor-reporting', icon: ReportIcon },
-      ]
+      path: '/dashboard',
+      items: []
     },
     {
       id: 'projects',
       name: 'Grants & Projects',
       icon: ChartIcon,
       items: [
-        { name: 'Create Project', path: '/projects/create', icon: ChartIcon },
-        { name: 'Manage Projects', path: '/projects', icon: ChartIcon },
+        { name: 'Project Overview', path: '/projects', icon: ChartIcon },
+        { name: 'Create Project', path: '/projects/create', icon: DocumentIcon },
         { name: 'Project Timeline', path: '/projects/timeline', icon: DocumentIcon },
         { name: 'Budget Categories', path: '/projects/categories', icon: BudgetIcon },
       ]
@@ -170,10 +179,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       name: 'Reporting & Analytics',
       icon: ReportIcon,
       items: [
+        { name: 'Analytics Dashboard', path: '/reporting-analytics', icon: ChartIcon },
         { name: 'Financial Reports', path: '/financial-reports', icon: DocumentIcon },
-        { name: 'Executive Dashboard', path: '/reports/executive', icon: ChartIcon },
         { name: 'Compliance Reports', path: '/compliance-dashboard', icon: ShieldIcon },
-        { name: 'Export Reports', path: '/reports/export', icon: DocumentIcon },
+        { name: 'KPI Dashboard', path: '/kpi-dashboard', icon: ChartIcon },
       ]
     },
     {
@@ -225,46 +234,66 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                 
                 return (
                   <div key={section.id} className="space-y-1">
-                    {/* Section Header */}
-                    <button
-                      onClick={() => toggleSection(section.id)}
-                      className={`w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
-                        hasActiveItem 
-                          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' 
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <SectionIcon />
-                        <span>{section.name}</span>
-                      </div>
-                      {isExpanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
-                    </button>
-                    
-                    {/* Section Items */}
-                    {isExpanded && (
-                      <div className="ml-6 space-y-1">
-                        {section.items.map((item) => {
-                          const isActive = location.pathname === item.path;
-                          const ItemIcon = item.icon;
-                          
-                          return (
-                            <Link
-                              key={item.name}
-                              to={item.path}
-                              onClick={() => setIsOpen(false)}
-                              className={`flex items-center space-x-3 px-3 py-2 text-sm rounded-lg transition-colors duration-200 ${
-                                isActive 
-                                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium' 
-                                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
-                              }`}
-                            >
-                              <ItemIcon />
-                              <span>{item.name}</span>
-                            </Link>
-                          );
-                        })}
-                      </div>
+                    {/* Dashboard and Projects as direct links, others as dropdown sections */}
+                    {(section.id === 'dashboard' || section.id === 'projects') && section.path ? (
+                      <Link
+                        to={section.path}
+                        onClick={() => setIsOpen(false)}
+                        className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
+                          location.pathname === section.path
+                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' 
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <SectionIcon />
+                          <span>{section.name}</span>
+                        </div>
+                      </Link>
+                    ) : (
+                      <>
+                        {/* Section Header */}
+                        <button
+                          onClick={() => toggleSection(section.id)}
+                          className={`w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
+                            hasActiveItem 
+                              ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' 
+                              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <SectionIcon />
+                            <span>{section.name}</span>
+                          </div>
+                          {isExpanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
+                        </button>
+                        
+                        {/* Section Items */}
+                        {isExpanded && (
+                          <div className="ml-6 space-y-1">
+                            {section.items.map((item) => {
+                              const isActive = location.pathname === item.path;
+                              const ItemIcon = item.icon;
+                              
+                              return (
+                                <Link
+                                  key={item.name}
+                                  to={item.path}
+                                  onClick={() => setIsOpen(false)}
+                                  className={`flex items-center space-x-3 px-3 py-2 text-sm rounded-lg transition-colors duration-200 ${
+                                    isActive 
+                                      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium' 
+                                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                                  }`}
+                                >
+                                  <ItemIcon />
+                                  <span>{item.name}</span>
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 );

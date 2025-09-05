@@ -264,19 +264,51 @@ const BudgetCreation: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="glass-card p-6">
-        <div className="flex items-center gap-4">
-          <div className="p-3 rounded-lg bg-blue-100 dark:bg-blue-900/30">
-            <DocumentTextIcon className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Create New Budget</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Fill in the details below to create a comprehensive project budget
-            </p>
+      {/* Header with Gradient */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-2xl shadow-xl">
+        <div className="absolute inset-0 bg-black/20"></div>
+        <div className="relative p-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <CurrencyDollarIcon className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-white">
+                    Create New Budget
+                  </h1>
+                  <p className="text-blue-100 mt-1">
+                    Fill in the details below to create a comprehensive project budget
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="hidden sm:block">
+              <div className="text-right">
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
+                  <p className="text-sm text-blue-100 font-medium">
+                    {new Date().toLocaleDateString('en-US', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </p>
+                  <p className="text-xs text-blue-200 mt-1">
+                    {new Date().toLocaleTimeString('en-US', { 
+                      hour: '2-digit', 
+                      minute: '2-digit'
+                    })}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+        <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-32 h-32 bg-purple-400/20 rounded-full blur-2xl"></div>
       </div>
 
       {/* Budget Summary */}

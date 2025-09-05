@@ -39,42 +39,42 @@ class Budget {
       budgetData.updated_by || budgetData.created_by
     ];
     
-    const result = await db.query(query, values);
+    const result = await db.pool.query(query, values);
     return new Budget(result.rows[0]);
   }
 
   // Find all budgets
   static async findAll() {
     const query = 'SELECT * FROM budgets ORDER BY created_at DESC';
-    const result = await db.query(query);
+    const result = await db.pool.query(query);
     return result.rows.map(row => new Budget(row));
   }
 
   // Find budget by ID
   static async findById(id) {
     const query = 'SELECT * FROM budgets WHERE id = $1';
-    const result = await db.query(query, [id]);
+    const result = await db.pool.query(query, [id]);
     return result.rows.length ? new Budget(result.rows[0]) : null;
   }
 
   // Find budgets by organization ID
   static async findByOrganizationId(organizationId) {
     const query = 'SELECT * FROM budgets WHERE organization_id = $1 ORDER BY created_at DESC';
-    const result = await db.query(query, [organizationId]);
+    const result = await db.pool.query(query, [organizationId]);
     return result.rows.map(row => new Budget(row));
   }
 
   // Find budgets by project ID
   static async findByProjectId(projectId) {
     const query = 'SELECT * FROM budgets WHERE project_id = $1 ORDER BY created_at DESC';
-    const result = await db.query(query, [projectId]);
+    const result = await db.pool.query(query, [projectId]);
     return result.rows.map(row => new Budget(row));
   }
 
   // Find budgets by status
   static async findByStatus(status) {
     const query = 'SELECT * FROM budgets WHERE status = $1 ORDER BY created_at DESC';
-    const result = await db.query(query, [status]);
+    const result = await db.pool.query(query, [status]);
     return result.rows.map(row => new Budget(row));
   }
 
@@ -101,14 +101,14 @@ class Budget {
       id
     ];
     
-    const result = await db.query(query, values);
+    const result = await db.pool.query(query, values);
     return result.rows.length ? new Budget(result.rows[0]) : null;
   }
 
   // Delete budget
   static async delete(id) {
     const query = 'DELETE FROM budgets WHERE id = $1 RETURNING *';
-    const result = await db.query(query, [id]);
+    const result = await db.pool.query(query, [id]);
     return result.rows.length ? new Budget(result.rows[0]) : null;
   }
 
@@ -121,7 +121,7 @@ class Budget {
       RETURNING *
     `;
     
-    const result = await db.query(query, [id, userId]);
+    const result = await db.pool.query(query, [id, userId]);
     return result.rows.length ? new Budget(result.rows[0]) : null;
   }
 
@@ -134,7 +134,7 @@ class Budget {
       RETURNING *
     `;
     
-    const result = await db.query(query, [id, userId]);
+    const result = await db.pool.query(query, [id, userId]);
     return result.rows.length ? new Budget(result.rows[0]) : null;
   }
 
@@ -147,15 +147,70 @@ class Budget {
       RETURNING *
     `;
     
-    const result = await db.query(query, [id, userId]);
+    const result = await db.pool.query(query, [id, userId]);
     return result.rows.length ? new Budget(result.rows[0]) : null;
   }
 
   // Get budget lines for a budget
   static async getBudgetLines(budgetId) {
     const query = 'SELECT * FROM budget_lines WHERE budget_id = $1 ORDER BY created_at ASC';
-    const result = await db.query(query, [budgetId]);
+    const result = await db.pool.query(query, [budgetId]);
     return result.rows;
+  }
+
+  // KPI Methods
+  static async countAll() {
+    const query = 'SELECT COUNT(*) as count FROM budgets';
+    const result = await db.pool.query(query);
+    return parseInt(result.rows[0].count);
+  }
+
+  static async countApproved() {
+    const query = 'SELECT COUNT(*) as count FROM budgets WHERE status = $1';
+    const result = await db.pool.query(query, ['approved']);
+    return parseInt(result.rows[0].count);
+  }
+
+  static async countByOrganization(organizationId) {
+    const query = 'SELECT COUNT(*) as count FROM budgets WHERE organization_id = $1';
+    const result = await db.pool.query(query, [organizationId]);
+    return parseInt(result.rows[0].count);
+  }
+
+  static async countApprovedByOrganization(organizationId) {
+    const query = 'SELECT COUNT(*) as count FROM budgets WHERE organization_id = $1 AND status = $2';
+    const result = await db.pool.query(query, [organizationId, 'approved']);
+    return parseInt(result.rows[0].count);
+  }
+
+  static async countByProject(projectId) {
+    const query = 'SELECT COUNT(*) as count FROM budgets WHERE project_id = $1';
+    const result = await db.pool.query(query, [projectId]);
+    return parseInt(result.rows[0].count);
+  }
+
+  static async countApprovedByProject(projectId) {
+    const query = 'SELECT COUNT(*) as count FROM budgets WHERE project_id = $1 AND status = $2';
+    const result = await db.pool.query(query, [projectId, 'approved']);
+    return parseInt(result.rows[0].count);
+  }
+
+  static async getTotalAmount() {
+    const query = 'SELECT COALESCE(SUM(total_amount), 0) as total FROM budgets WHERE status = $1';
+    const result = await db.pool.query(query, ['approved']);
+    return parseFloat(result.rows[0].total);
+  }
+
+  static async getTotalAmountByOrganization(organizationId) {
+    const query = 'SELECT COALESCE(SUM(total_amount), 0) as total FROM budgets WHERE organization_id = $1 AND status = $2';
+    const result = await db.pool.query(query, [organizationId, 'approved']);
+    return parseFloat(result.rows[0].total);
+  }
+
+  static async getTotalAmountByProject(projectId) {
+    const query = 'SELECT COALESCE(SUM(total_amount), 0) as total FROM budgets WHERE project_id = $1 AND status = $2';
+    const result = await db.pool.query(query, [projectId, 'approved']);
+    return parseFloat(result.rows[0].total);
   }
 }
 

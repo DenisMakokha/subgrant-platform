@@ -41,13 +41,6 @@ export const authApi = {
     });
   },
   
-  // Logout user
-  logout: async () => {
-    return fetchWithAuth('/auth/logout', {
-      method: 'POST',
-    });
-  },
-  
   // Register user
   register: async (userData: any) => {
     return fetchWithAuth('/auth/register', {
@@ -371,6 +364,13 @@ export const notificationApi = {
       method: 'PUT',
     });
   },
+  
+  // Delete notification
+  delete: async (id: string) => {
+    return fetchWithAuth(`/notifications/${id}`, {
+      method: 'DELETE',
+    });
+  },
 };
 
 // Health check API function
@@ -405,6 +405,86 @@ export const renewalAlertsApi = {
   },
 };
 
+// M&E Reports API functions
+export const reportsApi = {
+  // Get all reports
+  getAll: async () => {
+    return fetchWithAuth('/reports');
+  },
+  
+  // Create report
+  create: async (reportData: any) => {
+    return fetchWithAuth('/reports', {
+      method: 'POST',
+      body: JSON.stringify(reportData),
+    });
+  },
+  
+  // Update report
+  update: async (id: string, reportData: any) => {
+    return fetchWithAuth(`/reports/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(reportData),
+    });
+  },
+  
+  // Delete report
+  delete: async (id: string) => {
+    return fetchWithAuth(`/reports/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// Analytics API functions
+export const analyticsApi = {
+  // Get KPI dashboard data
+  getKpiDashboardData: async () => {
+    return fetchWithAuth('/kpi/dashboard');
+  },
+  
+  // Get disbursements
+  getDisbursements: async () => {
+    return fetchWithAuth('/disbursements');
+  },
+};
+
+// Contracts API functions
+export const contractsApi = {
+  // Get all contracts
+  getAll: async () => {
+    return fetchWithAuth('/contracts');
+  },
+  
+  // Get contract by ID
+  getById: async (id: string) => {
+    return fetchWithAuth(`/contracts/${id}`);
+  },
+  
+  // Create contract
+  create: async (contractData: any) => {
+    return fetchWithAuth('/contracts', {
+      method: 'POST',
+      body: JSON.stringify(contractData),
+    });
+  },
+  
+  // Update contract
+  update: async (id: string, contractData: any) => {
+    return fetchWithAuth(`/contracts/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(contractData),
+    });
+  },
+  
+  // Delete contract
+  delete: async (id: string) => {
+    return fetchWithAuth(`/contracts/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
 // Create a combined API object for easier imports
 const api = {
   auth: authApi,
@@ -418,8 +498,24 @@ const api = {
   notifications: notificationApi,
   health: healthApi,
   renewalAlerts: renewalAlertsApi,
+  contracts: contractsApi,
+  analytics: analyticsApi,
+  reports: reportsApi,
   fetchWithAuth,
 };
+
+// Export individual functions for backward compatibility
+export const getReports = reportsApi.getAll;
+export const createReport = reportsApi.create;
+export const updateReport = reportsApi.update;
+export const deleteReport = reportsApi.delete;
+export const getNotifications = notificationApi.getNotifications;
+export const markNotificationAsRead = notificationApi.markAsRead;
+export const deleteNotification = notificationApi.delete;
+export const getKpiDashboardData = () => fetchWithAuth('/kpi/dashboard');
+export const getProjects = projectApi.getAll;
+export const getDisbursements = analyticsApi.getDisbursements;
+export const getContracts = contractsApi.getAll;
 
 // Export everything
 export { API_BASE_URL };

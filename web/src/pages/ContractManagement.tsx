@@ -162,27 +162,66 @@ const ContractManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="glass-card p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Contract Management</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Manage and track all your contracts and agreements
-            </p>
+      {/* Header with Gradient */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-2xl shadow-xl">
+        <div className="absolute inset-0 bg-black/20"></div>
+        <div className="relative p-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <DocumentIcon className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-white">
+                    Contract Management
+                  </h1>
+                  <p className="text-blue-100 mt-1">
+                    Manage and track all your contracts and agreements
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="hidden sm:block">
+              <div className="text-right">
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
+                  <p className="text-sm text-blue-100 font-medium">
+                    {new Date().toLocaleDateString('en-US', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </p>
+                  <p className="text-xs text-blue-200 mt-1">
+                    {new Date().toLocaleTimeString('en-US', { 
+                      hour: '2-digit', 
+                      minute: '2-digit'
+                    })}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
-          <button
-            onClick={() => {
-              setEditingContract(null);
-              setFormData({ budget_id: '', template_id: '', title: '', description: '' });
-              setShowForm(true);
-            }}
-            className="btn-primary flex items-center gap-2"
-          >
-            <PlusIcon />
-            Create Contract
-          </button>
         </div>
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+        <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-32 h-32 bg-purple-400/20 rounded-full blur-2xl"></div>
+      </div>
+
+      {/* Action Button */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => {
+            setEditingContract(null);
+            setFormData({ budget_id: '', template_id: '', title: '', description: '' });
+            setShowForm(true);
+          }}
+          className="btn-primary flex items-center gap-2"
+        >
+          <PlusIcon />
+          Create Contract
+        </button>
       </div>
 
       {/* Error Message */}
@@ -215,32 +254,43 @@ const ContractManagement: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label htmlFor="budget_id" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Budget ID
+                  Associated Budget
                 </label>
-                <input
-                  type="text"
+                <select
                   id="budget_id"
                   name="budget_id"
                   value={formData.budget_id || ''}
                   onChange={handleInputChange}
                   className="input-field"
                   required
-                />
+                >
+                  <option value="">Select Budget</option>
+                  <option value="budget-001">Education Program Budget - $150,000</option>
+                  <option value="budget-002">Healthcare Initiative - $200,000</option>
+                  <option value="budget-003">Water Access Project - $100,000</option>
+                  <option value="budget-004">Community Development - $75,000</option>
+                </select>
               </div>
 
               <div>
                 <label htmlFor="template_id" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Template ID
+                  Contract Template
                 </label>
-                <input
-                  type="text"
+                <select
                   id="template_id"
                   name="template_id"
                   value={formData.template_id || ''}
                   onChange={handleInputChange}
                   className="input-field"
                   required
-                />
+                >
+                  <option value="">Select Template</option>
+                  <option value="template-standard">Standard Grant Agreement</option>
+                  <option value="template-education">Education Program Contract</option>
+                  <option value="template-healthcare">Healthcare Services Agreement</option>
+                  <option value="template-infrastructure">Infrastructure Development Contract</option>
+                  <option value="template-research">Research Grant Agreement</option>
+                </select>
               </div>
 
               <div className="md:col-span-2">

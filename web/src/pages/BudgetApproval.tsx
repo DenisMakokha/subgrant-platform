@@ -2,7 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import { formatCurrency, formatDate } from '../utils/format';
-import './BudgetApproval.css';
+
+// SVG Icons
+const CheckCircleIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
 
 interface Budget {
   id: string;
@@ -152,16 +158,76 @@ const BudgetApproval: React.FC = () => {
   }
 
   return (
-    <div className="budget-approval">
-      <div className="page-header">
-        <h1>Budget Approval</h1>
-        <p>Review and approve submitted budgets</p>
+    <div className="space-y-6">
+      {/* Header with Gradient */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-2xl shadow-xl">
+        <div className="absolute inset-0 bg-black/20"></div>
+        <div className="relative p-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <CheckCircleIcon className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-white">
+                    Budget Approval
+                  </h1>
+                  <p className="text-blue-100 mt-1">
+                    Review and approve submitted budgets
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="hidden sm:block">
+              <div className="text-right">
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
+                  <p className="text-sm text-blue-100 font-medium">
+                    {new Date().toLocaleDateString('en-US', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </p>
+                  <p className="text-xs text-blue-200 mt-1">
+                    {new Date().toLocaleTimeString('en-US', { 
+                      hour: '2-digit', 
+                      minute: '2-digit'
+                    })}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+        <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-32 h-32 bg-purple-400/20 rounded-full blur-2xl"></div>
       </div>
       
-      {error && <div className="alert alert-danger">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
+      {/* Error/Success Messages */}
+      {error && (
+        <div className="glass-card p-4 border-l-4 border-red-500">
+          <div className="flex">
+            <div className="ml-3">
+              <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {success && (
+        <div className="glass-card p-4 border-l-4 border-green-500">
+          <div className="flex">
+            <div className="ml-3">
+              <p className="text-sm text-green-700 dark:text-green-300">{success}</p>
+            </div>
+          </div>
+        </div>
+      )}
       
-      <div className="approval-content">
+      <div className="space-y-6">
         {!selectedBudget ? (
           <div className="budget-list">
             <h2>Pending Budgets for Approval</h2>

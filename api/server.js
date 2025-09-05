@@ -18,6 +18,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' })); // Parse URL-enc
 
 // Routes
 const authRoutes = require('./routes/auth');
+const organizationRoutes = require('./routes/organizations');
+const userRoutes = require('./routes/users');
 const projectRoutes = require('./routes/projects');
 const budgetCategoryRoutes = require('./routes/budgetCategories');
 const budgetRoutes = require('./routes/budgets');
@@ -37,6 +39,7 @@ const meReportRoutes = require('./routes/meReports');
 const financialReportRoutes = require('./routes/financialReports');
 const receiptRoutes = require('./routes/receipts');
 const kpiRoutes = require('./routes/kpi');
+const notificationRoutes = require('./routes/notifications');
 const healthRoutes = require('./routes/health');
 
 // Base route
@@ -49,6 +52,8 @@ app.get('/', (req, res) => {
 
 // API routes
 app.use('/api/auth', authRoutes);
+app.use('/api/organizations', organizationRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/budget-categories', budgetCategoryRoutes);
 app.use('/api/budgets', budgetRoutes);
@@ -68,6 +73,7 @@ app.use('/api/me-reports', meReportRoutes);
 app.use('/api/financial-reports', financialReportRoutes);
 app.use('/api/receipts', receiptRoutes);
 app.use('/api/kpi', kpiRoutes);
+app.use('/api/notifications', notificationRoutes);
 app.use('/api/health', healthRoutes);
 
 // Error handling middleware

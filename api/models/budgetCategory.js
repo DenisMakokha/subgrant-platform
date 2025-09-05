@@ -24,7 +24,7 @@ class BudgetCategory {
     `;
     
     const values = [
-      categoryData.project_id,
+      categoryData.project_id || null,
       categoryData.name,
       categoryData.description || '',
       categoryData.cap_amount || null,
@@ -34,35 +34,35 @@ class BudgetCategory {
       categoryData.updated_by || categoryData.created_by
     ];
     
-    const result = await db.query(query, values);
+    const result = await db.pool.query(query, values);
     return new BudgetCategory(result.rows[0]);
   }
 
   // Find all budget categories
   static async findAll() {
     const query = 'SELECT * FROM budget_categories ORDER BY created_at DESC';
-    const result = await db.query(query);
+    const result = await db.pool.query(query);
     return result.rows.map(row => new BudgetCategory(row));
   }
 
   // Find budget category by ID
   static async findById(id) {
     const query = 'SELECT * FROM budget_categories WHERE id = $1';
-    const result = await db.query(query, [id]);
+    const result = await db.pool.query(query, [id]);
     return result.rows.length ? new BudgetCategory(result.rows[0]) : null;
   }
 
   // Find budget categories by project ID
   static async findByProjectId(projectId) {
     const query = 'SELECT * FROM budget_categories WHERE project_id = $1 ORDER BY created_at DESC';
-    const result = await db.query(query, [projectId]);
+    const result = await db.pool.query(query, [projectId]);
     return result.rows.map(row => new BudgetCategory(row));
   }
 
   // Find active budget categories by project ID
   static async findActiveByProjectId(projectId) {
     const query = 'SELECT * FROM budget_categories WHERE project_id = $1 AND is_active = true ORDER BY created_at DESC';
-    const result = await db.query(query, [projectId]);
+    const result = await db.pool.query(query, [projectId]);
     return result.rows.map(row => new BudgetCategory(row));
   }
 
@@ -85,14 +85,14 @@ class BudgetCategory {
       id
     ];
     
-    const result = await db.query(query, values);
+    const result = await db.pool.query(query, values);
     return result.rows.length ? new BudgetCategory(result.rows[0]) : null;
   }
 
   // Delete budget category
   static async delete(id) {
     const query = 'DELETE FROM budget_categories WHERE id = $1 RETURNING *';
-    const result = await db.query(query, [id]);
+    const result = await db.pool.query(query, [id]);
     return result.rows.length ? new BudgetCategory(result.rows[0]) : null;
   }
 }

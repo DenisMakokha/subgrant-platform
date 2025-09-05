@@ -34,28 +34,28 @@ class BudgetLine {
       lineData.notes || ''
     ];
     
-    const result = await db.query(query, values);
+    const result = await db.pool.query(query, values);
     return new BudgetLine(result.rows[0]);
   }
 
   // Find all budget lines
   static async findAll() {
     const query = 'SELECT * FROM budget_lines ORDER BY created_at ASC';
-    const result = await db.query(query);
+    const result = await db.pool.query(query);
     return result.rows.map(row => new BudgetLine(row));
   }
 
   // Find budget line by ID
   static async findById(id) {
     const query = 'SELECT * FROM budget_lines WHERE id = $1';
-    const result = await db.query(query, [id]);
+    const result = await db.pool.query(query, [id]);
     return result.rows.length ? new BudgetLine(result.rows[0]) : null;
   }
 
   // Find budget lines by budget ID
   static async findByBudgetId(budgetId) {
     const query = 'SELECT * FROM budget_lines WHERE budget_id = $1 ORDER BY created_at ASC';
-    const result = await db.query(query, [budgetId]);
+    const result = await db.pool.query(query, [budgetId]);
     return result.rows.map(row => new BudgetLine(row));
   }
 
@@ -78,21 +78,21 @@ class BudgetLine {
       id
     ];
     
-    const result = await db.query(query, values);
+    const result = await db.pool.query(query, values);
     return result.rows.length ? new BudgetLine(result.rows[0]) : null;
   }
 
   // Delete budget line
   static async delete(id) {
     const query = 'DELETE FROM budget_lines WHERE id = $1 RETURNING *';
-    const result = await db.query(query, [id]);
+    const result = await db.pool.query(query, [id]);
     return result.rows.length ? new BudgetLine(result.rows[0]) : null;
   }
 
   // Delete all budget lines for a budget
   static async deleteByBudgetId(budgetId) {
     const query = 'DELETE FROM budget_lines WHERE budget_id = $1 RETURNING *';
-    const result = await db.query(query, [budgetId]);
+    const result = await db.pool.query(query, [budgetId]);
     return result.rows.map(row => new BudgetLine(row));
   }
 }

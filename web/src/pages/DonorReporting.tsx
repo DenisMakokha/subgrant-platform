@@ -3,7 +3,13 @@ import { useAuth } from '../contexts/AuthContext';
 import { getFinancialReports, exportFinancialReportAsPdf, exportFinancialReportAsExcel } from '../services/financialReports';
 import { getMeReports, exportMeReportAsPdf, exportMeReportAsExcel } from '../services/meReports';
 import { FinancialReport, MeReport } from '../types/reports';
-import './DonorReporting.css';
+
+// SVG Icons
+const DocumentChartBarIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+  </svg>
+);
 
 const DonorReporting: React.FC = () => {
   const { user } = useAuth();
@@ -67,25 +73,78 @@ const DonorReporting: React.FC = () => {
   }
 
   return (
-    <div className="donor-reporting">
-      <div className="dashboard-header">
-        <h1>Donor Reporting</h1>
-        <p>Welcome, {user.firstName} {user.lastName}!</p>
+    <div className="space-y-6">
+      {/* Header with Gradient */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-2xl shadow-xl">
+        <div className="absolute inset-0 bg-black/20"></div>
+        <div className="relative p-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <DocumentChartBarIcon className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-white">
+                    Donor Reporting
+                  </h1>
+                  <p className="text-blue-100 mt-1">
+                    Welcome, {user.firstName} {user.lastName}! Access approved reports and analytics
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="hidden sm:block">
+              <div className="text-right">
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
+                  <p className="text-sm text-blue-100 font-medium">
+                    {new Date().toLocaleDateString('en-US', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </p>
+                  <p className="text-xs text-blue-200 mt-1">
+                    {new Date().toLocaleTimeString('en-US', { 
+                      hour: '2-digit', 
+                      minute: '2-digit'
+                    })}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+        <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-32 h-32 bg-purple-400/20 rounded-full blur-2xl"></div>
       </div>
 
-      <div className="tabs">
-        <button 
-          className={`tab-button ${activeTab === 'financial' ? 'active' : ''}`}
-          onClick={() => setActiveTab('financial')}
-        >
-          Financial Reports
-        </button>
-        <button 
-          className={`tab-button ${activeTab === 'me' ? 'active' : ''}`}
-          onClick={() => setActiveTab('me')}
-        >
-          ME Reports
-        </button>
+      {/* Tab Navigation */}
+      <div className="glass-card p-6">
+        <div className="flex border-b border-gray-200 dark:border-gray-700">
+          <button 
+            className={`px-4 py-2 font-medium text-sm rounded-t-lg border-b-2 transition-colors ${
+              activeTab === 'financial' 
+                ? 'text-blue-600 border-blue-600 dark:text-blue-400 dark:border-blue-400' 
+                : 'text-gray-500 border-transparent hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+            }`}
+            onClick={() => setActiveTab('financial')}
+          >
+            Financial Reports
+          </button>
+          <button 
+            className={`px-4 py-2 font-medium text-sm rounded-t-lg border-b-2 transition-colors ${
+              activeTab === 'me' 
+                ? 'text-blue-600 border-blue-600 dark:text-blue-400 dark:border-blue-400' 
+                : 'text-gray-500 border-transparent hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+            }`}
+            onClick={() => setActiveTab('me')}
+          >
+            ME Reports
+          </button>
+        </div>
       </div>
 
       {activeTab === 'financial' && (

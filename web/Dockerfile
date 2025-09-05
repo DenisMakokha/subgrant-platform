@@ -1,14 +1,14 @@
-# Use Node.js 16 as the base image
-FROM node:16-alpine
+# Build stage
+FROM node:16-alpine AS builder
 
 # Set the working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json (if available)
+# Copy package.json and package-lock.json
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install all dependencies (including dev dependencies for build)
+RUN npm ci
 
 # Copy the rest of the application code
 COPY . .
@@ -16,8 +16,17 @@ COPY . .
 # Build the React application
 RUN npm run build
 
-# Install serve to serve the static files
+# Production stage
+FROM node:16-alpine AS production
+
+# Install serve globally
 RUN npm install -g serve
+
+# Set the working directory
+WORKDIR /app
+
+# Copy the build output from the builder stage
+COPY --from=builder /app/build ./build
 
 # Expose port 3000
 EXPOSE 3000

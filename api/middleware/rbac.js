@@ -109,7 +109,7 @@ const rolePermissions = {
 function checkPermission(resource, action) {
   return async (req, res, next) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.sub || req.user.id;
       const userRole = req.user.role;
 
       // Get user details
@@ -147,4 +147,29 @@ function checkPermission(resource, action) {
   };
 }
 
-module.exports = { checkPermission };
+// Check if user has one of the required roles
+function requireRole(allowedRoles) {
+  return async (req, res, next) => {
+    try {
+      const userRole = req.user?.role;
+      
+      if (!userRole) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      if (!allowedRoles.includes(userRole)) {
+        return res.status(403).json({ error: 'Access denied: Insufficient permissions' });
+      }
+
+      next();
+    } catch (error) {
+      console.error('Error checking role:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  };
+}
+
+// Alias for backward compatibility
+const requirePermission = checkPermission;
+
+module.exports = { checkPermission, requireRole, requirePermission };
