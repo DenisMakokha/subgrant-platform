@@ -14,7 +14,8 @@ services:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
-      - ./api/scripts/init-db.js:/docker-entrypoint-initdb.d/init-db.js:ro
+      - ./api/scripts/init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql:ro
+      - ./api/scripts/create_forum_tables.sql:/docker-entrypoint-initdb.d/02-create-forum-tables.sql:ro
     networks:
       - subgrant_network
 

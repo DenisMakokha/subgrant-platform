@@ -1,5 +1,5 @@
 {
-  "name": "subgrant-platform-web",
+  "name": "grants-platform-web",
   "version": "0.1.0",
   "private": true,
   "dependencies": {

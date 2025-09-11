@@ -99,7 +99,7 @@ const Login: React.FC = () => {
             <div className="flex items-center justify-center gap-3">
               <div className="h-px bg-gradient-to-r from-transparent via-blue-400/60 to-transparent flex-1 max-w-6"></div>
               <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent px-1 tracking-tight">
-                SubGrant Management Platform
+                Grants Management Platform
               </h2>
               <div className="h-px bg-gradient-to-r from-transparent via-purple-400/60 to-transparent flex-1 max-w-6"></div>
             </div>
@@ -235,9 +235,19 @@ const Login: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-4">
+        <div className="text-center mt-4 space-y-2">
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            © 2025 SubGrant Management Platform. All rights reserved.
+            © 2025 Grants Management Platform. All rights reserved.
+          </p>
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            Powered by <a 
+              href="https://neliumsystems.com/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
+            >
+              Nelium Systems
+            </a>
           </p>
         </div>
       </div>

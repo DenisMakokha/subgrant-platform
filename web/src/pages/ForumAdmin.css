@@ -1,0 +1,380 @@
+.forum-admin {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.forum-admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.forum-admin-header h1 {
+  color: #1f2937;
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.forum-admin-tabs {
+  display: flex;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.tab {
+  padding: 1rem 2rem;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #6b7280;
+  transition: all 0.3s ease;
+}
+
+.tab:hover {
+  color: #2563eb;
+  background-color: #f9fafb;
+}
+
+.tab.active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+  background-color: #f9fafb;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.section-header h2 {
+  color: #1f2937;
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-primary {
+  background-color: #2563eb;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.btn-success {
+  background-color: #16a34a;
+  color: white;
+}
+
+.btn-success:hover {
+  background-color: #15803d;
+  transform: translateY(-1px);
+}
+
+.form-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.form-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.form-content h3 {
+  margin: 0 0 1.5rem 0;
+  color: #1f2937;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+  box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.form-actions button {
+  flex: 1;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.form-actions button[type="submit"] {
+  background-color: #2563eb;
+  color: white;
+}
+
+.form-actions button[type="submit"]:hover:not(:disabled) {
+  background-color: #1d4ed8;
+}
+
+.form-actions button[type="submit"]:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.form-actions button[type="button"] {
+  background-color: #6b7280;
+  color: white;
+}
+
+.form-actions button[type="button"]:hover {
+  background-color: #4b5563;
+}
+
+.categories-list,
+.tags-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.category-item,
+.tag-item {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  transition: all 0.3s ease;
+}
+
+.category-item:hover,
+.tag-item:hover {
+  border-color: #2563eb;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.category-info,
+.tag-info {
+  flex: 1;
+}
+
+.category-info h4,
+.tag-details h4 {
+  margin: 0 0 0.5rem 0;
+  color: #1f2937;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.category-info p,
+.tag-details p {
+  margin: 0 0 0.75rem 0;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.category-slug,
+.tag-slug {
+  display: inline-block;
+  background-color: #f3f4f6;
+  color: #4b5563;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-right: 0.5rem;
+}
+
+.category-order {
+  display: inline-block;
+  background-color: #ddd6fe;
+  color: #7c3aed;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.tag-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.tag-preview {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  color: white;
+  font-weight: 600;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  min-width: 80px;
+  text-align: center;
+}
+
+.category-actions,
+.tag-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.category-actions button,
+.tag-actions button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.category-actions button:first-child,
+.tag-actions button:first-child {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.category-actions button:first-child:hover,
+.tag-actions button:first-child:hover {
+  background-color: #2563eb;
+}
+
+.category-actions button.delete,
+.tag-actions button.delete {
+  background-color: #ef4444;
+  color: white;
+}
+
+.category-actions button.delete:hover,
+.tag-actions button.delete:hover {
+  background-color: #dc2626;
+}
+
+@media (max-width: 768px) {
+  .forum-admin {
+    padding: 1rem;
+  }
+  
+  .forum-admin-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+  
+  .forum-admin-tabs {
+    flex-wrap: wrap;
+  }
+  
+  .tab {
+    flex: 1;
+    min-width: 120px;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+  
+  .category-item,
+  .tag-item {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .category-actions,
+  .tag-actions {
+    align-self: stretch;
+  }
+  
+  .category-actions button,
+  .tag-actions button {
+    flex: 1;
+  }
+  
+  .tag-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .form-content {
+    margin: 1rem;
+    width: calc(100% - 2rem);
+  }
+}

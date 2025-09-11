@@ -4,8 +4,9 @@ export interface Contract {
   template_id: string;
   title: string;
   description: string;
+  content?: string;
   envelope_id: string | null;
-  status: 'ready' | 'sent' | 'partially_signed' | 'completed' | 'filed' | 'declined' | 'voided';
+  status: 'draft' | 'ready' | 'sent' | 'partially_signed' | 'completed' | 'filed' | 'declined' | 'voided';
   sent_at: string | null;
   completed_at: string | null;
   filed_at: string | null;

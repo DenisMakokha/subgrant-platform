@@ -37,7 +37,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         setSidebarOpen={setSidebarOpen}
       />
       
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-full px-2 sm:px-4 lg:px-6">
         <div className="flex gap-6 py-6">
           <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
           

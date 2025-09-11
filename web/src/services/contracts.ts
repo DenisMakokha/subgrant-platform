@@ -139,3 +139,49 @@ export const downloadContractDocument = async (artifactId: string) => {
     throw error;
   }
 };
+
+// Generate contract PDF
+export const generateContractPDF = async (contractId: string) => {
+  try {
+    const response = await api.fetchWithAuth(`/contracts/${contractId}/generate-pdf`, {
+      method: 'POST',
+    });
+    return response;
+  } catch (error) {
+    console.error('Error generating contract PDF:', error);
+    throw error;
+  }
+};
+
+// Get contract templates
+export const getContractTemplates = async () => {
+  try {
+    const response = await api.fetchWithAuth('/contracts/templates');
+    return response;
+  } catch (error) {
+    console.error('Error fetching contract templates:', error);
+    throw error;
+  }
+};
+
+// Get projects for contract creation
+export const getProjectsForContract = async () => {
+  try {
+    const response = await api.fetchWithAuth('/projects');
+    return response;
+  } catch (error) {
+    console.error('Error fetching projects:', error);
+    throw error;
+  }
+};
+
+// Get budgets for contract creation
+export const getBudgetsForContract = async () => {
+  try {
+    const response = await api.fetchWithAuth('/budgets');
+    return response;
+  } catch (error) {
+    console.error('Error fetching budgets:', error);
+    throw error;
+  }
+};

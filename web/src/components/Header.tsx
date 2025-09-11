@@ -78,10 +78,10 @@ const Header: React.FC<HeaderProps> = ({
             
             <Link to="/" className="flex items-center gap-3">
               <div className="w-8 h-8 bg-gradient-to-r from-primary-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">SG</span>
+                <span className="text-white font-bold text-sm">GP</span>
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">
-                SubGrant Platform
+                Grants Platform
               </span>
             </Link>
           </div>

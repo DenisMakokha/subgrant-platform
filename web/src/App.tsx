@@ -11,6 +11,9 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import ContractManagementTabs from './pages/ContractManagementTabs';
+import ContractTemplates from './pages/ContractTemplates';
+import CreateContract from './pages/CreateContract';
+import ContractSettings from './pages/ContractSettings';
 import ContractSigning from './pages/ContractSigning';
 import DisbursementManagement from './pages/DisbursementManagement';
 import PartnerOnboarding from './pages/PartnerOnboarding';
@@ -30,6 +33,9 @@ import ReportingAnalyticsTabs from './pages/ReportingAnalyticsTabs';
 import DocumentsManagementTabs from './pages/DocumentsManagementTabs';
 import NotificationsManagementTabs from './pages/NotificationsManagementTabs';
 import NotFound from './pages/NotFound';
+import Forum from './pages/ForumAdmin';
+import TopicDetail from './pages/TopicDetail';
+import NewTopic from './pages/NewTopic';
 
 const App: React.FC = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -120,6 +126,8 @@ const App: React.FC = () => {
                   <Route path="/partners/compliance" element={<PartnerManagementTabs />} />
                   <Route path="/contracts" element={<ContractManagementTabs />} />
                   <Route path="/contracts/templates" element={<ContractManagementTabs />} />
+                  <Route path="/contracts/create" element={<ContractManagementTabs />} />
+                  <Route path="/contracts/settings" element={<ContractManagementTabs />} />
                   <Route path="/contract-signing" element={<ProtectedRoute><ContractSigning /></ProtectedRoute>} />
                   <Route path="/contracts/signing" element={<ContractManagementTabs />} />
                   <Route path="/contracts/compliance" element={<ContractManagementTabs />} />
@@ -160,6 +168,12 @@ const App: React.FC = () => {
                   <Route path="/notifications/deadlines" element={<NotificationsManagementTabs />} />
                   <Route path="/notifications/escalation" element={<NotificationsManagementTabs />} />
                   <Route path="/notifications/templates" element={<NotificationsManagementTabs />} />
+                  <Route path="/forum" element={<Forum />} />
+                  <Route path="/forum/categories" element={<Forum />} />
+                  <Route path="/forum/tags" element={<Forum />} />
+                  <Route path="/forum/settings" element={<Forum />} />
+                  <Route path="/forum/topics/:id" element={<TopicDetail />} />
+                  <Route path="/forum/new-topic" element={<NewTopic />} />
                   <Route path="/profile" element={<Profile user={null} />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>

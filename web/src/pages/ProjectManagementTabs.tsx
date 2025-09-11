@@ -1258,9 +1258,11 @@ const ProjectManagementTabs: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header with Gradient */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-2xl shadow-xl">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-6">
+          {/* Header with Gradient */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-2xl shadow-xl">
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative p-8">
           <div className="flex items-center justify-between">
@@ -1765,14 +1767,14 @@ const ProjectManagementTabs: React.FC = () => {
 
       {/* Create Category Modal */}
       {showCreateCategoryModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
-          <div className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700">
-            {/* Header with gradient */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-t-3xl">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden p-0 transform animate-in zoom-in-95 duration-200 border border-gray-200 dark:border-gray-700">
+            {/* Modal Header */}
+            <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 rounded-t-2xl px-6 py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
-                    <TagIcon className="w-6 h-6 text-white" />
+                  <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                    <TagIcon className="w-5 h-5 text-white" />
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-white">Create Budget Category</h3>
@@ -1781,50 +1783,51 @@ const ProjectManagementTabs: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setShowCreateCategoryModal(false)}
-                  className="p-2 text-white hover:bg-white hover:bg-opacity-20 rounded-xl transition-all duration-200"
+                  className="text-white/70 hover:text-white hover:bg-white/20 rounded-full p-2 transition-all duration-200"
                 >
-                  <XCircleIcon className="w-6 h-6" />
+                  <XCircleIcon className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
-            <div className="p-8">
-              <div className="space-y-8">
+            {/* Modal Body */}
+            <div className="p-8 max-h-[calc(90vh-120px)] overflow-y-auto">
+              <div className="space-y-6">
                 {/* Basic Information Section */}
-                <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 p-6 rounded-2xl">
+                <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
                   <div className="flex items-center gap-3 mb-6">
-                    <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-                      <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg">
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
-                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Basic Information</h4>
+                    <h4 className="text-xl font-bold text-gray-900 dark:text-white">Basic Information</h4>
                   </div>
                   
                   <div className="space-y-6">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                      <label className="block text-base font-bold text-gray-800 dark:text-gray-200 mb-4">
                         Category Name *
                       </label>
                       <input
                         type="text"
                         value={newCategory.name}
                         onChange={(e) => setNewCategory({...newCategory, name: e.target.value})}
-                        className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg"
+                        className="w-full px-5 py-4 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-3 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg font-medium shadow-sm"
                         placeholder="e.g., Personnel, Equipment, Travel"
                         required
                       />
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                      <label className="block text-base font-bold text-gray-800 dark:text-gray-200 mb-4">
                         Description
                       </label>
                       <textarea
                         value={newCategory.description}
                         onChange={(e) => setNewCategory({...newCategory, description: e.target.value})}
-                        rows={4}
-                        className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none"
+                        rows={5}
+                        className="w-full px-5 py-4 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-3 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none text-base font-medium shadow-sm"
                         placeholder="Describe what this category covers and any specific guidelines..."
                       />
                     </div>
@@ -1954,21 +1957,34 @@ const ProjectManagementTabs: React.FC = () => {
 
       {/* Edit Category Modal */}
       {showEditCategoryModal && selectedCategory && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
-          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 rounded-2xl shadow-2xl">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Edit Budget Category</h3>
-              <button
-                onClick={() => {
-                  setShowEditCategoryModal(false);
-                  setSelectedCategory(null);
-                }}
-                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-              >
-                <XCircleIcon className="w-6 h-6" />
-              </button>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden p-0 transform animate-in zoom-in-95 duration-200 border border-gray-200 dark:border-gray-700">
+            {/* Modal Header */}
+            <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 rounded-t-2xl px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                    <TagIcon className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white">Edit Budget Category</h3>
+                    <p className="text-blue-100 text-sm">Modify budget category settings and allocation</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowEditCategoryModal(false);
+                    setSelectedCategory(null);
+                  }}
+                  className="text-white/70 hover:text-white hover:bg-white/20 rounded-full p-2 transition-all duration-200"
+                >
+                  <XCircleIcon className="w-5 h-5" />
+                </button>
+              </div>
             </div>
-            <div className="p-6">
+
+            {/* Modal Body */}
+            <div className="p-6 max-h-[calc(90vh-120px)] overflow-y-auto">
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -2064,6 +2080,8 @@ const ProjectManagementTabs: React.FC = () => {
           </div>
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 };

@@ -89,4 +89,19 @@ router.get(
   ContractController.downloadContractDocument
 );
 
+// Generate contract PDF
+router.post(
+  '/:contractId/generate-pdf',
+  authorizeRole(['system_administrator', 'admin']),
+  checkPermission('contracts', 'update'),
+  ContractController.generateContractPDF
+);
+
+// Get contract templates
+router.get(
+  '/templates',
+  checkPermission('contracts', 'read'),
+  ContractController.getContractTemplates
+);
+
 module.exports = router;

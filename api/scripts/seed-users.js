@@ -15,6 +15,14 @@ const client = new Client({
 // Test users to create
 const testUsers = [
   {
+    email: 'admin@example.com',
+    password: 'admin123',
+    first_name: 'Admin',
+    last_name: 'User',
+    role: 'system_administrator',
+    organization_id: null
+  },
+  {
     email: 'admin@test.com',
     password: 'admin123',
     first_name: 'Admin',

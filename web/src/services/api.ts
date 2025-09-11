@@ -1,5 +1,5 @@
 // API service for making HTTP requests to the backend
-import { getToken } from '../utils/auth';
+import { getToken, isTokenExpired, removeToken } from '../utils/auth';
 
 // Base API URL from environment variables
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
@@ -8,6 +8,22 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api
 async function fetchWithAuth(url: string, options: RequestInit = {}) {
   // Get the authentication token
   const token = getToken();
+  
+  // Check if token exists and is not expired
+  if (token && isTokenExpired(token)) {
+    console.warn('Token expired, logging out user');
+    removeToken();
+    localStorage.removeItem('user');
+    // Redirect to login page
+    window.location.href = '/login';
+    throw new Error('Session expired. Please log in again.');
+  }
+  
+  console.log('API Request:', {
+    url: `${API_BASE_URL}${url}`,
+    hasToken: !!token,
+    tokenPreview: token ? `${token.substring(0, 20)}...` : 'No token'
+  });
   
   // Set default headers
   const headers = {
@@ -22,9 +38,30 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
     headers,
   });
   
+  console.log('API Response:', {
+    status: response.status,
+    statusText: response.statusText,
+    ok: response.ok
+  });
+  
   // Handle response
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
+    
+    // Handle 401 Unauthorized (token expired/invalid)
+    if (response.status === 401) {
+      console.warn('Unauthorized response, logging out user');
+      removeToken();
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+      throw new Error('Session expired. Please log in again.');
+    }
+    
+    console.error('API Error:', {
+      status: response.status,
+      errorData,
+      url: `${API_BASE_URL}${url}`
+    });
     throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
   }
   
@@ -512,11 +549,12 @@ export const deleteReport = reportsApi.delete;
 export const getNotifications = notificationApi.getNotifications;
 export const markNotificationAsRead = notificationApi.markAsRead;
 export const deleteNotification = notificationApi.delete;
+
+// Export everything
 export const getKpiDashboardData = () => fetchWithAuth('/kpi/dashboard');
 export const getProjects = projectApi.getAll;
 export const getDisbursements = analyticsApi.getDisbursements;
 export const getContracts = contractsApi.getAll;
 
-// Export everything
-export { API_BASE_URL };
+export { API_BASE_URL, fetchWithAuth };
 export default api;

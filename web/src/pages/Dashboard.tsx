@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
+import { getToken } from '../utils/auth';
 import { Contract, Project } from '../types';
 
 // Additional SVG Icons
@@ -109,10 +110,17 @@ const Dashboard: React.FC = () => {
       
       try {
         console.log('Fetching projects...');
+        console.log('API Base URL:', process.env.REACT_APP_API_URL || 'http://localhost:3000/api');
+        console.log('Token available:', !!getToken());
         projectsData = await api.projects.getAll();
         console.log('Projects fetched:', projectsData);
-      } catch (projectsError) {
+      } catch (projectsError: any) {
         console.error('Error fetching projects:', projectsError);
+        console.error('Error details:', {
+          message: projectsError?.message,
+          stack: projectsError?.stack,
+          name: projectsError?.name
+        });
         // Set empty array as fallback
         projectsData = [];
       }
@@ -218,152 +226,155 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Header with Gradient */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-2xl shadow-xl">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative p-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                  <span className="text-2xl font-bold text-white">
-                    {(user.firstName || user.email).charAt(0).toUpperCase()}
-                  </span>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-6">
+          {/* Welcome Header with Gradient */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-2xl shadow-xl">
+            <div className="absolute inset-0 bg-black/20"></div>
+            <div className="relative p-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                      <span className="text-2xl font-bold text-white">
+                        {(user.firstName || user.email).charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <h1 className="text-3xl font-bold text-white">
+                        Welcome back, {user.firstName || user.email}!
+                      </h1>
+                      <p className="text-blue-100 mt-1 flex items-center gap-2">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-white/20 text-white">
+                          {user.role.replace('_', ' ').toUpperCase()}
+                        </span>
+                        • Grants Platform
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="hidden sm:block">
+                  <div className="text-right">
+                    <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
+                      <p className="text-sm text-blue-100 font-medium">
+                        {new Date().toLocaleDateString('en-US', { 
+                          weekday: 'long', 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}
+                      </p>
+                      <p className="text-xs text-blue-200 mt-1">
+                        {new Date().toLocaleTimeString('en-US', { 
+                          hour: '2-digit', 
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* Decorative elements */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-16 translate-x-16"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12"></div>
+          </div>
+
+          {/* Key Metrics with Enhanced Design */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="group relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
+                    <DocumentIcon className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                  </div>
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-white">
-                    Welcome back, {user.firstName || user.email}!
-                  </h1>
-                  <p className="text-blue-100 mt-1 flex items-center gap-2">
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-white/20 text-white">
-                      {user.role.replace('_', ' ').toUpperCase()}
-                    </span>
-                    • SubGrant Management Platform
-                  </p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Active Projects</p>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{kpiData?.activeProjects || 0}</p>
+                  <div className="flex items-center text-xs text-green-600 dark:text-green-400">
+                    <span className="mr-1">↗</span>
+                    <span>+12% from last month</span>
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="hidden sm:block">
-              <div className="text-right">
-                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
-                  <p className="text-sm text-blue-100 font-medium">
-                    {new Date().toLocaleDateString('en-US', { 
-                      weekday: 'long', 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    })}
-                  </p>
-                  <p className="text-xs text-blue-200 mt-1">
-                    {new Date().toLocaleTimeString('en-US', { 
-                      hour: '2-digit', 
-                      minute: '2-digit'
-                    })}
-                  </p>
+
+            <div className="group relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg">
+                    <CheckCircleIcon className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Approved Budgets</p>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{kpiData?.approvedBudgets || 0}</p>
+                  <div className="flex items-center text-xs text-green-600 dark:text-green-400">
+                    <span className="mr-1">↗</span>
+                    <span>+8% from last month</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="group relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700">
+              <div className="absolute inset-0 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-yellow-500 to-amber-600 shadow-lg">
+                    <CurrencyDollarIcon className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></div>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Total Disbursements</p>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{kpiData?.totalDisbursements || 0}</p>
+                  <div className="flex items-center text-xs text-blue-600 dark:text-blue-400">
+                    <span className="mr-1">→</span>
+                    <span>Steady this month</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="group relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 shadow-lg">
+                    <ClockIcon className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <div className="w-2 h-2 rounded-full bg-orange-400 animate-pulse"></div>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Pending Disbursements</p>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{kpiData?.pendingDisbursements || 0}</p>
+                  <div className="flex items-center text-xs text-orange-600 dark:text-orange-400">
+                    <span className="mr-1">⚠</span>
+                    <span>Needs attention</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-16 translate-x-16"></div>
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12"></div>
-      </div>
-
-      {/* Key Metrics with Enhanced Design */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="group relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div className="relative p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
-                <DocumentIcon className="w-6 h-6 text-white" />
-              </div>
-              <div className="text-right">
-                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-              </div>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Active Projects</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{kpiData?.activeProjects || 0}</p>
-              <div className="flex items-center text-xs text-green-600 dark:text-green-400">
-                <span className="mr-1">↗</span>
-                <span>+12% from last month</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="group relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700">
-          <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div className="relative p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg">
-                <CheckCircleIcon className="w-6 h-6 text-white" />
-              </div>
-              <div className="text-right">
-                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-              </div>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Approved Budgets</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{kpiData?.approvedBudgets || 0}</p>
-              <div className="flex items-center text-xs text-green-600 dark:text-green-400">
-                <span className="mr-1">↗</span>
-                <span>+8% from last month</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="group relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700">
-          <div className="absolute inset-0 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div className="relative p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-yellow-500 to-amber-600 shadow-lg">
-                <CurrencyDollarIcon className="w-6 h-6 text-white" />
-              </div>
-              <div className="text-right">
-                <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></div>
-              </div>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Total Disbursements</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{kpiData?.totalDisbursements || 0}</p>
-              <div className="flex items-center text-xs text-blue-600 dark:text-blue-400">
-                <span className="mr-1">→</span>
-                <span>Steady this month</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="group relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700">
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div className="relative p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 shadow-lg">
-                <ClockIcon className="w-6 h-6 text-white" />
-              </div>
-              <div className="text-right">
-                <div className="w-2 h-2 rounded-full bg-orange-400 animate-pulse"></div>
-              </div>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Pending Disbursements</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{kpiData?.pendingDisbursements || 0}</p>
-              <div className="flex items-center text-xs text-orange-600 dark:text-orange-400">
-                <span className="mr-1">⚠</span>
-                <span>Needs attention</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
         {/* Recent Projects */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
@@ -523,7 +534,8 @@ const Dashboard: React.FC = () => {
           ) : (
             <div className="text-center py-8">
               <DocumentIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 dark:text-gray-400">No contracts found</p>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No contracts yet</h3>
+              <p className="text-gray-500 dark:text-gray-400">Get started by creating your first contract</p>
               <Link to="/contracts" className="btn-primary mt-4 inline-flex items-center gap-2">
                 <PlusIcon />
                 Create Contract
@@ -588,7 +600,8 @@ const Dashboard: React.FC = () => {
           ) : (
             <div className="text-center py-8">
               <CurrencyDollarIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 dark:text-gray-400">No disbursements found</p>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No disbursements yet</h3>
+              <p className="text-gray-500 dark:text-gray-400">Get started by creating your first disbursement</p>
               <Link to="/disbursements" className="btn-primary mt-4 inline-flex items-center gap-2">
                 <PlusIcon />
                 Create Disbursement
@@ -599,7 +612,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Additional Sections */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
         {/* Quick Actions */}
         <div className="glass-card p-6">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Quick Actions</h2>
@@ -694,6 +707,7 @@ const Dashboard: React.FC = () => {
               </span>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>

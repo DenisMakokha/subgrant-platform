@@ -26,7 +26,7 @@ import {
   XMarkIcon,
   DocumentTextIcon,
   CurrencyDollarIcon,
-  TrendingUpIcon,
+  ArrowTrendingUpIcon,
   CalendarIcon,
   PresentationChartBarIcon,
   ChartPieIcon,
@@ -259,7 +259,7 @@ const ReportingAnalyticsTabs: React.FC = () => {
   const getTypeIcon = (type: string) => {
     const typeConfig: Record<string, any> = {
       financial: CurrencyDollarIcon,
-      progress: TrendingUpIcon,
+      progress: ArrowTrendingUpIcon,
       donor: UserGroupIcon,
       compliance: ShieldCheckIcon,
       impact: ChartBarIcon,
@@ -642,7 +642,7 @@ const ReportingAnalyticsTabs: React.FC = () => {
               <p className="text-green-100 text-sm font-medium">Active Projects</p>
               <p className="text-2xl font-bold">{analyticsData.activeProjects}</p>
             </div>
-            <TrendingUpIcon className="w-8 h-8 text-green-200" />
+            <ArrowTrendingUpIcon className="w-8 h-8 text-green-200" />
           </div>
         </div>
         

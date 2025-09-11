@@ -41,6 +41,8 @@ const receiptRoutes = require('./routes/receipts');
 const kpiRoutes = require('./routes/kpi');
 const notificationRoutes = require('./routes/notifications');
 const healthRoutes = require('./routes/health');
+const forumRoutes = require('./routes/forum');
+const forumAdminRoutes = require('./routes/forumAdmin');
 
 // Base route
 app.get('/', (req, res) => {
@@ -75,6 +77,8 @@ app.use('/api/receipts', receiptRoutes);
 app.use('/api/kpi', kpiRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/health', healthRoutes);
+app.use('/api/forum', forumRoutes);
+app.use('/api/forum-admin', forumAdminRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
