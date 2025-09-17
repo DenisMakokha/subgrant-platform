@@ -36,6 +36,9 @@ const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showVerificationBanner, setShowVerificationBanner] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState('');
+  const [resendLoading, setResendLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
@@ -55,13 +58,44 @@ const Login: React.FC = () => {
       // Update auth context
       login(response.user);
       
-      // Redirect to intended destination or dashboard
-      const from = location.state?.from?.pathname || '/dashboard';
+      // Role-based redirect
+      console.log('User role:', response.user.role);
+      let redirectPath = '/dashboard';
+      if (response.user.role === 'partner_user') {
+        redirectPath = '/partner/dashboard';
+        console.log('Redirecting partner to:', redirectPath);
+      } else {
+        console.log('Redirecting admin to:', redirectPath);
+      }
+      
+      // Use intended destination if it exists, otherwise use role-based default
+      const from = location.state?.from?.pathname || redirectPath;
+      console.log('Final redirect path:', from);
       navigate(from, { replace: true });
     } catch (err: any) {
-      setError(err.message || 'An error occurred during login');
+      // Check if it's an email verification error and user is a partner
+      if (err.message === 'Email not verified' && err.userRole === 'partner_user') {
+        setShowVerificationBanner(true);
+        setVerificationEmail(email);
+        setError('');
+      } else {
+        setError(err.message || 'An error occurred during login');
+        setShowVerificationBanner(false);
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    try {
+      setResendLoading(true);
+      await authApi.resendVerification(verificationEmail);
+      // Show success feedback
+    } catch (err: any) {
+      setError(err.message || 'Failed to resend verification email');
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -108,6 +142,37 @@ const Login: React.FC = () => {
 
         {/* Login Form */}
         <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 dark:border-gray-700/20 p-6">
+          {/* Email Verification Banner */}
+          {showVerificationBanner && (
+            <div className="bg-yellow-50 dark:bg-yellow-900/50 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4 mb-5">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3 flex-1">
+                  <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                    Email Verification Required
+                  </h3>
+                  <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
+                    <p>Please verify your email address before logging in. We've sent a verification link to <strong>{verificationEmail}</strong></p>
+                  </div>
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      onClick={handleResendVerification}
+                      disabled={resendLoading}
+                      className="text-sm bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200 px-3 py-1 rounded-md hover:bg-yellow-200 dark:hover:bg-yellow-700 disabled:opacity-50"
+                    >
+                      {resendLoading ? 'Sending...' : 'Resend Verification Email'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <form className="space-y-5" onSubmit={handleSubmit}>
             {error && (
               <div className="bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-800 rounded-xl p-4">

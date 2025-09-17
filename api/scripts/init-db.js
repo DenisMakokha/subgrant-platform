@@ -31,6 +31,29 @@ CREATE TABLE IF NOT EXISTS organizations (
     compliance_status VARCHAR(50) DEFAULT 'pending',
     due_diligence_completed BOOLEAN DEFAULT FALSE,
     due_diligence_date TIMESTAMP,
+    -- Primary Contact Information
+    primary_contact_name VARCHAR(255),
+    primary_contact_title VARCHAR(255),
+    primary_contact_phone VARCHAR(20),
+    primary_contact_email VARCHAR(255),
+    -- Enhanced Address Information
+    city VARCHAR(100),
+    state_province VARCHAR(100),
+    postal_code VARCHAR(20),
+    -- Banking Information
+    bank_name VARCHAR(255),
+    bank_branch VARCHAR(255),
+    account_name VARCHAR(255),
+    account_number VARCHAR(100),
+    swift_code VARCHAR(20),
+    -- Authorized Signatory
+    signatory_name VARCHAR(255),
+    signatory_title VARCHAR(255),
+    signatory_email VARCHAR(255),
+    -- Legal Structure
+    legal_structure VARCHAR(100),
+    incorporation_country VARCHAR(100),
+    incorporation_date DATE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by UUID,

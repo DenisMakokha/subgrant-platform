@@ -21,9 +21,18 @@ import {
   ChartBarIcon,
   DocumentTextIcon,
   TagIcon,
+  FolderIcon,
 } from '@heroicons/react/24/outline';
 
-interface Project {
+interface FinancialReportingDate {
+  id: string;
+  date: string;
+  type: 'predefined' | 'custom';
+  description?: string;
+  status: 'upcoming' | 'due' | 'submitted' | 'overdue';
+}
+
+interface Grant {
   id: string;
   name: string;
   description: string;
@@ -35,13 +44,20 @@ interface Project {
   total_disbursed?: number;
   partner_count?: number;
   donor_name?: string;
+  donor_contact_name?: string;
+  donor_contact_email?: string;
+  donor_contact_phone?: string;
   grant_number?: string;
-  project_manager?: string;
+  program_manager?: string;
+  financial_reporting_frequency?: string;
+  annual_report_due_date?: string;
+  custom_reporting_timeline?: string;
+  financial_reporting_dates?: FinancialReportingDate[];
   created_at: string;
   updated_at: string;
 }
 
-interface NewProject {
+interface NewGrant {
   name: string;
   description: string;
   open_date: string;
@@ -49,8 +65,15 @@ interface NewProject {
   currency: string;
   budget_amount: string;
   donor_name: string;
+  donor_contact_name: string;
+  donor_contact_email: string;
+  donor_contact_phone: string;
   grant_number: string;
-  project_manager: string;
+  program_manager: string;
+  financial_reporting_frequency: string;
+  annual_report_due_date: string;
+  custom_reporting_timeline: string;
+  financial_reporting_dates?: FinancialReportingDate[];
 }
 
 interface BudgetCategory {
@@ -63,11 +86,11 @@ interface BudgetCategory {
   is_active: boolean;
 }
 
-const ProjectManagementTabs: React.FC = () => {
+const GrantManagementTabs: React.FC = () => {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [grants, setGrants] = useState<Grant[]>([]);
   const [categories, setCategories] = useState<BudgetCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -75,11 +98,11 @@ const ProjectManagementTabs: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [selectedGrant, setSelectedGrant] = useState<Grant | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
-  const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
+  const [filteredGrants, setFilteredGrants] = useState<Grant[]>([]);
   const [showCreateCategoryModal, setShowCreateCategoryModal] = useState(false);
   const [showEditCategoryModal, setShowEditCategoryModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<BudgetCategory | null>(null);
@@ -105,7 +128,7 @@ const ProjectManagementTabs: React.FC = () => {
   };
   
   const [activeTab, setActiveTab] = useState(getActiveTabFromPath());
-  const [newProject, setNewProject] = useState<NewProject>({
+  const [newGrant, setNewGrant] = useState<NewGrant>({
     name: '',
     description: '',
     open_date: '',
@@ -113,51 +136,178 @@ const ProjectManagementTabs: React.FC = () => {
     currency: 'USD',
     budget_amount: '',
     donor_name: '',
+    donor_contact_name: '',
+    donor_contact_email: '',
+    donor_contact_phone: '',
     grant_number: '',
-    project_manager: ''
+    program_manager: '',
+    financial_reporting_frequency: 'quarterly',
+    annual_report_due_date: '',
+    custom_reporting_timeline: '',
+    financial_reporting_dates: []
+  });
+
+  // Financial Reporting Dates state
+  const [financialReportingDates, setFinancialReportingDates] = useState<FinancialReportingDate[]>([]);
+  const [newReportingDate, setNewReportingDate] = useState({
+    date: '',
+    description: '',
+    type: 'custom' as 'predefined' | 'custom'
   });
 
   // Fetch data on component mount
   useEffect(() => {
-    fetchProjects();
+    fetchGrants();
     fetchCategories();
   }, []);
 
+  // Generate suggested financial reporting dates based on frequency and grant duration (for reference only)
+  const generateSuggestedReportingDates = (openDate: string, closeDate: string, frequency: string): FinancialReportingDate[] => {
+    if (!openDate || !closeDate) return [];
+    
+    const start = new Date(openDate);
+    const end = new Date(closeDate);
+    const dates: FinancialReportingDate[] = [];
+    
+    let current = new Date(start);
+    let intervalMonths = 0;
+    
+    switch (frequency) {
+      case 'monthly':
+        intervalMonths = 1;
+        break;
+      case 'quarterly':
+        intervalMonths = 3;
+        break;
+      case 'semi-annual':
+        intervalMonths = 6;
+        break;
+      case 'annual':
+        intervalMonths = 12;
+        break;
+      default:
+        return [];
+    }
+    
+    let counter = 1;
+    while (current <= end) {
+      current = new Date(start);
+      current.setMonth(current.getMonth() + (intervalMonths * counter));
+      
+      if (current <= end) {
+        const today = new Date();
+        let status: 'upcoming' | 'due' | 'submitted' | 'overdue' = 'upcoming';
+        
+        if (current < today) {
+          status = 'overdue';
+        } else if (current.getTime() - today.getTime() <= 7 * 24 * 60 * 60 * 1000) {
+          status = 'due';
+        }
+        
+        dates.push({
+          id: `suggested-${counter}`,
+          date: current.toISOString().split('T')[0],
+          type: 'predefined',
+          description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} Report ${counter}`,
+          status
+        });
+      }
+      counter++;
+    }
+    
+    return dates;
+  };
+
+  // Add financial reporting date
+  const addFinancialReportingDate = () => {
+    if (!newReportingDate.date) return;
+    
+    const today = new Date();
+    const reportDate = new Date(newReportingDate.date);
+    let status: 'upcoming' | 'due' | 'submitted' | 'overdue' = 'upcoming';
+    
+    if (reportDate < today) {
+      status = 'overdue';
+    } else if (reportDate.getTime() - today.getTime() <= 7 * 24 * 60 * 60 * 1000) {
+      status = 'due';
+    }
+    
+    const reportingDate: FinancialReportingDate = {
+      id: `report-${Date.now()}`,
+      date: newReportingDate.date,
+      type: newReportingDate.type,
+      description: newReportingDate.description || 'Financial Report',
+      status
+    };
+    
+    setFinancialReportingDates(prev => [...prev, reportingDate].sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    ));
+    
+    setNewReportingDate({ date: '', description: '', type: 'custom' });
+  };
+
+  // Remove reporting date
+  const removeReportingDate = (id: string) => {
+    setFinancialReportingDates(prev => prev.filter(date => date.id !== id));
+  };
+
+  // Reset financial reporting dates when creating a new grant
+  const resetFinancialReportingDates = () => {
+    setFinancialReportingDates([]);
+  };
+
+  // Add suggested dates based on frequency (optional helper)
+  const addSuggestedReportingDates = () => {
+    if (newGrant.open_date && newGrant.close_date && newGrant.financial_reporting_frequency) {
+      const suggestedDates = generateSuggestedReportingDates(
+        newGrant.open_date,
+        newGrant.close_date,
+        newGrant.financial_reporting_frequency
+      );
+      
+      setFinancialReportingDates(prev => [
+        ...prev,
+        ...suggestedDates
+      ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
+    }
+  };
+
   // Auto-generate grant number when switching to create tab
   useEffect(() => {
-    if (activeTab === 'create' && !newProject.grant_number) {
+    if (activeTab === 'create' && !newGrant.grant_number) {
       generateGrantNumber();
     }
-  }, [activeTab, newProject.grant_number]);
+  }, [activeTab, newGrant.grant_number]);
 
-  // Filter projects based on search and status
+  // Filter grants based on search and status
   useEffect(() => {
-    let filtered = projects;
+    let filtered = grants;
     
     if (searchTerm) {
-      filtered = filtered.filter(project => 
-        project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.donor_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.grant_number?.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(grant => 
+        grant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        grant.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        grant.donor_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        grant.grant_number?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     
     if (statusFilter !== 'all') {
-      filtered = filtered.filter(project => project.status === statusFilter);
+      filtered = filtered.filter(grant => grant.status === statusFilter);
     }
     
-    setFilteredProjects(filtered);
-  }, [projects, searchTerm, statusFilter]);
+    setFilteredGrants(filtered);
+  }, [grants, searchTerm, statusFilter]);
 
-  const fetchProjects = async () => {
+  const fetchGrants = async () => {
     try {
       setLoading(true);
-      const response = await api.projects.getAll();
-      setProjects(response.projects || []);
-    } catch (err) {
-      setError('Failed to fetch projects');
-      console.error('Error fetching projects:', err);
+      const response = await api.fetchWithAuth('/api/projects');
+      setGrants(response.projects || []);
+    } catch (err: any) {
+      setError('Failed to load grants');
+      console.error('Error fetching grants:', err);
     } finally {
       setLoading(false);
     }
@@ -185,10 +335,10 @@ const ProjectManagementTabs: React.FC = () => {
     }
   };
 
-  const handleCreateProject = async () => {
+  const handleCreateGrant = async () => {
     try {
       // Validate budget allocations against category caps
-      const totalBudget = parseFloat(newProject.budget_amount) || 0;
+      const totalBudget = parseFloat(newGrant.budget_amount) || 0;
       const totalAllocated = Object.values(budgetAllocations).reduce((sum, amount) => sum + (parseFloat(amount) || 0), 0);
       
       for (const [categoryId, amount] of Object.entries(budgetAllocations)) {
@@ -197,28 +347,29 @@ const ProjectManagementTabs: React.FC = () => {
         const category = categories.find(cat => cat.id === categoryId);
         
         if (category?.cap_amount && allocatedAmount > category.cap_amount) {
-          setError(`Allocation for ${category.name} exceeds maximum cap of ${newProject.currency} ${category.cap_amount.toLocaleString()}`);
+          setError(`Allocation for ${category.name} exceeds maximum cap of ${newGrant.currency} ${category.cap_amount.toLocaleString()}`);
           return;
         }
         
         if (category?.cap_percentage && totalBudget > 0) {
           const maxAllowed = (totalBudget * category.cap_percentage) / 100;
           if (allocatedAmount > maxAllowed) {
-            setError(`Allocation for ${category.name} exceeds ${category.cap_percentage}% cap (${newProject.currency} ${maxAllowed.toLocaleString()})`);
+            setError(`Allocation for ${category.name} exceeds ${category.cap_percentage}% cap (${newGrant.currency} ${maxAllowed.toLocaleString()})`);
             return;
           }
         }
       }
 
-      const projectData = {
-        ...newProject,
+      const grantData = {
+        ...newGrant,
         budget_amount: totalBudget,
-        budget_allocations: budgetAllocations
+        budget_allocations: budgetAllocations,
+        financial_reporting_dates: financialReportingDates
       };
 
-      await api.projects.create(projectData);
+      await api.projects.create(grantData);
       
-      setNewProject({
+      setNewGrant({
         name: '',
         description: '',
         open_date: '',
@@ -226,75 +377,93 @@ const ProjectManagementTabs: React.FC = () => {
         currency: 'USD',
         budget_amount: '',
         donor_name: '',
+        donor_contact_name: '',
+        donor_contact_email: '',
+        donor_contact_phone: '',
         grant_number: '',
-        project_manager: ''
+        program_manager: '',
+        financial_reporting_frequency: 'quarterly',
+        annual_report_due_date: '',
+        custom_reporting_timeline: ''
       });
       setBudgetAllocations({});
       setSelectedBudgetCategories([]);
+      setFinancialReportingDates([]);
+      setNewReportingDate({
+        date: '',
+        description: '',
+        type: 'custom' as 'predefined' | 'custom'
+      });
       
-      await fetchProjects();
-      setSuccess('Project created successfully');
+      await fetchGrants();
+      setSuccess('Grant created successfully');
       setTimeout(() => setSuccess(null), 3000);
       setShowCreateModal(false);
       setActiveTab('overview');
     } catch (err) {
-      setError('Failed to create project');
-      console.error('Error creating project:', err);
+      setError('Failed to create grant');
+      console.error('Error creating grant:', err);
     }
   };
 
-  const handleEditProject = (project: Project) => {
-    setSelectedProject(project);
-    setNewProject({
-      name: project.name,
-      description: project.description,
-      open_date: project.open_date.split('T')[0],
-      close_date: project.close_date.split('T')[0],
-      currency: project.currency,
-      budget_amount: project.budget_amount?.toString() || '',
-      donor_name: project.donor_name || '',
-      grant_number: project.grant_number || '',
-      project_manager: project.project_manager || ''
+  const handleEditGrant = (grant: Grant) => {
+    setSelectedGrant(grant);
+    setNewGrant({
+      name: grant.name,
+      description: grant.description,
+      open_date: grant.open_date.split('T')[0],
+      close_date: grant.close_date.split('T')[0],
+      currency: grant.currency,
+      budget_amount: grant.budget_amount?.toString() || '',
+      donor_name: grant.donor_name || '',
+      donor_contact_name: grant.donor_contact_name || '',
+      donor_contact_email: grant.donor_contact_email || '',
+      donor_contact_phone: grant.donor_contact_phone || '',
+      grant_number: grant.grant_number || '',
+      program_manager: grant.program_manager || '',
+      financial_reporting_frequency: grant.financial_reporting_frequency || 'quarterly',
+      annual_report_due_date: grant.annual_report_due_date || '',
+      custom_reporting_timeline: grant.custom_reporting_timeline || ''
     });
     setShowEditModal(true);
   };
 
-  const handleUpdateProject = async () => {
-    if (!selectedProject) return;
+  const handleUpdateGrant = async () => {
+    if (!selectedGrant) return;
     
     try {
-      await api.projects.update(selectedProject.id, {
-        ...newProject,
-        budget_amount: parseFloat(newProject.budget_amount) || 0
+      await api.projects.update(selectedGrant.id, {
+        ...newGrant,
+        budget_amount: parseFloat(newGrant.budget_amount) || 0
       });
       
-      await fetchProjects();
-      setSuccess('Project updated successfully');
+      await fetchGrants();
+      setSuccess('Grant updated successfully');
       setTimeout(() => setSuccess(null), 3000);
       setShowEditModal(false);
-      setSelectedProject(null);
+      setSelectedGrant(null);
     } catch (err) {
-      setError('Failed to update project');
-      console.error('Error updating project:', err);
+      setError('Failed to update grant');
+      console.error('Error updating grant:', err);
     }
   };
 
-  const handleDeleteProject = async (project: Project) => {
-    if (window.confirm(`Are you sure you want to delete ${project.name}? This action cannot be undone.`)) {
+  const handleDeleteGrant = async (grant: Grant) => {
+    if (window.confirm(`Are you sure you want to delete ${grant.name}? This action cannot be undone.`)) {
       try {
-        await api.projects.delete(project.id);
-        setSuccess('Project deleted successfully');
+        await api.projects.delete(grant.id);
+        setSuccess('Grant deleted successfully');
         setTimeout(() => setSuccess(null), 3000);
-        await fetchProjects();
+        await fetchGrants();
       } catch (err) {
-        setError('Failed to delete project');
-        console.error('Error deleting project:', err);
+        setError('Failed to delete grant');
+        console.error('Error deleting grant:', err);
       }
     }
   };
 
-  const handleViewProject = (project: Project) => {
-    setSelectedProject(project);
+  const handleViewGrant = (grant: Grant) => {
+    setSelectedGrant(grant);
     setShowViewModal(true);
   };
 
@@ -309,32 +478,30 @@ const ProjectManagementTabs: React.FC = () => {
       const randomNum = Math.floor(Math.random() * 9000) + 1000; // 4-digit random number
       const grantNumber = `GRN-${year}${month}-${randomNum}`;
       
-      setNewProject({...newProject, grant_number: grantNumber});
+      setNewGrant({...newGrant, grant_number: grantNumber});
       setIsGeneratingGrantNumber(false);
     }, 800);
   };
 
-  const exportProjects = () => {
-    const csvContent = [
-      ['Name', 'Description', 'Status', 'Budget', 'Currency', 'Donor', 'Start Date', 'End Date', 'Manager'].join(','),
-      ...filteredProjects.map(project => [
-        project.name,
-        project.description,
-        project.status,
-        project.budget_amount || 0,
-        project.currency,
-        project.donor_name || '',
-        project.open_date,
-        project.close_date,
-        project.project_manager || ''
-      ].join(','))
-    ].join('\n');
+  const exportGrants = () => {
+    const csvContent = "data:text/csv;charset=utf-8," + 
+      "Grant Name,Grant Number,Description,Status,Currency,Budget Amount,Program Manager,Donor Organization,Donor Contact Name,Donor Contact Email,Donor Contact Phone,Open Date,Close Date,Financial Reporting,Annual Reporting,Custom Timeline,Reporting Dates Count,Next Reporting Date,Overdue Reports\n" + 
+      filteredGrants.map((grant: Grant) => {
+        const reportingDates = grant.financial_reporting_dates || [];
+        const reportingDatesCount = reportingDates.length;
+        const nextReportingDate = reportingDates
+          .filter(date => new Date(date.date) >= new Date())
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0]?.date || '';
+        const overdueReports = reportingDates.filter(date => date.status === 'overdue').length;
+        
+        return `"${grant.name}","${grant.grant_number || ''}","${grant.description}","${grant.status}","${grant.currency}","${grant.budget_amount || ''}","${grant.program_manager || ''}","${grant.donor_name || ''}","${grant.donor_contact_name || ''}","${grant.donor_contact_email || ''}","${grant.donor_contact_phone || ''}","${grant.open_date}","${grant.close_date}","${grant.financial_reporting_frequency || ''}","${grant.annual_report_due_date || ''}","${grant.custom_reporting_timeline || ''}","${reportingDatesCount}","${nextReportingDate}","${overdueReports}"`;
+      }).join("\n");
     
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'projects.csv';
+    a.download = 'grants.csv';
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -507,7 +674,7 @@ const ProjectManagementTabs: React.FC = () => {
                     <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                     <input
                       type="text"
-                      placeholder="Search projects..."
+                      placeholder="Search grants..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -530,7 +697,7 @@ const ProjectManagementTabs: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={exportProjects}
+                    onClick={exportGrants}
                     className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
                   >
                     <ArrowDownTrayIcon className="w-5 h-5" />
@@ -541,27 +708,46 @@ const ProjectManagementTabs: React.FC = () => {
                     className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
                   >
                     <PlusIcon className="w-5 h-5" />
-                    New Project
+                    New Grant
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Projects Grid/List */}
+            {/* Grants Grid/List */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-              {viewMode === 'grid' ? (
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : filteredGrants.length === 0 ? (
+                <div className="text-center py-12">
+                  <FolderIcon className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No grants</h3>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating a new grant.</p>
+                  <div className="mt-6">
+                    <button
+                      onClick={() => setShowCreateModal(true)}
+                      className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+                      New Grant
+                    </button>
+                  </div>
+                </div>
+              ) : viewMode === 'grid' ? (
                 <div className="p-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredProjects.map((project) => (
-                      <div key={project.id} className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
+                    {filteredGrants.map((grant: Grant) => (
+                      <div key={grant.id} className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center gap-2">
-                            {getStatusIcon(project.status)}
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">{project.name}</h3>
+                            {getStatusIcon(grant.status)}
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{grant.name}</h3>
                           </div>
-                          {getStatusBadge(project.status)}
+                          {getStatusBadge(grant.status)}
                         </div>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">{project.description}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">{grant.description}</p>
                         <div className="space-y-2 text-sm mb-4">
                           <div className="flex justify-between">
                             <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
@@ -569,7 +755,7 @@ const ProjectManagementTabs: React.FC = () => {
                               Budget:
                             </span>
                             <span className="font-medium text-gray-900 dark:text-white">
-                              {project.currency} {project.budget_amount?.toLocaleString() || '0'}
+                              {grant.currency} {grant.budget_amount?.toLocaleString() || '0'}
                             </span>
                           </div>
                           <div className="flex justify-between">
@@ -577,42 +763,83 @@ const ProjectManagementTabs: React.FC = () => {
                               <BuildingOfficeIcon className="w-4 h-4" />
                               Donor:
                             </span>
-                            <span className="font-medium text-gray-900 dark:text-white truncate ml-2">{project.donor_name || 'N/A'}</span>
+                            <span className="font-medium text-gray-900 dark:text-white truncate ml-2">{grant.donor_name || 'N/A'}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
                               <UserIcon className="w-4 h-4" />
                               Manager:
                             </span>
-                            <span className="font-medium text-gray-900 dark:text-white truncate ml-2">{project.project_manager || 'N/A'}</span>
+                            <span className="font-medium text-gray-900 dark:text-white truncate ml-2">{grant.program_manager || 'N/A'}</span>
                           </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                              <CalendarIcon className="w-4 h-4" />
+                              Start Date:
+                            </span>
+                            <span className="font-medium text-gray-900 dark:text-white">
+                              {grant.open_date ? new Date(grant.open_date).toLocaleDateString() : 'Not set'}
+                            </span>
+                          </div>
+                          {/* Financial Reporting Dates */}
+                          {grant.financial_reporting_dates && grant.financial_reporting_dates.length > 0 && (
+                            <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+                              <div className="flex items-center gap-1 mb-2">
+                                <CalendarIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
+                                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                                  Reporting Dates ({grant.financial_reporting_dates.length})
+                                </span>
+                              </div>
+                              <div className="flex flex-wrap gap-1">
+                                {grant.financial_reporting_dates.slice(0, 3).map((reportDate) => (
+                                  <span
+                                    key={reportDate.id}
+                                    className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
+                                      reportDate.status === 'overdue' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' :
+                                      reportDate.status === 'due' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
+                                      reportDate.status === 'submitted' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
+                                      'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                                    }`}
+                                    title={`${reportDate.description} - ${new Date(reportDate.date).toLocaleDateString()}`}
+                                  >
+                                    {new Date(reportDate.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                  </span>
+                                ))}
+                                {grant.financial_reporting_dates.length > 3 && (
+                                  <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                                    +{grant.financial_reporting_dates.length - 3} more
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                         <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-                          <div className="flex items-center space-x-1">
+                          <div className="flex items-center space-x-2">
                             <button
-                              onClick={() => handleViewProject(project)}
+                              onClick={() => handleViewGrant(grant)}
                               className="p-2 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                              title="View project details"
+                              title="View grant details"
                             >
                               <EyeIcon className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => handleEditProject(project)}
+                              onClick={() => handleEditGrant(grant)}
                               className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                              title="Edit project"
+                              title="Edit grant"
                             >
                               <PencilIcon className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => handleDeleteProject(project)}
+                              onClick={() => handleDeleteGrant(grant)}
                               className="p-2 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                              title="Delete project"
+                              title="Delete grant"
                             >
                               <TrashIcon className="w-4 h-4" />
                             </button>
                           </div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">
-                            {new Date(project.open_date).toLocaleDateString()} - {new Date(project.close_date).toLocaleDateString()}
+                            {new Date(grant.open_date).toLocaleDateString()} - {new Date(grant.close_date).toLocaleDateString()}
                           </div>
                         </div>
                       </div>
@@ -620,94 +847,73 @@ const ProjectManagementTabs: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead className="bg-gray-50 dark:bg-gray-700">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Project</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Budget</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Donor</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Timeline</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                      {filteredProjects.map((project) => (
-                        <tr key={project.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              {getStatusIcon(project.status)}
-                              <div className="ml-3">
-                                <div className="text-sm font-medium text-gray-900 dark:text-white">{project.name}</div>
-                                <div className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">{project.description}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {getStatusBadge(project.status)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            {project.currency} {project.budget_amount?.toLocaleString() || '0'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            {project.donor_name || 'N/A'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                            {new Date(project.open_date).toLocaleDateString()} - {new Date(project.close_date).toLocaleDateString()}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <div className="flex items-center space-x-2">
-                              <button
-                                onClick={() => handleViewProject(project)}
-                                className="p-1.5 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
-                                title="View project details"
-                              >
-                                <EyeIcon className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleEditProject(project)}
-                                className="p-1.5 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors"
-                                title="Edit project"
-                              >
-                                <PencilIcon className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteProject(project)}
-                                className="p-1.5 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                                title="Delete project"
-                              >
-                                <TrashIcon className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
+                <div className="p-6">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                      <thead className="bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Grant</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Budget</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Program Manager</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Start Date</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-              
-              {filteredProjects.length === 0 && !loading && (
-                <div className="text-center py-12">
-                  <div className="text-gray-400 dark:text-gray-500 mb-4">
-                    <ChartBarIcon className="w-16 h-16 mx-auto" />
+                      </thead>
+                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        {filteredGrants.map((grant: Grant) => (
+                          <tr key={grant.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                {getStatusIcon(grant.status)}
+                                <div className="ml-3">
+                                  <div className="text-sm font-medium text-gray-900 dark:text-white">{grant.name}</div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">{grant.description}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {getStatusBadge(grant.status)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                              {grant.currency} {grant.budget_amount?.toLocaleString() || '0'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                              {grant.program_manager || 'Unassigned'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                              {grant.open_date ? new Date(grant.open_date).toLocaleDateString() : 'Not set'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  onClick={() => handleViewGrant(grant)}
+                                  className="p-1.5 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                                  title="View grant details"
+                                >
+                                  <EyeIcon className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleEditGrant(grant)}
+                                  className="p-1.5 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors"
+                                  title="Edit grant"
+                                >
+                                  <PencilIcon className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteGrant(grant)}
+                                  className="p-1.5 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                                  title="Delete grant"
+                                >
+                                  <TrashIcon className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                    {searchTerm || statusFilter !== 'all' ? 'No projects match your filters' : 'No projects found'}
-                  </h3>
-                  <p className="text-gray-500 dark:text-gray-400 mb-4">
-                    {searchTerm || statusFilter !== 'all' ? 'Try adjusting your search or filters.' : 'Get started by creating your first project.'}
-                  </p>
-                  {!searchTerm && statusFilter === 'all' && (
-                    <button
-                      onClick={() => setActiveTab('create')}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 mx-auto transition-colors"
-                    >
-                      <PlusIcon className="w-5 h-5" />
-                      Create Project
-                    </button>
-                  )}
                 </div>
               )}
             </div>
@@ -720,13 +926,37 @@ const ProjectManagementTabs: React.FC = () => {
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
               {/* Header */}
               <div className="bg-white dark:bg-gray-800 px-8 py-6 border-b border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                    <PlusIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  </div>
+                <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">Create New Project</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Set up a new grant project with budget allocations</p>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                        <PlusIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">Create New Grant</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Set up a new grant with donor information and reporting timelines</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="hidden sm:block">
+                    <div className="text-right">
+                      <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
+                        <p className="text-sm text-blue-100 font-medium">
+                          {new Date().toLocaleDateString('en-US', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })}
+                        </p>
+                        <p className="text-xs text-blue-200 mt-1">
+                          {new Date().toLocaleTimeString('en-US', { 
+                            hour: '2-digit', 
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -743,14 +973,14 @@ const ProjectManagementTabs: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                          Project Name *
+                          Grant Name *
                         </label>
                         <input
                           type="text"
-                          value={newProject.name}
-                          onChange={(e) => setNewProject({...newProject, name: e.target.value})}
+                          value={newGrant.name}
+                          onChange={(e) => setNewGrant({...newGrant, name: e.target.value})}
                           className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm"
-                          placeholder="Enter project name"
+                          placeholder="Enter grant name"
                           required
                         />
                       </div>
@@ -762,8 +992,8 @@ const ProjectManagementTabs: React.FC = () => {
                         <div className="relative">
                           <input
                             type="text"
-                            value={newProject.grant_number}
-                            onChange={(e) => setNewProject({...newProject, grant_number: e.target.value})}
+                            value={newGrant.grant_number}
+                            onChange={(e) => setNewGrant({...newGrant, grant_number: e.target.value})}
                             className="w-full px-4 py-3 pr-32 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm"
                             placeholder="Auto-generate or enter manually"
                           />
@@ -788,11 +1018,11 @@ const ProjectManagementTabs: React.FC = () => {
                             )}
                           </button>
                         </div>
-                        {newProject.grant_number && (
+                        {newGrant.grant_number && (
                           <div className="mt-2 flex items-center gap-2 text-sm">
                             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                             <span className="text-green-600 dark:text-green-400 font-medium">
-                              Grant number ready: {newProject.grant_number}
+                              Grant number ready: {newGrant.grant_number}
                             </span>
                           </div>
                         )}
@@ -804,18 +1034,18 @@ const ProjectManagementTabs: React.FC = () => {
                   <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                       <DocumentTextIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
-                      Project Description
+                      Grant Description
                     </h4>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                         Description
                       </label>
                       <textarea
-                        value={newProject.description}
-                        onChange={(e) => setNewProject({...newProject, description: e.target.value})}
+                        value={newGrant.description}
+                        onChange={(e) => setNewGrant({...newGrant, description: e.target.value})}
                         rows={4}
                         className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm resize-none"
-                        placeholder="Describe the project objectives, scope, and key activities..."
+                        placeholder="Describe the grant objectives, scope, and key activities..."
                       />
                     </div>
                   </div>
@@ -824,7 +1054,7 @@ const ProjectManagementTabs: React.FC = () => {
                   <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                       <CalendarIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                      Project Timeline
+                      Grant Timeline
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
@@ -833,8 +1063,8 @@ const ProjectManagementTabs: React.FC = () => {
                         </label>
                         <input
                           type="date"
-                          value={newProject.open_date}
-                          onChange={(e) => setNewProject({...newProject, open_date: e.target.value})}
+                          value={newGrant.open_date}
+                          onChange={(e) => setNewGrant({...newGrant, open_date: e.target.value})}
                           className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm"
                         />
                       </div>
@@ -845,8 +1075,8 @@ const ProjectManagementTabs: React.FC = () => {
                         </label>
                         <input
                           type="date"
-                          value={newProject.close_date}
-                          onChange={(e) => setNewProject({...newProject, close_date: e.target.value})}
+                          value={newGrant.close_date}
+                          onChange={(e) => setNewGrant({...newGrant, close_date: e.target.value})}
                           className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm"
                         />
                       </div>
@@ -865,8 +1095,8 @@ const ProjectManagementTabs: React.FC = () => {
                           Currency
                         </label>
                         <select
-                          value={newProject.currency}
-                          onChange={(e) => setNewProject({...newProject, currency: e.target.value})}
+                          value={newGrant.currency}
+                          onChange={(e) => setNewGrant({...newGrant, currency: e.target.value})}
                           className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm"
                         >
                           <option value="USD">USD - US Dollar</option>
@@ -882,8 +1112,8 @@ const ProjectManagementTabs: React.FC = () => {
                         </label>
                         <input
                           type="number"
-                          value={newProject.budget_amount}
-                          onChange={(e) => setNewProject({...newProject, budget_amount: e.target.value})}
+                          value={newGrant.budget_amount}
+                          onChange={(e) => setNewGrant({...newGrant, budget_amount: e.target.value})}
                           className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm"
                           placeholder="0.00"
                           min="0"
@@ -893,14 +1123,14 @@ const ProjectManagementTabs: React.FC = () => {
                       
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                          Project Manager
+                          Program Manager
                         </label>
                         <input
                           type="text"
-                          value={newProject.project_manager}
-                          onChange={(e) => setNewProject({...newProject, project_manager: e.target.value})}
+                          value={newGrant.program_manager}
+                          onChange={(e) => setNewGrant({...newGrant, program_manager: e.target.value})}
                           className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm"
-                          placeholder="Enter manager name"
+                          placeholder="Enter program manager name"
                         />
                       </div>
                     </div>
@@ -911,12 +1141,174 @@ const ProjectManagementTabs: React.FC = () => {
                       </label>
                       <input
                         type="text"
-                        value={newProject.donor_name}
-                        onChange={(e) => setNewProject({...newProject, donor_name: e.target.value})}
+                        value={newGrant.donor_name}
+                        onChange={(e) => setNewGrant({...newGrant, donor_name: e.target.value})}
                         className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm"
                         placeholder="Enter donor organization name"
                       />
                     </div>
+                  </div>
+
+                  {/* Donor Contact Information Section */}
+                  <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                      <UserIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                      Donor Contact Information
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                          Contact Person Name
+                        </label>
+                        <input
+                          type="text"
+                          value={newGrant.donor_contact_name}
+                          onChange={(e) => setNewGrant({...newGrant, donor_contact_name: e.target.value})}
+                          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm"
+                          placeholder="Contact person full name"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                          Contact Email
+                        </label>
+                        <input
+                          type="email"
+                          value={newGrant.donor_contact_email}
+                          onChange={(e) => setNewGrant({...newGrant, donor_contact_email: e.target.value})}
+                          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm"
+                          placeholder="contact@donor.org"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                          Contact Phone
+                        </label>
+                        <input
+                          type="tel"
+                          value={newGrant.donor_contact_phone}
+                          onChange={(e) => setNewGrant({...newGrant, donor_contact_phone: e.target.value})}
+                          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm"
+                          placeholder="+1 (555) 123-4567"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Financial Reporting Dates */}
+                  <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <div className="flex justify-between items-center mb-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                          <CalendarIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        </div>
+                        <div>
+                          <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Financial Reporting Dates</h4>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Add specific dates when financial reports are due</p>
+                        </div>
+                      </div>
+                      {newGrant.open_date && newGrant.close_date && newGrant.financial_reporting_frequency && (
+                        <button
+                          onClick={addSuggestedReportingDates}
+                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-all duration-200 shadow-sm hover:shadow-md"
+                        >
+                          <PlusIcon className="w-4 h-4" />
+                          Add Suggested Dates
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Add New Reporting Date */}
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-6">
+                      <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Add Reporting Date</h5>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                            Report Date
+                          </label>
+                          <input
+                            type="date"
+                            value={newReportingDate.date}
+                            onChange={(e) => setNewReportingDate({...newReportingDate, date: e.target.value})}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                            Description
+                          </label>
+                          <input
+                            type="text"
+                            value={newReportingDate.description}
+                            onChange={(e) => setNewReportingDate({...newReportingDate, description: e.target.value})}
+                            placeholder="e.g., Quarterly Report Q1"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                          />
+                        </div>
+                        <div className="flex items-end">
+                          <button
+                            onClick={addFinancialReportingDate}
+                            disabled={!newReportingDate.date}
+                            className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm flex items-center justify-center gap-2 transition-all duration-200"
+                          >
+                            <PlusIcon className="w-4 h-4" />
+                            Add Date
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Reporting Dates List */}
+                    {financialReportingDates.length > 0 ? (
+                      <div className="space-y-3">
+                        <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Scheduled Reporting Dates</h5>
+                        {financialReportingDates.map((reportDate) => (
+                          <div key={reportDate.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-3 h-3 rounded-full ${
+                                reportDate.status === 'overdue' ? 'bg-red-500' :
+                                reportDate.status === 'due' ? 'bg-yellow-500' :
+                                reportDate.status === 'submitted' ? 'bg-green-500' :
+                                'bg-blue-500'
+                              }`}></div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                  {reportDate.description}
+                                </p>
+                                <p className="text-xs text-gray-600 dark:text-gray-400">
+                                  {new Date(reportDate.date).toLocaleDateString()} • {reportDate.type === 'predefined' ? 'Suggested' : 'Custom'}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                reportDate.status === 'overdue' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' :
+                                reportDate.status === 'due' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
+                                reportDate.status === 'submitted' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
+                                'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                              }`}>
+                                {reportDate.status}
+                              </span>
+                              <button
+                                onClick={() => removeReportingDate(reportDate.id)}
+                                className="p-1 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                                title="Remove reporting date"
+                              >
+                                <TrashIcon className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 text-gray-500 dark:text-gray-400">
+                        <CalendarIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">No financial reporting dates added yet</p>
+                        <p className="text-xs mt-1">Add dates manually or use suggested dates based on reporting frequency</p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Budget Category Allocations */}
@@ -928,7 +1320,7 @@ const ProjectManagementTabs: React.FC = () => {
                         </div>
                         <div>
                           <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Budget Category Allocations</h4>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Allocate your project budget across different categories</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Allocate your grant budget across different categories</p>
                         </div>
                       </div>
                       <button
@@ -946,13 +1338,13 @@ const ProjectManagementTabs: React.FC = () => {
                         <div>
                           <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Allocated</p>
                           <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                            {newProject.currency} {Object.values(budgetAllocations).reduce((sum, amount) => sum + (parseFloat(amount) || 0), 0).toLocaleString()}
+                            {newGrant.currency} {Object.values(budgetAllocations).reduce((sum, amount) => sum + (parseFloat(amount) || 0), 0).toLocaleString()}
                           </p>
                         </div>
                         <div className="text-right">
                           <p className="text-sm text-gray-600 dark:text-gray-400">Budget Remaining</p>
                           <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                            {newProject.currency} {((parseFloat(newProject.budget_amount) || 0) - Object.values(budgetAllocations).reduce((sum, amount) => sum + (parseFloat(amount) || 0), 0)).toLocaleString()}
+                            {newGrant.currency} {((parseFloat(newGrant.budget_amount) || 0) - Object.values(budgetAllocations).reduce((sum, amount) => sum + (parseFloat(amount) || 0), 0)).toLocaleString()}
                           </p>
                         </div>
                       </div>
@@ -977,7 +1369,7 @@ const ProjectManagementTabs: React.FC = () => {
                         {categories.filter(cat => cat.is_active && !selectedBudgetCategories.includes(cat.id)).map((category) => (
                           <option key={category.id} value={category.id}>
                             {category.name}
-                            {category.cap_amount && ` (Max: ${newProject.currency} ${category.cap_amount.toLocaleString()})`}
+                            {category.cap_amount && ` (Max: ${newGrant.currency} ${category.cap_amount.toLocaleString()})`}
                             {category.cap_percentage && ` (Cap: ${category.cap_percentage}%)`}
                           </option>
                         ))}
@@ -992,7 +1384,7 @@ const ProjectManagementTabs: React.FC = () => {
                       if (!category) return null;
                       
                       return (
-                        <div key={categoryId} className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-xl p-5 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all duration-200">
+                        <div key={categoryId} className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-xl p-5 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200">
                           <div className="flex justify-between items-start mb-4">
                             <div className="flex-1">
                               <div className="flex items-center gap-3">
@@ -1010,7 +1402,7 @@ const ProjectManagementTabs: React.FC = () => {
                             <div className="flex items-center gap-3">
                               {(category.cap_amount || category.cap_percentage) && (
                                 <div className="text-xs text-gray-500 dark:text-gray-400 text-right bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded-lg">
-                                  {category.cap_amount && <div>Max: {newProject.currency} {category.cap_amount.toLocaleString()}</div>}
+                                  {category.cap_amount && <div>Max: {newGrant.currency} {category.cap_amount.toLocaleString()}</div>}
                                   {category.cap_percentage && <div>Cap: {category.cap_percentage}%</div>}
                                 </div>
                               )}
@@ -1034,7 +1426,7 @@ const ProjectManagementTabs: React.FC = () => {
                             </div>
                             <div className="flex-1">
                               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Allocation Amount ({newProject.currency})
+                                Allocation Amount ({newGrant.currency})
                               </label>
                               <input
                                 type="number"
@@ -1089,11 +1481,11 @@ const ProjectManagementTabs: React.FC = () => {
                       Cancel
                     </button>
                     <button
-                      onClick={handleCreateProject}
+                      onClick={handleCreateGrant}
                       className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl transition-all duration-200 font-medium shadow-lg hover:shadow-xl flex items-center gap-2"
                     >
                       <PlusIcon className="w-5 h-5" />
-                      Create Project
+                      Create Grant
                     </button>
                   </div>
                 </div>
@@ -1105,33 +1497,33 @@ const ProjectManagementTabs: React.FC = () => {
       case 'timeline':
         return (
           <div className="glass-card p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Project Timeline</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Grant Timeline</h3>
             <div className="space-y-6">
-              {projects.map((project) => (
-                <div key={project.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+              {grants.map((grant) => (
+                <div key={grant.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-md font-medium text-gray-900 dark:text-white">{project.name}</h4>
+                    <h4 className="text-md font-medium text-gray-900 dark:text-white">{grant.name}</h4>
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      project.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
-                      project.status === 'draft' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
+                      grant.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
+                      grant.status === 'draft' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
                       'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
                     }`}>
-                      {project.status}
+                      {grant.status}
                     </span>
                   </div>
                   <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
                     <div className="flex items-center">
                       <span className="font-medium">Start:</span>
-                      <span className="ml-1">{new Date(project.open_date).toLocaleDateString()}</span>
+                      <span className="ml-1">{new Date(grant.open_date).toLocaleDateString()}</span>
                     </div>
                     <div className="flex items-center">
                       <span className="font-medium">End:</span>
-                      <span className="ml-1">{new Date(project.close_date).toLocaleDateString()}</span>
+                      <span className="ml-1">{new Date(grant.close_date).toLocaleDateString()}</span>
                     </div>
                     <div className="flex items-center">
                       <span className="font-medium">Duration:</span>
                       <span className="ml-1">
-                        {Math.ceil((new Date(project.close_date).getTime() - new Date(project.open_date).getTime()) / (1000 * 60 * 60 * 24))} days
+                        {Math.ceil((new Date(grant.close_date).getTime() - new Date(grant.open_date).getTime()) / (1000 * 60 * 60 * 24))} days
                       </span>
                     </div>
                   </div>
@@ -1140,17 +1532,17 @@ const ProjectManagementTabs: React.FC = () => {
                       <div 
                         className="bg-blue-600 h-2 rounded-full" 
                         style={{ 
-                          width: project.status === 'completed' ? '100%' : 
-                                 project.status === 'active' ? '60%' : '20%' 
+                          width: grant.status === 'completed' ? '100%' : 
+                                 grant.status === 'active' ? '60%' : '20%' 
                         }}
                       ></div>
                     </div>
                   </div>
                 </div>
               ))}
-              {projects.length === 0 && (
+              {grants.length === 0 && (
                 <div className="text-center py-8">
-                  <p className="text-gray-500 dark:text-gray-400">No projects to display in timeline view.</p>
+                  <p className="text-gray-500 dark:text-gray-400">No grants to display in timeline view.</p>
                 </div>
               )}
             </div>
@@ -1165,7 +1557,7 @@ const ProjectManagementTabs: React.FC = () => {
               <div className="flex justify-between items-center">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Budget Categories</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Manage budget categories for project allocation</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Manage budget categories for grant allocation</p>
                 </div>
                 <button
                   onClick={() => setShowCreateCategoryModal(true)}
@@ -1313,9 +1705,9 @@ const ProjectManagementTabs: React.FC = () => {
         <div className="p-1">
           <nav className="flex space-x-1" aria-label="Tabs">
             {[
-              { id: 'overview', name: 'Projects Overview', icon: <ChartBarIcon className="w-4 h-4" /> },
-              { id: 'create', name: 'Create Project', icon: <PlusIcon className="w-4 h-4" /> },
-              { id: 'timeline', name: 'Project Timeline', icon: <CalendarIcon className="w-4 h-4" /> },
+              { id: 'overview', name: 'Grants Overview', icon: <ChartBarIcon className="w-4 h-4" /> },
+              { id: 'create', name: 'Create Grant', icon: <PlusIcon className="w-4 h-4" /> },
+              { id: 'timeline', name: 'Grant Timeline', icon: <CalendarIcon className="w-4 h-4" /> },
               { id: 'categories', name: 'Budget Categories', icon: <TagIcon className="w-4 h-4" /> }
             ].map((tab) => (
               <button
@@ -1355,7 +1747,7 @@ const ProjectManagementTabs: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
           <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 rounded-2xl shadow-2xl">
             <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Create New Project</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Create New Grant</h3>
               <button
                 onClick={() => setShowCreateModal(false)}
                 className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
@@ -1368,12 +1760,12 @@ const ProjectManagementTabs: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Project Name *
+                      Grant Name *
                     </label>
                     <input
                       type="text"
-                      value={newProject.name}
-                      onChange={(e) => setNewProject({...newProject, name: e.target.value})}
+                      value={newGrant.name}
+                      onChange={(e) => setNewGrant({...newGrant, name: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       required
                     />
@@ -1384,8 +1776,8 @@ const ProjectManagementTabs: React.FC = () => {
                     </label>
                     <input
                       type="text"
-                      value={newProject.grant_number}
-                      onChange={(e) => setNewProject({...newProject, grant_number: e.target.value})}
+                      value={newGrant.grant_number}
+                      onChange={(e) => setNewGrant({...newGrant, grant_number: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
@@ -1396,8 +1788,8 @@ const ProjectManagementTabs: React.FC = () => {
                     Description
                   </label>
                   <textarea
-                    value={newProject.description}
-                    onChange={(e) => setNewProject({...newProject, description: e.target.value})}
+                    value={newGrant.description}
+                    onChange={(e) => setNewGrant({...newGrant, description: e.target.value})}
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
@@ -1410,8 +1802,8 @@ const ProjectManagementTabs: React.FC = () => {
                     </label>
                     <input
                       type="date"
-                      value={newProject.open_date}
-                      onChange={(e) => setNewProject({...newProject, open_date: e.target.value})}
+                      value={newGrant.open_date}
+                      onChange={(e) => setNewGrant({...newGrant, open_date: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
@@ -1421,8 +1813,8 @@ const ProjectManagementTabs: React.FC = () => {
                     </label>
                     <input
                       type="date"
-                      value={newProject.close_date}
-                      onChange={(e) => setNewProject({...newProject, close_date: e.target.value})}
+                      value={newGrant.close_date}
+                      onChange={(e) => setNewGrant({...newGrant, close_date: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
@@ -1434,8 +1826,8 @@ const ProjectManagementTabs: React.FC = () => {
                       Currency
                     </label>
                     <select
-                      value={newProject.currency}
-                      onChange={(e) => setNewProject({...newProject, currency: e.target.value})}
+                      value={newGrant.currency}
+                      onChange={(e) => setNewGrant({...newGrant, currency: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="USD">USD</option>
@@ -1450,8 +1842,8 @@ const ProjectManagementTabs: React.FC = () => {
                     </label>
                     <input
                       type="number"
-                      value={newProject.budget_amount}
-                      onChange={(e) => setNewProject({...newProject, budget_amount: e.target.value})}
+                      value={newGrant.budget_amount}
+                      onChange={(e) => setNewGrant({...newGrant, budget_amount: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       min="0"
                       step="0.01"
@@ -1459,12 +1851,12 @@ const ProjectManagementTabs: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Project Manager
+                      Program Manager
                     </label>
                     <input
                       type="text"
-                      value={newProject.project_manager}
-                      onChange={(e) => setNewProject({...newProject, project_manager: e.target.value})}
+                      value={newGrant.program_manager}
+                      onChange={(e) => setNewGrant({...newGrant, program_manager: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
@@ -1476,10 +1868,80 @@ const ProjectManagementTabs: React.FC = () => {
                   </label>
                   <input
                     type="text"
-                    value={newProject.donor_name}
-                    onChange={(e) => setNewProject({...newProject, donor_name: e.target.value})}
+                    value={newGrant.donor_name}
+                    onChange={(e) => setNewGrant({...newGrant, donor_name: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
+                </div>
+
+                {/* Donor Contact Information */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Contact Name
+                    </label>
+                    <input
+                      type="text"
+                      value={newGrant.donor_contact_name || ''}
+                      onChange={(e) => setNewGrant({...newGrant, donor_contact_name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Contact person name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Contact Email
+                    </label>
+                    <input
+                      type="email"
+                      value={newGrant.donor_contact_email || ''}
+                      onChange={(e) => setNewGrant({...newGrant, donor_contact_email: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="contact@donor.org"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Contact Phone
+                    </label>
+                    <input
+                      type="tel"
+                      value={newGrant.donor_contact_phone || ''}
+                      onChange={(e) => setNewGrant({...newGrant, donor_contact_phone: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="+1 (555) 123-4567"
+                    />
+                  </div>
+                </div>
+
+                {/* Reporting Timelines */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Financial Reporting Frequency
+                    </label>
+                    <select
+                      value={newGrant.financial_reporting_frequency || 'quarterly'}
+                      onChange={(e) => setNewGrant({...newGrant, financial_reporting_frequency: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="monthly">Monthly</option>
+                      <option value="quarterly">Quarterly</option>
+                      <option value="semi-annual">Semi-Annual</option>
+                      <option value="annual">Annual</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Annual Report Due Date
+                    </label>
+                    <input
+                      type="date"
+                      value={newGrant.annual_report_due_date || ''}
+                      onChange={(e) => setNewGrant({...newGrant, annual_report_due_date: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
                 </div>
                 
                 <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -1490,10 +1952,10 @@ const ProjectManagementTabs: React.FC = () => {
                     Cancel
                   </button>
                   <button
-                    onClick={handleCreateProject}
+                    onClick={handleCreateGrant}
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                   >
-                    Create Project
+                    Create Grant
                   </button>
                 </div>
               </div>
@@ -1503,15 +1965,15 @@ const ProjectManagementTabs: React.FC = () => {
       )}
 
       {/* Edit Project Modal */}
-      {showEditModal && selectedProject && (
+      {showEditModal && selectedGrant && (
         <div className="fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
           <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 rounded-2xl shadow-2xl">
             <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Edit Project</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Edit Grant</h3>
               <button
                 onClick={() => {
                   setShowEditModal(false);
-                  setSelectedProject(null);
+                  setSelectedGrant(null);
                 }}
                 className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
               >
@@ -1523,12 +1985,12 @@ const ProjectManagementTabs: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Project Name *
+                      Grant Name *
                     </label>
                     <input
                       type="text"
-                      value={newProject.name}
-                      onChange={(e) => setNewProject({...newProject, name: e.target.value})}
+                      value={newGrant.name}
+                      onChange={(e) => setNewGrant({...newGrant, name: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       required
                     />
@@ -1539,8 +2001,8 @@ const ProjectManagementTabs: React.FC = () => {
                     </label>
                     <input
                       type="text"
-                      value={newProject.grant_number}
-                      onChange={(e) => setNewProject({...newProject, grant_number: e.target.value})}
+                      value={newGrant.grant_number}
+                      onChange={(e) => setNewGrant({...newGrant, grant_number: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
@@ -1551,8 +2013,8 @@ const ProjectManagementTabs: React.FC = () => {
                     Description
                   </label>
                   <textarea
-                    value={newProject.description}
-                    onChange={(e) => setNewProject({...newProject, description: e.target.value})}
+                    value={newGrant.description}
+                    onChange={(e) => setNewGrant({...newGrant, description: e.target.value})}
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
@@ -1565,8 +2027,8 @@ const ProjectManagementTabs: React.FC = () => {
                     </label>
                     <input
                       type="date"
-                      value={newProject.open_date}
-                      onChange={(e) => setNewProject({...newProject, open_date: e.target.value})}
+                      value={newGrant.open_date}
+                      onChange={(e) => setNewGrant({...newGrant, open_date: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
@@ -1576,8 +2038,8 @@ const ProjectManagementTabs: React.FC = () => {
                     </label>
                     <input
                       type="date"
-                      value={newProject.close_date}
-                      onChange={(e) => setNewProject({...newProject, close_date: e.target.value})}
+                      value={newGrant.close_date}
+                      onChange={(e) => setNewGrant({...newGrant, close_date: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
@@ -1589,8 +2051,8 @@ const ProjectManagementTabs: React.FC = () => {
                       Currency
                     </label>
                     <select
-                      value={newProject.currency}
-                      onChange={(e) => setNewProject({...newProject, currency: e.target.value})}
+                      value={newGrant.currency}
+                      onChange={(e) => setNewGrant({...newGrant, currency: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="USD">USD</option>
@@ -1605,8 +2067,8 @@ const ProjectManagementTabs: React.FC = () => {
                     </label>
                     <input
                       type="number"
-                      value={newProject.budget_amount}
-                      onChange={(e) => setNewProject({...newProject, budget_amount: e.target.value})}
+                      value={newGrant.budget_amount}
+                      onChange={(e) => setNewGrant({...newGrant, budget_amount: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       min="0"
                       step="0.01"
@@ -1614,12 +2076,12 @@ const ProjectManagementTabs: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Project Manager
+                      Program Manager
                     </label>
                     <input
                       type="text"
-                      value={newProject.project_manager}
-                      onChange={(e) => setNewProject({...newProject, project_manager: e.target.value})}
+                      value={newGrant.program_manager}
+                      onChange={(e) => setNewGrant({...newGrant, program_manager: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
@@ -1631,27 +2093,97 @@ const ProjectManagementTabs: React.FC = () => {
                   </label>
                   <input
                     type="text"
-                    value={newProject.donor_name}
-                    onChange={(e) => setNewProject({...newProject, donor_name: e.target.value})}
+                    value={newGrant.donor_name}
+                    onChange={(e) => setNewGrant({...newGrant, donor_name: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
+                </div>
+
+                {/* Donor Contact Information */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Contact Name
+                    </label>
+                    <input
+                      type="text"
+                      value={newGrant.donor_contact_name || ''}
+                      onChange={(e) => setNewGrant({...newGrant, donor_contact_name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Contact person name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Contact Email
+                    </label>
+                    <input
+                      type="email"
+                      value={newGrant.donor_contact_email || ''}
+                      onChange={(e) => setNewGrant({...newGrant, donor_contact_email: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="contact@donor.org"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Contact Phone
+                    </label>
+                    <input
+                      type="tel"
+                      value={newGrant.donor_contact_phone || ''}
+                      onChange={(e) => setNewGrant({...newGrant, donor_contact_phone: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="+1 (555) 123-4567"
+                    />
+                  </div>
+                </div>
+
+                {/* Reporting Timelines */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Financial Reporting Frequency
+                    </label>
+                    <select
+                      value={newGrant.financial_reporting_frequency || 'quarterly'}
+                      onChange={(e) => setNewGrant({...newGrant, financial_reporting_frequency: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="monthly">Monthly</option>
+                      <option value="quarterly">Quarterly</option>
+                      <option value="semi-annual">Semi-Annual</option>
+                      <option value="annual">Annual</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Annual Report Due Date
+                    </label>
+                    <input
+                      type="date"
+                      value={newGrant.annual_report_due_date || ''}
+                      onChange={(e) => setNewGrant({...newGrant, annual_report_due_date: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
                 </div>
                 
                 <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <button
                     onClick={() => {
                       setShowEditModal(false);
-                      setSelectedProject(null);
+                      setSelectedGrant(null);
                     }}
                     className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
-                    onClick={handleUpdateProject}
+                    onClick={handleUpdateGrant}
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                   >
-                    Update Project
+                    Update Grant
                   </button>
                 </div>
               </div>
@@ -1661,19 +2193,19 @@ const ProjectManagementTabs: React.FC = () => {
       )}
 
       {/* View Project Modal */}
-      {showViewModal && selectedProject && (
+      {showViewModal && selectedGrant && (
         <div className="fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
           <div className="relative w-full max-w-6xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 rounded-2xl shadow-2xl">
             <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-3">
-                {getStatusIcon(selectedProject.status)}
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{selectedProject.name}</h3>
-                {getStatusBadge(selectedProject.status)}
+                {getStatusIcon(selectedGrant.status)}
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{selectedGrant.name}</h3>
+                {getStatusBadge(selectedGrant.status)}
               </div>
               <button
                 onClick={() => {
                   setShowViewModal(false);
-                  setSelectedProject(null);
+                  setSelectedGrant(null);
                 }}
                 className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
               >
@@ -1684,19 +2216,19 @@ const ProjectManagementTabs: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="space-y-6">
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Project Details</h4>
+                    <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Grant Details</h4>
                     <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-3">
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600 dark:text-gray-400">Grant Number:</span>
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">{selectedProject.grant_number || 'N/A'}</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">{selectedGrant.grant_number || 'N/A'}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">Project Manager:</span>
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">{selectedProject.project_manager || 'N/A'}</span>
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Program Manager:</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">{selectedGrant.program_manager || 'N/A'}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600 dark:text-gray-400">Donor:</span>
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">{selectedProject.donor_name || 'N/A'}</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">{selectedGrant.donor_name || 'N/A'}</span>
                       </div>
                     </div>
                   </div>
@@ -1706,16 +2238,16 @@ const ProjectManagementTabs: React.FC = () => {
                     <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-3">
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600 dark:text-gray-400">Start Date:</span>
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">{new Date(selectedProject.open_date).toLocaleDateString()}</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">{new Date(selectedGrant.open_date).toLocaleDateString()}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600 dark:text-gray-400">End Date:</span>
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">{new Date(selectedProject.close_date).toLocaleDateString()}</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">{new Date(selectedGrant.close_date).toLocaleDateString()}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600 dark:text-gray-400">Duration:</span>
                         <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          {Math.ceil((new Date(selectedProject.close_date).getTime() - new Date(selectedProject.open_date).getTime()) / (1000 * 60 * 60 * 24))} days
+                          {Math.ceil((new Date(selectedGrant.close_date).getTime() - new Date(selectedGrant.open_date).getTime()) / (1000 * 60 * 60 * 24))} days
                         </span>
                       </div>
                     </div>
@@ -1729,12 +2261,12 @@ const ProjectManagementTabs: React.FC = () => {
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600 dark:text-gray-400">Total Budget:</span>
                         <span className="text-lg font-semibold text-gray-900 dark:text-white">
-                          {selectedProject.currency} {selectedProject.budget_amount?.toLocaleString() || '0'}
+                          {selectedGrant.currency} {selectedGrant.budget_amount?.toLocaleString() || '0'}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600 dark:text-gray-400">Currency:</span>
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">{selectedProject.currency}</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">{selectedGrant.currency}</span>
                       </div>
                     </div>
                   </div>
@@ -1742,7 +2274,7 @@ const ProjectManagementTabs: React.FC = () => {
                   <div>
                     <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Description</h4>
                     <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                      <p className="text-sm text-gray-700 dark:text-gray-300">{selectedProject.description || 'No description provided.'}</p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">{selectedGrant.description || 'No description provided.'}</p>
                     </div>
                   </div>
                 </div>
@@ -1752,12 +2284,12 @@ const ProjectManagementTabs: React.FC = () => {
                 <button
                   onClick={() => {
                     setShowViewModal(false);
-                    handleEditProject(selectedProject);
+                    handleEditGrant(selectedGrant);
                   }}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2"
                 >
                   <PencilIcon className="w-4 h-4" />
-                  Edit Project
+                  Edit Grant
                 </button>
               </div>
             </div>
@@ -2086,4 +2618,4 @@ const ProjectManagementTabs: React.FC = () => {
   );
 };
 
-export default ProjectManagementTabs;
+export default GrantManagementTabs;

@@ -1,5 +1,5 @@
 const db = require('../config/database');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 class User {
   constructor(data) {
@@ -15,6 +15,9 @@ class User {
     this.mfa_secret = data.mfa_secret;
     this.password_hash = data.password_hash;
     this.last_login = data.last_login;
+    this.email_verified_at = data.email_verified_at;
+    this.onboarding_status = data.onboarding_status || 'email_pending';
+    this.last_verification_sent_at = data.last_verification_sent_at;
     this.created_at = data.created_at;
     this.updated_at = data.updated_at;
   }
@@ -28,8 +31,8 @@ class User {
     const query = `
       INSERT INTO users (
         organization_id, first_name, last_name, email, phone, role, status,
-        mfa_enabled, mfa_secret, password_hash
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        mfa_enabled, mfa_secret, password_hash, email_verified_at, onboarding_status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *;
     `;
     
@@ -43,7 +46,9 @@ class User {
       userData.status || 'active',
       userData.mfa_enabled || false,
       userData.mfa_secret,
-      password_hash
+      password_hash,
+      userData.email_verified_at || null,
+      userData.onboarding_status || 'email_pending'
     ];
     
     const result = await db.pool.query(query, values);

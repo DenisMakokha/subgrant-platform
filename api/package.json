@@ -11,17 +11,22 @@
     "test-api": "node scripts/test-api.js"
   },
   "dependencies": {
+    "aws-sdk": "^2.1692.0",
     "axios": "^1.4.0",
-    "bcrypt": "^5.1.0",
+    "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
+    "express-rate-limit": "^6.11.2",
     "helmet": "^6.0.1",
-    "joi": "^17.9.2",
+    "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.0",
-    "nodemailer": "^6.9.1",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^6.10.1",
     "otplib": "^12.0.1",
-    "pg": "^8.16.3"
+    "pdfkit": "^0.15.0",
+    "pg": "^8.16.3",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "jest": "^29.4.1",

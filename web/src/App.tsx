@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Layout from './components/Layout';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -36,6 +36,31 @@ import NotFound from './pages/NotFound';
 import Forum from './pages/ForumAdmin';
 import TopicDetail from './pages/TopicDetail';
 import NewTopic from './pages/NewTopic';
+import PartnerRegister from './pages/PartnerRegister';
+import PartnerLogin from './pages/PartnerLogin';
+import EmailVerification from './pages/EmailVerification';
+import SectionC from './components/onboarding/SectionC';
+import SectionB from './components/onboarding/SectionB';
+import SectionA from './components/onboarding/SectionA';
+import ReviewStatus from './components/onboarding/ReviewStatus';
+import PartnerDashboard from './pages/PartnerDashboard';
+import ProtectedOnboardingRoute from './components/ProtectedOnboardingRoute';
+
+// Dashboard Router Component
+const DashboardRouter: React.FC = () => {
+  const { user } = useAuth();
+  
+  console.log('DashboardRouter - User:', user);
+  console.log('DashboardRouter - User role:', user?.role);
+  
+  if (user?.role === 'partner_user') {
+    console.log('DashboardRouter - Redirecting to partner dashboard');
+    return <Navigate to="/partner/dashboard" replace />;
+  }
+  
+  console.log('DashboardRouter - Showing admin dashboard');
+  return <Dashboard />;
+};
 
 const App: React.FC = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -110,20 +135,94 @@ const App: React.FC = () => {
             </div>
           } />
           
+          {/* Partner authentication routes (public) */}
+          <Route path="/partner/register" element={
+            <div className="min-h-screen flex flex-col">
+              <Header 
+                darkMode={darkMode}
+                toggleTheme={toggleTheme}
+                sidebarOpen={sidebarOpen}
+                setSidebarOpen={setSidebarOpen}
+              />
+              <main className="flex-1">
+                <PartnerRegister />
+              </main>
+              <Footer />
+            </div>
+          } />
+          <Route path="/partner/login" element={
+            <div className="min-h-screen flex flex-col">
+              <Header 
+                darkMode={darkMode}
+                toggleTheme={toggleTheme}
+                sidebarOpen={sidebarOpen}
+                setSidebarOpen={setSidebarOpen}
+              />
+              <main className="flex-1">
+                <PartnerLogin />
+              </main>
+              <Footer />
+            </div>
+          } />
+          <Route path="/auth/verify-email" element={
+            <div className="min-h-screen flex flex-col">
+              <Header 
+                darkMode={darkMode}
+                toggleTheme={toggleTheme}
+                sidebarOpen={sidebarOpen}
+                setSidebarOpen={setSidebarOpen}
+              />
+              <main className="flex-1">
+                <EmailVerification />
+              </main>
+              <Footer />
+            </div>
+          } />
+          
           {/* Protected routes with layout */}
           <Route path="/*" element={
             <ProtectedRoute>
               <Layout>
                 <Routes>
-                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/dashboard" element={
+                    <ProtectedRoute>
+                      <DashboardRouter />
+                    </ProtectedRoute>
+                  } />
                   <Route path="/projects" element={<ProjectManagementTabs />} />
                   <Route path="/projects/create" element={<ProjectManagementTabs />} />
                   <Route path="/projects/timeline" element={<ProjectManagementTabs />} />
                   <Route path="/projects/categories" element={<ProjectManagementTabs />} />
                   <Route path="/partners" element={<PartnerManagementTabs />} />
-                  <Route path="/partners/onboarding" element={<PartnerManagementTabs />} />
+                  <Route path="/partners/add-partner" element={<PartnerManagementTabs />} />
+                  <Route path="/partners/onboarding" element={<PartnerOnboarding />} />
+                  <Route path="/partner/dashboard" element={<PartnerDashboard />} />
+                  <Route path="/onboarding/section-c" element={
+                    <ProtectedOnboardingRoute requiredStatus={['attachments_pending', 'changes_requested']}>
+                      <SectionC />
+                    </ProtectedOnboardingRoute>
+                  } />
+                  <Route path="/onboarding/section-b" element={
+                    <ProtectedOnboardingRoute requiredStatus={['financials_pending', 'changes_requested']}>
+                      <SectionB />
+                    </ProtectedOnboardingRoute>
+                  } />
+                  <Route path="/onboarding/section-a" element={
+                    <ProtectedOnboardingRoute requiredStatus={['approved']}>
+                      <SectionA />
+                    </ProtectedOnboardingRoute>
+                  } />
+                  <Route path="/onboarding/review-status" element={
+                    <ProtectedOnboardingRoute requiredStatus={['under_review', 'changes_requested']}>
+                      <ReviewStatus />
+                    </ProtectedOnboardingRoute>
+                  } />
                   <Route path="/partners/due-diligence" element={<PartnerManagementTabs />} />
                   <Route path="/partners/compliance" element={<PartnerManagementTabs />} />
+                  <Route path="/partner-management" element={<PartnerManagementTabs />} />
+                  <Route path="/partner-management/onboarding" element={<PartnerManagementTabs />} />
+                  <Route path="/partner-management/due-diligence" element={<PartnerManagementTabs />} />
+                  <Route path="/partner-management/compliance" element={<PartnerManagementTabs />} />
                   <Route path="/contracts" element={<ContractManagementTabs />} />
                   <Route path="/contracts/templates" element={<ContractManagementTabs />} />
                   <Route path="/contracts/create" element={<ContractManagementTabs />} />

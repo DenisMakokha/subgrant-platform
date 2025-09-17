@@ -86,6 +86,14 @@ export const authApi = {
     });
   },
   
+  // Resend verification email
+  resendVerification: async (email: string) => {
+    return fetchWithAuth('/auth/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+  
   // Refresh token
   refreshToken: async () => {
     return fetchWithAuth('/auth/refresh', {

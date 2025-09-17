@@ -85,10 +85,22 @@ export const hasAllRoles = (roles: string[]): boolean => {
 export const isTokenExpired = (token: string): boolean => {
   try {
     const parsed = parseToken(token);
-    if (!parsed || !parsed.exp) return true;
+    if (!parsed || !parsed.exp) {
+      console.warn('Token missing expiration time, treating as expired');
+      return true;
+    }
     
     const currentTime = Math.floor(Date.now() / 1000);
-    return parsed.exp < currentTime;
+    const isExpired = parsed.exp < currentTime;
+    
+    console.log('Token expiration check:', {
+      currentTime,
+      tokenExp: parsed.exp,
+      timeUntilExpiry: parsed.exp - currentTime,
+      isExpired
+    });
+    
+    return isExpired;
   } catch (error) {
     console.error('Error checking token expiration:', error);
     return true;

@@ -43,6 +43,12 @@ const notificationRoutes = require('./routes/notifications');
 const healthRoutes = require('./routes/health');
 const forumRoutes = require('./routes/forum');
 const forumAdminRoutes = require('./routes/forumAdmin');
+const integrationRoutes = require('./routes/integrations');
+const onboardingAuthRoutes = require('./routes/onboardingAuth');
+const onboardingSectionCRoutes = require('./routes/onboardingSectionC');
+const onboardingSectionBRoutes = require('./routes/onboardingSectionB');
+const onboardingSectionARoutes = require('./routes/onboardingSectionA');
+const onboardingAdminRoutes = require('./routes/onboardingAdmin');
 
 // Base route
 app.get('/', (req, res) => {
@@ -79,6 +85,12 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/forum', forumRoutes);
 app.use('/api/forum-admin', forumAdminRoutes);
+app.use('/api/integrations', integrationRoutes);
+app.use('/api/onboarding/auth', onboardingAuthRoutes);
+app.use('/api/onboarding', onboardingSectionCRoutes);
+app.use('/api/onboarding', onboardingSectionBRoutes);
+app.use('/api/onboarding', onboardingSectionARoutes);
+app.use('/api/onboarding/admin', onboardingAdminRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

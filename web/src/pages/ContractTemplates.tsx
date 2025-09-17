@@ -45,13 +45,13 @@ const ContractTemplates: React.FC = () => {
     category: 'sub-grant',
   });
 
-  // Default template content based on the Sub-Grant Agreement
-  const defaultTemplateContent = `**SUBGRANT AGREEMENT**
+  // Default template content based on the Grant Agreement
+  const defaultTemplateContent = `**GRANT AGREEMENT**
 
 1. **AGREEMENT DETAILS:**
    - Effective Date: {{start_date}}
    - Agreement End Date: {{end_date}}
-   - Sub-Grant Agreement Number: {{agreement_number}}
+   - Grant Agreement Number: {{agreement_number}}
 
 2. **CONTRACTING PARTIES:**
 
@@ -246,8 +246,8 @@ _________________________    Date: {{signature_date}}
       const mockTemplates: ContractTemplate[] = [
         {
           id: '1',
-          name: 'Sub-Grant Agreement Template 2025',
-          description: 'Standard sub-grant agreement template for partner organizations',
+          name: 'Grant Agreement Template 2025',
+          description: 'Standard grant agreement template for partner organizations',
           content: defaultTemplateContent,
           category: 'sub-grant',
           created_at: new Date().toISOString(),
@@ -581,7 +581,7 @@ _________________________    Date: {{signature_date}}
                         value={formData.name}
                         onChange={handleInputChange}
                         className="w-full px-5 py-4 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-3 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 text-lg font-medium shadow-sm"
-                        placeholder="Sub-Grant Agreement Template"
+                        placeholder="Grant Agreement Template"
                         required
                       />
                     </div>

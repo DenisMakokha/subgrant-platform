@@ -1,6 +1,9 @@
 # Use Node.js 16 as the base image
 FROM node:16-alpine
 
+# Install build dependencies for native modules
+RUN apk add --no-cache python3 make g++ libc6-compat
+
 # Set the working directory
 WORKDIR /app
 

@@ -6,7 +6,7 @@ const { authenticator } = require('otplib');
 class AuthService {
   constructor() {
     this.jwtSecret = process.env.JWT_SECRET || 'subgrant_platform_secret_key';
-    this.jwtExpiration = process.env.JWT_EXPIRATION || '4h';
+    this.jwtExpiration = process.env.JWT_EXPIRATION || '24h';
   }
 
   // Generate JWT token

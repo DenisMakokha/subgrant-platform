@@ -319,7 +319,7 @@ class ContractDataService {
     
     // Fetch template content
     const templateResponse = await apiService.get(`/contract-templates/${templateId}`);
-    const template = templateResponse.data?.content || 'SUB-GRANT AGREEMENT\n\nThis agreement is between {{grantor_name}} and {{partner_organization}} for the project {{project_name}}.\n\nTotal Amount: {{total_amount}}\nProject Duration: {{start_date}} to {{end_date}}\n\nGrantor: {{grantor_name}}\nSignatory: {{grantor_signatory_name}}, {{grantor_signatory_title}}\n\nGrantee: {{partner_organization}}\nSignatory: {{grantee_signatory_name}}, {{grantee_signatory_title}}';
+    const template = templateResponse.data?.content || 'GRANT AGREEMENT\n\nThis agreement is between {{grantor_name}} and {{partner_organization}} for the project {{project_name}}.\n\nTotal Amount: {{total_amount}}\nProject Duration: {{start_date}} to {{end_date}}\n\nGrantor: {{grantor_name}}\nSignatory: {{grantor_signatory_name}}, {{grantor_signatory_title}}\n\nGrantee: {{partner_organization}}\nSignatory: {{grantee_signatory_name}}, {{grantee_signatory_title}}';
     
     // Replace variables
     return this.replaceTemplateVariables(template, contractData);

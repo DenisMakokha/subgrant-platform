@@ -32,7 +32,7 @@ const mockData = {
       role: 'system_administrator',
       status: 'active',
       mfa_enabled: false,
-      password_hash: '$2b$10$example_hash_here', // This is just a placeholder
+      password_hash: '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password: password
       last_login: new Date(),
       created_at: new Date(),
       updated_at: new Date()
@@ -47,7 +47,7 @@ const mockData = {
       role: 'partner_user',
       status: 'active',
       mfa_enabled: false,
-      password_hash: '$2b$10$example_hash_here', // This is just a placeholder
+      password_hash: '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password: password
       last_login: new Date(),
       created_at: new Date(),
       updated_at: new Date()

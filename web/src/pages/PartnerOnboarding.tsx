@@ -71,6 +71,29 @@ const PartnerOnboarding: React.FC = () => {
     email: '',
     website: '',
     description: '',
+    // Primary Contact Information
+    primary_contact_name: '',
+    primary_contact_title: '',
+    primary_contact_phone: '',
+    primary_contact_email: '',
+    // Enhanced Address Information
+    city: '',
+    state_province: '',
+    postal_code: '',
+    // Banking Information
+    bank_name: '',
+    bank_branch: '',
+    account_name: '',
+    account_number: '',
+    swift_code: '',
+    // Authorized Signatory
+    signatory_name: '',
+    signatory_title: '',
+    signatory_email: '',
+    // Legal Structure
+    legal_structure: '',
+    incorporation_country: '',
+    incorporation_date: '',
   });
 
   useEffect(() => {
@@ -125,6 +148,29 @@ const PartnerOnboarding: React.FC = () => {
       email: organization.email,
       website: organization.website || '',
       description: organization.description || '',
+      // Primary Contact Information
+      primary_contact_name: organization.primary_contact_name || '',
+      primary_contact_title: organization.primary_contact_title || '',
+      primary_contact_phone: organization.primary_contact_phone || '',
+      primary_contact_email: organization.primary_contact_email || '',
+      // Enhanced Address Information
+      city: organization.city || '',
+      state_province: organization.state_province || '',
+      postal_code: organization.postal_code || '',
+      // Banking Information
+      bank_name: organization.bank_name || '',
+      bank_branch: organization.bank_branch || '',
+      account_name: organization.account_name || '',
+      account_number: organization.account_number || '',
+      swift_code: organization.swift_code || '',
+      // Authorized Signatory
+      signatory_name: organization.signatory_name || '',
+      signatory_title: organization.signatory_title || '',
+      signatory_email: organization.signatory_email || '',
+      // Legal Structure
+      legal_structure: organization.legal_structure || '',
+      incorporation_country: organization.incorporation_country || '',
+      incorporation_date: organization.incorporation_date || '',
     });
     setShowForm(true);
   };
@@ -154,6 +200,29 @@ const PartnerOnboarding: React.FC = () => {
       email: '',
       website: '',
       description: '',
+      // Primary Contact Information
+      primary_contact_name: '',
+      primary_contact_title: '',
+      primary_contact_phone: '',
+      primary_contact_email: '',
+      // Enhanced Address Information
+      city: '',
+      state_province: '',
+      postal_code: '',
+      // Banking Information
+      bank_name: '',
+      bank_branch: '',
+      account_name: '',
+      account_number: '',
+      swift_code: '',
+      // Authorized Signatory
+      signatory_name: '',
+      signatory_title: '',
+      signatory_email: '',
+      // Legal Structure
+      legal_structure: '',
+      incorporation_country: '',
+      incorporation_date: '',
     });
     setError(null);
   };

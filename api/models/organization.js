@@ -17,6 +17,29 @@ class Organization {
     this.compliance_status = data.compliance_status || 'pending';
     this.due_diligence_completed = data.due_diligence_completed || false;
     this.due_diligence_date = data.due_diligence_date;
+    // Primary Contact Information
+    this.primary_contact_name = data.primary_contact_name;
+    this.primary_contact_title = data.primary_contact_title;
+    this.primary_contact_phone = data.primary_contact_phone;
+    this.primary_contact_email = data.primary_contact_email;
+    // Enhanced Address Information
+    this.city = data.city;
+    this.state_province = data.state_province;
+    this.postal_code = data.postal_code;
+    // Banking Information
+    this.bank_name = data.bank_name;
+    this.bank_branch = data.bank_branch;
+    this.account_name = data.account_name;
+    this.account_number = data.account_number;
+    this.swift_code = data.swift_code;
+    // Authorized Signatory
+    this.signatory_name = data.signatory_name;
+    this.signatory_title = data.signatory_title;
+    this.signatory_email = data.signatory_email;
+    // Legal Structure
+    this.legal_structure = data.legal_structure;
+    this.incorporation_country = data.incorporation_country;
+    this.incorporation_date = data.incorporation_date;
     this.created_at = data.created_at;
     this.updated_at = data.updated_at;
     this.created_by = data.created_by;
@@ -29,8 +52,12 @@ class Organization {
       INSERT INTO organizations (
         name, legal_name, registration_number, tax_id, address, country, phone, email,
         website, description, status, compliance_status, due_diligence_completed,
-        due_diligence_date, created_by, updated_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        due_diligence_date, primary_contact_name, primary_contact_title, primary_contact_phone,
+        primary_contact_email, city, state_province, postal_code, bank_name, bank_branch,
+        account_name, account_number, swift_code, signatory_name, signatory_title,
+        signatory_email, legal_structure, incorporation_country, incorporation_date,
+        created_by, updated_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34)
       RETURNING *;
     `;
     
@@ -49,6 +76,24 @@ class Organization {
       organizationData.compliance_status || 'pending',
       organizationData.due_diligence_completed || false,
       organizationData.due_diligence_date,
+      organizationData.primary_contact_name,
+      organizationData.primary_contact_title,
+      organizationData.primary_contact_phone,
+      organizationData.primary_contact_email,
+      organizationData.city,
+      organizationData.state_province,
+      organizationData.postal_code,
+      organizationData.bank_name,
+      organizationData.bank_branch,
+      organizationData.account_name,
+      organizationData.account_number,
+      organizationData.swift_code,
+      organizationData.signatory_name,
+      organizationData.signatory_title,
+      organizationData.signatory_email,
+      organizationData.legal_structure,
+      organizationData.incorporation_country,
+      organizationData.incorporation_date,
       organizationData.created_by,
       organizationData.updated_by
     ];

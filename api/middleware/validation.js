@@ -1,5 +1,29 @@
 const Joi = require('joi');
 
+// Generic validation middleware for Zod schemas
+const validateSchema = (schema) => {
+  return (req, res, next) => {
+    try {
+      const validatedData = schema.parse(req.body);
+      req.validatedData = validatedData;
+      next();
+    } catch (error) {
+      if (error.errors) {
+        // Zod validation error
+        const errorMessages = error.errors.map(err => `${err.path.join('.')}: ${err.message}`);
+        return res.status(400).json({
+          error: 'Validation failed',
+          details: errorMessages
+        });
+      }
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: error.message
+      });
+    }
+  };
+};
+
 // Validation schema for disbursement
 const disbursementSchema = Joi.object({
   budget_id: Joi.string().uuid().required(),
@@ -158,6 +182,7 @@ const validateContract = (data) => {
 };
 
 module.exports = {
+  validateSchema,
   validateDisbursement,
   validateOrganization,
   validateUser,

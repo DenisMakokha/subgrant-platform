@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './Sidebar.css';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 // Using simple SVG icons instead of Heroicons for now
 const DashboardIcon = () => (
@@ -77,17 +78,7 @@ const Settings = () => (
   </svg>
 );
 
-const ChevronDownIcon = () => (
-  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-  </svg>
-);
-
-const ChevronRightIcon = () => (
-  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-  </svg>
-);
+// Removed chevron icons as we no longer have expandable sections
 
 interface SidebarProps {
   isOpen: boolean;
@@ -98,147 +89,135 @@ interface NavigationSection {
   id: string;
   name: string;
   icon: React.ComponentType;
-  path?: string;
-  items: Array<{
-    name: string;
-    path: string;
-    icon: React.ComponentType;
-  }>;
+  path: string;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
-  const [expandedSections, setExpandedSections] = useState<string[]>(['dashboard']);
+  const { user } = useAuth();
 
-  const toggleSection = (sectionId: string) => {
-    setExpandedSections(prev => 
-      prev.includes(sectionId) 
-        ? []
-        : [sectionId]
-    );
+  // Define navigation sections based on user role
+  const getNavigationSections = () => {
+    if (user?.role === 'partner_user') {
+      // Partner-specific menu items
+      return [
+        {
+          id: 'dashboard',
+          name: 'Dashboard',
+          icon: DashboardIcon,
+          path: '/partner/dashboard'
+        },
+        {
+          id: 'contracts',
+          name: 'My Contracts',
+          icon: ContractIcon,
+          path: '/partner/contracts'
+        },
+        {
+          id: 'budget',
+          name: 'Budget Management',
+          icon: BudgetIcon,
+          path: '/partner/budgets'
+        },
+        {
+          id: 'financial',
+          name: 'Financial Reports',
+          icon: MoneyIcon,
+          path: '/partner/financial'
+        },
+        {
+          id: 'monitoring',
+          name: 'M&E Reports',
+          icon: ReportIcon,
+          path: '/partner/me-reports'
+        },
+        {
+          id: 'documents',
+          name: 'Documents',
+          icon: DocumentIcon,
+          path: '/partner/documents'
+        },
+        {
+          id: 'forum',
+          name: 'Forum',
+          icon: ForumIcon,
+          path: '/forum'
+        }
+      ];
+    }
+
+    // Admin menu items (default)
+    return [
+      {
+        id: 'dashboard',
+        name: 'Dashboard',
+        icon: DashboardIcon,
+        path: '/dashboard'
+      },
+      {
+        id: 'projects',
+        name: 'Grants & Projects',
+        icon: ChartIcon,
+        path: '/projects'
+      },
+      {
+        id: 'partners',
+        name: 'Partner Management',
+        icon: BuildingIcon,
+        path: '/partner-management'
+      },
+      {
+        id: 'contracts',
+        name: 'Contract Management',
+        icon: ContractIcon,
+        path: '/contracts'
+      },
+      {
+        id: 'budget',
+        name: 'Budget Management',
+        icon: BudgetIcon,
+        path: '/budgets'
+      },
+      {
+        id: 'financial',
+        name: 'Financial Management',
+        icon: MoneyIcon,
+        path: '/financial-dashboard'
+      },
+      {
+        id: 'monitoring',
+        name: 'M&E Reports',
+        icon: ReportIcon,
+        path: '/me-reports'
+      },
+      {
+        id: 'reporting',
+        name: 'Reporting & Analytics',
+        icon: ReportIcon,
+        path: '/reporting-analytics'
+      },
+      {
+        id: 'documents',
+        name: 'Documents',
+        icon: DocumentIcon,
+        path: '/documents'
+      },
+      {
+        id: 'forum',
+        name: 'Forum',
+        icon: ForumIcon,
+        path: '/forum'
+      },
+      {
+        id: 'notifications',
+        name: 'Notifications & Alerts',
+        icon: ReportIcon,
+        path: '/notifications'
+      }
+    ];
   };
 
-  const navigationSections = [
-    {
-      id: 'dashboard',
-      name: 'Dashboard',
-      icon: DashboardIcon,
-      path: '/dashboard',
-      items: []
-    },
-    {
-      id: 'projects',
-      name: 'Grants & Projects',
-      icon: ChartIcon,
-      items: [
-        { name: 'Project Overview', path: '/projects', icon: ChartIcon },
-        { name: 'Create Project', path: '/projects/create', icon: DocumentIcon },
-        { name: 'Project Timeline', path: '/projects/timeline', icon: DocumentIcon },
-        { name: 'Budget Categories', path: '/projects/categories', icon: BudgetIcon },
-      ]
-    },
-    {
-      id: 'partners',
-      name: 'Partner Management',
-      icon: BuildingIcon,
-      items: [
-        { name: 'Partner Onboarding', path: '/partner-onboarding', icon: BuildingIcon },
-        { name: 'Partner Profiles', path: '/partners', icon: BuildingIcon },
-        { name: 'Due Diligence', path: '/partners/due-diligence', icon: ShieldIcon },
-        { name: 'Partner Compliance', path: '/partners/compliance', icon: ShieldIcon },
-      ]
-    },
-    {
-      id: 'contracts',
-      name: 'Contract Management',
-      icon: ContractIcon,
-      items: [
-        { name: 'Create Contract', path: '/contracts/create', icon: ContractIcon },
-        { name: 'Manage Contracts', path: '/contracts', icon: ContractIcon },
-        { name: 'Contract Signing', path: '/contracts/signing', icon: DocumentIcon },
-        { name: 'Contract Templates', path: '/contracts/templates', icon: DocumentIcon },
-      ]
-    },
-    {
-      id: 'budget',
-      name: 'Budget Management',
-      icon: BudgetIcon,
-      items: [
-        { name: 'Budget Creation', path: '/budgets/create', icon: BudgetIcon },
-        { name: 'Budget Review', path: '/budgets/review', icon: DocumentIcon },
-        { name: 'Budget Approval', path: '/budgets/approval', icon: ShieldIcon },
-        { name: 'Budget Templates', path: '/budgets/templates', icon: DocumentIcon },
-      ]
-    },
-    {
-      id: 'financial',
-      name: 'Financial Management',
-      icon: MoneyIcon,
-      items: [
-        { name: 'Disbursements', path: '/disbursements', icon: MoneyIcon },
-        { name: 'Financial Dashboard', path: '/financial-dashboard', icon: ChartIcon },
-        { name: 'Receipts', path: '/receipts', icon: DocumentIcon },
-        { name: 'Financial Retirement', path: '/financial/retirement', icon: MoneyIcon },
-        { name: 'Reconciliation', path: '/financial/reconciliation', icon: ShieldIcon },
-      ]
-    },
-    {
-      id: 'monitoring',
-      name: 'M&E Reports',
-      icon: ReportIcon,
-      items: [
-        { name: 'M&E Reports', path: '/me-reports', icon: ReportIcon },
-        { name: 'KPI Tracking', path: '/monitoring/kpi', icon: ChartIcon },
-        { name: 'Risk Management', path: '/monitoring/risks', icon: ShieldIcon },
-        { name: 'Progress Milestones', path: '/monitoring/milestones', icon: DocumentIcon },
-      ]
-    },
-    {
-      id: 'reporting',
-      name: 'Reporting & Analytics',
-      icon: ReportIcon,
-      items: [
-        { name: 'Analytics Dashboard', path: '/reporting-analytics', icon: ChartIcon },
-        { name: 'Financial Reports', path: '/financial-reports', icon: DocumentIcon },
-        { name: 'Compliance Reports', path: '/compliance-dashboard', icon: ShieldIcon },
-        { name: 'KPI Dashboard', path: '/kpi-dashboard', icon: ChartIcon },
-      ]
-    },
-    {
-      id: 'documents',
-      name: 'Documents',
-      icon: DocumentIcon,
-      items: [
-        { name: 'Document Library', path: '/documents', icon: DocumentIcon },
-        { name: 'Version Control', path: '/documents/versions', icon: DocumentIcon },
-        { name: 'Audit Trail', path: '/documents/audit', icon: ShieldIcon },
-        { name: 'Templates', path: '/documents/templates', icon: DocumentIcon },
-      ]
-    },
-    {
-      id: 'forum',
-      name: 'Forum',
-      icon: ForumIcon,
-      path: '/forum',
-      items: [
-        { name: 'Posts', path: '/forum', icon: MessageSquare },
-        { name: 'Categories', path: '/forum/categories', icon: DocumentIcon },
-        { name: 'Tags', path: '/forum/tags', icon: Settings },
-        { name: 'Settings', path: '/forum/settings', icon: Settings },
-      ]
-    },
-    {
-      id: 'notifications',
-      name: 'Notifications & Alerts',
-      icon: ReportIcon,
-      items: [
-        { name: 'Notification Center', path: '/notifications', icon: ReportIcon },
-        { name: 'Alert Settings', path: '/notifications/settings', icon: ShieldIcon },
-        { name: 'Deadline Reminders', path: '/notifications/deadlines', icon: DocumentIcon },
-        { name: 'Escalation Rules', path: '/notifications/escalation', icon: ShieldIcon },
-      ]
-    }
-  ];
+  const navigationSections = getNavigationSections();
 
   return (
     <>
@@ -259,74 +238,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           <nav className="glass-card p-3 sticky top-24">
             <div className="space-y-2">
               {navigationSections.map((section) => {
-                const isExpanded = expandedSections.includes(section.id);
                 const SectionIcon = section.icon;
-                const hasActiveItem = section.items.some(item => location.pathname === item.path);
+                const isActive = location.pathname === section.path || location.pathname.startsWith(section.path + '/');
                 
                 return (
-                  <div key={section.id} className="space-y-1">
-                    {/* Dashboard, Projects, and Forum as direct links, others as dropdown sections */}
-                    {(section.id === 'dashboard' || section.id === 'projects' || section.id === 'forum') && section.path ? (
-                      <Link
-                        to={section.path}
-                        onClick={() => setIsOpen(false)}
-                        className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
-                          location.pathname === section.path
-                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' 
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                        }`}
-                      >
-                        <div className="flex items-center space-x-3">
-                          <SectionIcon />
-                          <span>{section.name}</span>
-                        </div>
-                      </Link>
-                    ) : (
-                      <>
-                        {/* Section Header */}
-                        <button
-                          onClick={() => toggleSection(section.id)}
-                          className={`w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
-                            hasActiveItem 
-                              ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' 
-                              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                          }`}
-                        >
-                          <div className="flex items-center space-x-3">
-                            <SectionIcon />
-                            <span>{section.name}</span>
-                          </div>
-                          {isExpanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
-                        </button>
-                        
-                        {/* Section Items */}
-                        {isExpanded && (
-                          <div className="ml-4 space-y-1">
-                            {section.items.map((item) => {
-                              const ItemIcon = item.icon;
-                              const isActive = location.pathname === item.path;
-                              
-                              return (
-                                <Link
-                                  key={item.path}
-                                  to={item.path}
-                                  onClick={() => setIsOpen(false)}
-                                  className={`flex items-center space-x-3 px-3 py-2 text-sm rounded-lg transition-colors duration-200 ${
-                                    isActive 
-                                      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium' 
-                                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
-                                  }`}
-                                >
-                                  <ItemIcon />
-                                  <span>{item.name}</span>
-                                </Link>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
+                  <Link
+                    key={section.id}
+                    to={section.path}
+                    onClick={() => setIsOpen(false)}
+                    className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
+                      isActive
+                        ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' 
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <SectionIcon />
+                      <span>{section.name}</span>
+                    </div>
+                  </Link>
                 );
               })}
             </div>

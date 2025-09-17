@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { organizationService } from '../services/organizationService';
-import { Organization } from '../types/organization';
+import { Organization, OrganizationFormData } from '../types/organization';
 import {
   PlusIcon,
   Squares2X2Icon,
@@ -32,13 +32,11 @@ const PartnerManagementTabs: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredOrganizations, setFilteredOrganizations] = useState<Organization[]>([]);
   const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
   const [showViewModal, setShowViewModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [complianceFilter, setComplianceFilter] = useState<string>('all');
   const [selectedOrganizations, setSelectedOrganizations] = useState<string[]>([]);
@@ -108,24 +106,69 @@ const PartnerManagementTabs: React.FC = () => {
 
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
-    const basePath = '/partners';
-    const tabPaths: { [key: string]: string } = {
-      'partners': basePath,
-      'onboarding': `${basePath}/onboarding`,
-      'due-diligence': `${basePath}/due-diligence`,
-      'compliance': `${basePath}/compliance`,
-    };
-    navigate(tabPaths[tabId] || basePath);
+    
+    // Update URL based on tab
+    switch (tabId) {
+      case 'onboarding':
+        navigate('/partner-management/onboarding');
+        break;
+      case 'due-diligence':
+        navigate('/partner-management/due-diligence');
+        break;
+      case 'compliance':
+        navigate('/partner-management/compliance');
+        break;
+      default:
+        navigate('/partner-management');
+    }
   };
 
   const handleViewOrganization = (org: Organization) => {
     setSelectedOrganization(org);
-    setShowViewModal(true);
+    setActiveTab('view-organization');
   };
 
   const handleEditOrganization = (org: Organization) => {
     setSelectedOrganization(org);
-    setShowEditModal(true);
+    setActiveTab('edit-organization');
+  };
+
+  const handleSaveOrganization = async (organizationData: OrganizationFormData) => {
+    if (!selectedOrganization) return;
+    
+    try {
+      await organizationService.updateOrganization(selectedOrganization.id, organizationData);
+      setSuccess('Organization updated successfully');
+      setSelectedOrganization(null);
+      setActiveTab('partners');
+      await fetchOrganizations();
+    } catch (error) {
+      setError('Failed to update organization');
+    }
+  };
+
+  const handleApproveOrganization = async (org: Organization) => {
+    try {
+      await organizationService.updateOrganization(org.id, { status: 'approved' });
+      setSuccess(`${org.name} has been approved successfully`);
+      await fetchOrganizations();
+    } catch (error) {
+      setError('Failed to approve organization');
+      console.error('Error approving organization:', error);
+    }
+  };
+
+  const handleRejectOrganization = async (org: Organization) => {
+    if (window.confirm(`Are you sure you want to reject ${org.name}? This will prevent them from accessing the platform.`)) {
+      try {
+        await organizationService.updateOrganization(org.id, { status: 'rejected' });
+        setSuccess(`${org.name} has been rejected`);
+        await fetchOrganizations();
+      } catch (error) {
+        setError('Failed to reject organization');
+        console.error('Error rejecting organization:', error);
+      }
+    }
   };
 
   const handleDeleteOrganization = async (org: Organization) => {
@@ -141,42 +184,71 @@ const PartnerManagementTabs: React.FC = () => {
     }
   };
 
-  const handleCreatePartner = () => {
-    setSelectedOrganization(null);
-    setShowCreateModal(true);
+
+  const handleBulkApprove = async () => {
+    try {
+      await Promise.all(
+        selectedOrganizations.map(orgId => 
+          organizationService.updateOrganization(orgId, { status: 'approved' })
+        )
+      );
+      setSuccess(`${selectedOrganizations.length} organizations approved successfully`);
+      await fetchOrganizations();
+      setSelectedOrganizations([]);
+      setShowBulkActions(false);
+    } catch (error) {
+      setError('Failed to approve organizations');
+      console.error('Error approving organizations:', error);
+    }
   };
 
-  const handleSaveOrganization = async (orgData: any) => {
-    try {
-      if (selectedOrganization) {
-        // Update existing organization
-        await organizationService.updateOrganization(selectedOrganization.id, orgData);
-        setSuccess('Organization updated successfully');
-      } else {
-        // Create new organization
-        await organizationService.createOrganization(orgData);
-        setSuccess('Organization created successfully');
+  const handleBulkReject = async () => {
+    if (window.confirm(`Are you sure you want to reject ${selectedOrganizations.length} organizations? This will prevent them from accessing the platform.`)) {
+      try {
+        await Promise.all(
+          selectedOrganizations.map(orgId => 
+            organizationService.updateOrganization(orgId, { status: 'rejected' })
+          )
+        );
+        setSuccess(`${selectedOrganizations.length} organizations rejected`);
+        await fetchOrganizations();
+        setSelectedOrganizations([]);
+        setShowBulkActions(false);
+      } catch (error) {
+        setError('Failed to reject organizations');
+        console.error('Error rejecting organizations:', error);
       }
-      await fetchOrganizations();
-      setShowCreateModal(false);
-      setShowEditModal(false);
-      setSelectedOrganization(null);
-    } catch (err) {
-      setError('Failed to save organization');
-      console.error('Error saving organization:', err);
     }
   };
 
   const handleBulkAction = (action: string) => {
-    console.log(`Bulk action: ${action} for organizations:`, selectedOrganizations);
-    // Implement bulk actions here
-    setSelectedOrganizations([]);
-    setShowBulkActions(false);
+    switch (action) {
+      case 'approve':
+        handleBulkApprove();
+        break;
+      case 'reject':
+        handleBulkReject();
+        break;
+      case 'suspend':
+        // Handle suspend action
+        console.log('Suspend action for:', selectedOrganizations);
+        setSelectedOrganizations([]);
+        setShowBulkActions(false);
+        break;
+      case 'export':
+        exportData();
+        setSelectedOrganizations([]);
+        setShowBulkActions(false);
+        break;
+      default:
+        setSelectedOrganizations([]);
+        setShowBulkActions(false);
+    }
   };
 
   const handleSelectOrganization = (orgId: string) => {
-    setSelectedOrganizations(prev => 
-      prev.includes(orgId) 
+    setSelectedOrganizations(prev =>
+      prev.includes(orgId)
         ? prev.filter(id => id !== orgId)
         : [...prev, orgId]
     );
@@ -244,17 +316,20 @@ const PartnerManagementTabs: React.FC = () => {
   };
 
   const tabs = [
-    { id: 'partners', name: 'Partner Profiles', icon: UserGroupIcon },
-    { id: 'onboarding', name: 'Partner Onboarding', icon: BuildingOfficeIcon },
-    { id: 'due-diligence', name: 'Due Diligence', icon: ShieldCheckIcon },
-    { id: 'compliance', name: 'Compliance', icon: DocumentCheckIcon },
+    { id: 'partners', name: 'Partner Directory', icon: UserGroupIcon },
+    { id: 'onboarding', name: 'Pending Approvals', icon: ClockIcon },
+    { id: 'due-diligence', name: 'Due Diligence', icon: DocumentCheckIcon },
+    { id: 'compliance', name: 'Compliance', icon: ShieldCheckIcon },
   ];
 
-  // Partner Profiles Tab Content
+  // Partner Directory Tab Content
   const renderPartnerProfiles = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Partner Profiles</h2>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Partner Directory</h2>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Manage approved partner organizations</p>
+        </div>
         <div className="flex items-center space-x-3">
           {selectedOrganizations.length > 0 && (
             <div className="relative">
@@ -269,15 +344,21 @@ const PartnerManagementTabs: React.FC = () => {
                 <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
                   <button
                     onClick={() => handleBulkAction('approve')}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    className="w-full text-left px-4 py-2 text-sm text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20"
                   >
                     Approve Selected
                   </button>
                   <button
                     onClick={() => handleBulkAction('reject')}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    className="w-full text-left px-4 py-2 text-sm text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20"
                   >
                     Reject Selected
+                  </button>
+                  <button
+                    onClick={() => handleBulkAction('suspend')}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    Suspend Selected
                   </button>
                   <button
                     onClick={() => handleBulkAction('export')}
@@ -296,72 +377,70 @@ const PartnerManagementTabs: React.FC = () => {
             <ArrowDownTrayIcon className="w-5 h-5" />
             Export
           </button>
-          <button
-            onClick={handleCreatePartner}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-          >
-            <PlusIcon className="w-5 h-5" />
-            Add Partner
-          </button>
+          <div className="bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-lg border border-blue-200 dark:border-blue-800">
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              Partners register through self-service portal
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Search and Filter Controls */}
       <div className="flex flex-col lg:flex-row gap-4 justify-between items-center">
-      <div className="flex flex-col sm:flex-row gap-4 flex-1">
-        <div className="relative flex-1 max-w-md">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input
-            type="text"
-            placeholder="Search partners..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-        <div className="flex gap-3">
-          <div className="relative">
-            <FunnelIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+        <div className="flex flex-col sm:flex-row gap-4 flex-1">
+          <div className="relative flex-1 max-w-md">
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Search partners..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div className="flex gap-3">
+            <div className="relative">
+              <FunnelIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="pl-9 pr-8 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="all">All Status</option>
+                <option value="approved">Approved</option>
+                <option value="pending">Pending</option>
+                <option value="rejected">Rejected</option>
+                <option value="suspended">Suspended</option>
+              </select>
+            </div>
             <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="pl-9 pr-8 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              value={complianceFilter}
+              onChange={(e) => setComplianceFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="all">All Status</option>
-              <option value="approved">Approved</option>
+              <option value="all">All Compliance</option>
+              <option value="approved">Compliant</option>
               <option value="pending">Pending</option>
-              <option value="rejected">Rejected</option>
-              <option value="suspended">Suspended</option>
+              <option value="in_review">In Review</option>
+              <option value="rejected">Non-Compliant</option>
             </select>
           </div>
-          <select
-            value={complianceFilter}
-            onChange={(e) => setComplianceFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`p-2 rounded-lg ${viewMode === 'grid' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
           >
-            <option value="all">All Compliance</option>
-            <option value="approved">Compliant</option>
-            <option value="pending">Pending</option>
-            <option value="in_review">In Review</option>
-            <option value="rejected">Non-Compliant</option>
-          </select>
+            <Squares2X2Icon className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={`p-2 rounded-lg ${viewMode === 'list' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
+          >
+            <ListBulletIcon className="w-5 h-5" />
+          </button>
         </div>
       </div>
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => setViewMode('grid')}
-          className={`p-2 rounded-lg ${viewMode === 'grid' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
-        >
-          <Squares2X2Icon className="w-5 h-5" />
-        </button>
-        <button
-          onClick={() => setViewMode('list')}
-          className={`p-2 rounded-lg ${viewMode === 'list' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
-        >
-          <ListBulletIcon className="w-5 h-5" />
-        </button>
-      </div>
-    </div>
 
       {loading ? (
         <div className="flex justify-center items-center py-12">
@@ -371,150 +450,152 @@ const PartnerManagementTabs: React.FC = () => {
         <div>
           {viewMode === 'grid' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredOrganizations.map((org) => (
-                  <div key={org.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{org.name}</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{org.legal_name}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">{org.country}</p>
-                      </div>
-                      <div className="flex items-center">
-                        {org.status === 'approved' && (
-                          <CheckCircleIcon className="w-5 h-5 text-green-500" />
-                        )}
-                        {org.status === 'pending' && (
-                          <ClockIcon className="w-5 h-5 text-yellow-500" />
-                        )}
-                        {(org.status === 'suspended' || org.status === 'rejected') && (
-                          <ExclamationTriangleIcon className="w-5 h-5 text-red-500" />
-                        )}
-                      </div>
+              {filteredOrganizations.map((org) => (
+                <div key={org.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{org.name}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{org.legal_name}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">{org.country}</p>
                     </div>
-                    
-                    <div className="mt-4 space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600 dark:text-gray-400">Status:</span>
-                        <span className={`font-medium ${
-                          org.status === 'approved' ? 'text-green-600' :
-                          org.status === 'pending' ? 'text-yellow-600' : 'text-red-600'
-                        }`}>
-                          {org.status.charAt(0).toUpperCase() + org.status.slice(1)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600 dark:text-gray-400">Compliance:</span>
-                        <span className={`font-medium ${
-                          org.compliance_status === 'approved' ? 'text-green-600' :
-                          org.compliance_status === 'pending' ? 'text-yellow-600' : 'text-red-600'
-                        }`}>
-                          {org.compliance_status?.charAt(0).toUpperCase() + org.compliance_status?.slice(1)}
-                        </span>
-                      </div>
+                    <div className="flex items-center">
+                      {org.status === 'approved' && (
+                        <CheckCircleIcon className="w-5 h-5 text-green-500" />
+                      )}
+                      {org.status === 'pending' && (
+                        <ClockIcon className="w-5 h-5 text-yellow-500" />
+                      )}
+                      {(org.status === 'suspended' || org.status === 'rejected') && (
+                        <ExclamationTriangleIcon className="w-5 h-5 text-red-500" />
+                      )}
                     </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead className="bg-gray-50 dark:bg-gray-700">
-                      <tr>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/3">
+                  
+                  <div className="mt-4 space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-gray-400">Status:</span>
+                      <span className={`font-medium ${
+                        org.status === 'approved' ? 'text-green-600' :
+                        org.status === 'pending' ? 'text-yellow-600' : 'text-red-600'
+                      }`}>
+                        {org.status.charAt(0).toUpperCase() + org.status.slice(1)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 dark:text-gray-400">Compliance:</span>
+                      <span className={`font-medium ${
+                        org.compliance_status === 'approved' ? 'text-green-600' :
+                        org.compliance_status === 'pending' ? 'text-yellow-600' : 'text-red-600'
+                      }`}>
+                        {org.compliance_status?.charAt(0).toUpperCase() + org.compliance_status?.slice(1)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/3">
+                        <div className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedOrganizations.length === filteredOrganizations.length && filteredOrganizations.length > 0}
+                            onChange={handleSelectAll}
+                            className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                          Organization
+                        </div>
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/4">
+                        Email
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/6">
+                        Country
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/8">
+                        Status
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/8">
+                        Compliance
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {filteredOrganizations.map((org) => (
+                      <tr key={org.id}>
+                        <td className="px-3 py-2">
                           <div className="flex items-center">
                             <input
                               type="checkbox"
-                              checked={selectedOrganizations.length === filteredOrganizations.length && filteredOrganizations.length > 0}
-                              onChange={handleSelectAll}
+                              checked={selectedOrganizations.includes(org.id)}
+                              onChange={() => handleSelectOrganization(org.id)}
                               className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                             />
-                            Organization
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-medium text-gray-900 dark:text-white truncate">{org.name}</div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{formatFieldValue(org.legal_name, 'No legal name')}</div>
+                            </div>
                           </div>
-                        </th>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/4">
-                          Email
-                        </th>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/6">
-                          Country
-                        </th>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/8">
-                          Status
-                        </th>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/8">
-                          Compliance
-                        </th>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">
-                          Actions
-                        </th>
+                        </td>
+                        <td className="px-3 py-2 text-sm text-gray-900 dark:text-white">
+                          <div className="truncate max-w-[200px]" title={org.email}>{org.email}</div>
+                        </td>
+                        <td className="px-3 py-2 text-sm text-gray-900 dark:text-white">
+                          <div className="truncate">{formatFieldValue(org.country, 'N/A')}</div>
+                        </td>
+                        <td className="px-3 py-2">
+                          {getStatusBadge(org.status)}
+                        </td>
+                        <td className="px-3 py-2">
+                          {getStatusBadge(org.compliance_status)}
+                        </td>
+                        <td className="px-3 py-2 text-sm font-medium">
+                          <div className="flex items-center space-x-1">
+                            <button 
+                              onClick={() => handleViewOrganization(org)}
+                              className="p-1.5 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                              title="View organization details"
+                            >
+                              <EyeIcon className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedOrganization(org);
+                                setShowViewModal(true);
+                              }}
+                              className="p-1.5 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors"
+                              title="View organization details"
+                            >
+                              <PencilIcon className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteOrganization(org)}
+                              className="p-1.5 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                              title="Delete organization"
+                            >
+                              <TrashIcon className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                      {filteredOrganizations.map((org) => (
-                        <tr key={org.id}>
-                          <td className="px-3 py-2">
-                            <div className="flex items-center">
-                              <input
-                                type="checkbox"
-                                checked={selectedOrganizations.includes(org.id)}
-                                onChange={() => handleSelectOrganization(org.id)}
-                                className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                              />
-                              <div className="min-w-0 flex-1">
-                                <div className="text-sm font-medium text-gray-900 dark:text-white truncate">{org.name}</div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{formatFieldValue(org.legal_name, 'No legal name')}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-3 py-2 text-sm text-gray-900 dark:text-white">
-                            <div className="truncate max-w-[200px]" title={org.email}>{org.email}</div>
-                          </td>
-                          <td className="px-3 py-2 text-sm text-gray-900 dark:text-white">
-                            <div className="truncate">{formatFieldValue(org.country, 'N/A')}</div>
-                          </td>
-                          <td className="px-3 py-2">
-                            {getStatusBadge(org.status)}
-                          </td>
-                          <td className="px-3 py-2">
-                            {getStatusBadge(org.compliance_status)}
-                          </td>
-                          <td className="px-3 py-2 text-sm font-medium">
-                            <div className="flex items-center space-x-1">
-                              <button 
-                                onClick={() => handleViewOrganization(org)}
-                                className="p-1.5 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
-                                title="View organization details"
-                              >
-                                <EyeIcon className="w-4 h-4" />
-                              </button>
-                              <button 
-                                onClick={() => handleEditOrganization(org)}
-                                className="p-1.5 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors"
-                                title="Edit organization"
-                              >
-                                <PencilIcon className="w-4 h-4" />
-                              </button>
-                              <button 
-                                onClick={() => handleDeleteOrganization(org)}
-                                className="p-1.5 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                                title="Delete organization"
-                              >
-                                <TrashIcon className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            )}
-          </div>
-        )}
-      </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
-
 
 
   const renderTabContent = () => {
@@ -527,6 +608,35 @@ const PartnerManagementTabs: React.FC = () => {
         return renderDueDiligence();
       case 'compliance':
         return renderCompliance();
+      case 'view-organization':
+        return selectedOrganization ? (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Organization Details</h2>
+              <button
+                onClick={() => {
+                  setSelectedOrganization(null);
+                  setActiveTab('partners');
+                }}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <XCircleIcon className="w-6 h-6" />
+              </button>
+            </div>
+            <OrganizationView organization={selectedOrganization} />
+          </div>
+        ) : null;
+      case 'edit-organization':
+        return selectedOrganization ? (
+          <OrganizationForm
+            organization={selectedOrganization}
+            onSave={handleSaveOrganization}
+            onCancel={() => {
+              setSelectedOrganization(null);
+              setActiveTab('partners');
+            }}
+          />
+        ) : null;
       default:
         return renderPartnerProfiles();
     }
@@ -1092,16 +1202,12 @@ const PartnerManagementTabs: React.FC = () => {
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Partner Onboarding</h2>
             <p className="text-gray-600 dark:text-gray-400 mt-1">Manage partner application pipeline and onboarding process</p>
           </div>
-          <button
-            onClick={handleCreatePartner}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 shadow-lg hover:shadow-xl transition-all"
-          >
-            <PlusIcon className="w-5 h-5" />
-            New Application
-          </button>
+          <div className="text-sm text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-lg">
+            Partners register through the public registration portal
+          </div>
         </div>
 
-        {/* Onboarding Pipeline Stats */}
+        {/* Onboarding Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 rounded-xl p-6 border border-blue-200 dark:border-blue-700">
             <div className="flex items-center justify-between mb-4">
@@ -1358,55 +1464,6 @@ const PartnerManagementTabs: React.FC = () => {
         {/* Tab Content */}
         {renderTabContent()}
 
-        {/* Create/Edit Organization Modal */}
-        {(showCreateModal || showEditModal) && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
-            <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 rounded-2xl shadow-2xl">
-              {/* Modal Header */}
-              <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-8 py-6 rounded-t-2xl">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-                      <PlusIcon className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                        {selectedOrganization ? 'Edit Organization' : 'Create New Organization'}
-                      </h2>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {selectedOrganization ? 'Update organization information' : 'Add a new partner organization'}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setShowCreateModal(false);
-                      setShowEditModal(false);
-                      setSelectedOrganization(null);
-                    }}
-                    className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                  >
-                    <XCircleIcon className="w-6 h-6" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Modal Content */}
-              <div className="px-8 py-6">
-                <OrganizationForm
-                  organization={selectedOrganization}
-                  onSave={handleSaveOrganization}
-                  onCancel={() => {
-                    setShowCreateModal(false);
-                    setShowEditModal(false);
-                    setSelectedOrganization(null);
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* View Organization Modal */}
         {showViewModal && selectedOrganization && (
           <div className="fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
@@ -1457,6 +1514,13 @@ const OrganizationForm: React.FC<{
   onSave: (data: any) => void;
   onCancel: () => void;
 }> = ({ organization, onSave, onCancel }) => {
+  // East African Countries
+  const eastAfricanCountries = [
+    'Burundi', 'Comoros', 'Djibouti', 'Eritrea', 'Ethiopia', 'Kenya', 
+    'Madagascar', 'Malawi', 'Mauritius', 'Mozambique', 'Rwanda', 
+    'Seychelles', 'Somalia', 'South Sudan', 'Sudan', 'Tanzania', 'Uganda', 'Zambia', 'Zimbabwe'
+  ];
+
   const [formData, setFormData] = useState({
     name: organization?.name || '',
     legal_name: organization?.legal_name || '',
@@ -1468,33 +1532,221 @@ const OrganizationForm: React.FC<{
     description: organization?.description || '',
     registration_number: organization?.registration_number || '',
     tax_id: organization?.tax_id || '',
+    // Primary Contact Information
+    primary_contact_name: organization?.primary_contact_name || '',
+    primary_contact_title: organization?.primary_contact_title || '',
+    primary_contact_phone: organization?.primary_contact_phone || '',
+    primary_contact_email: organization?.primary_contact_email || '',
+    // Enhanced Address Information
+    city: organization?.city || '',
+    state_province: organization?.state_province || '',
+    postal_code: organization?.postal_code || '',
+    // Banking Information
+    bank_name: organization?.bank_name || '',
+    bank_branch: organization?.bank_branch || '',
+    account_name: organization?.account_name || '',
+    account_number: organization?.account_number || '',
+    swift_code: organization?.swift_code || '',
+    // Authorized Signatory
+    signatory_name: organization?.signatory_name || '',
+    signatory_title: organization?.signatory_title || '',
+    signatory_email: organization?.signatory_email || '',
+    // Legal Structure
+    legal_structure: organization?.legal_structure || '',
+    incorporation_country: organization?.incorporation_country || '',
+    incorporation_date: organization?.incorporation_date || '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    
+    if (!validateForm()) {
+      // Scroll to first error
+      const firstError = document.querySelector('.border-red-500');
+      if (firstError) {
+        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      await onSave(formData);
+    } catch (error) {
+      console.error('Error saving organization:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const validateField = (name: string, value: string) => {
+    const newErrors = { ...errors };
+    
+    switch (name) {
+      case 'name':
+        if (!value.trim()) {
+          newErrors[name] = 'Organization name is required';
+        } else {
+          delete newErrors[name];
+        }
+        break;
+      case 'email':
+        if (!value.trim()) {
+          newErrors[name] = 'Email is required';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          newErrors[name] = 'Please enter a valid email address';
+        } else {
+          delete newErrors[name];
+        }
+        break;
+      case 'primary_contact_email':
+        if (!value.trim()) {
+          newErrors[name] = 'Primary contact email is required';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          newErrors[name] = 'Please enter a valid email address';
+        } else {
+          delete newErrors[name];
+        }
+        break;
+      case 'phone':
+      case 'primary_contact_phone':
+        if (value && !/^[+]?[0-9\s\-\(\)]{10,}$/.test(value)) {
+          newErrors[name] = 'Please enter a valid phone number';
+        } else {
+          delete newErrors[name];
+        }
+        break;
+      case 'website':
+        if (value && !/^https?:\/\/.+/.test(value)) {
+          newErrors[name] = 'Please enter a valid URL (starting with http:// or https://)';
+        } else {
+          delete newErrors[name];
+        }
+        break;
+      case 'country':
+        if (!value.trim()) {
+          newErrors[name] = 'Operating country is required';
+        } else {
+          delete newErrors[name];
+        }
+        break;
+      case 'address':
+        if (!value.trim()) {
+          newErrors[name] = 'Address is required';
+        } else {
+          delete newErrors[name];
+        }
+        break;
+      case 'city':
+        if (!value.trim()) {
+          newErrors[name] = 'City is required';
+        } else {
+          delete newErrors[name];
+        }
+        break;
+      case 'bank_name':
+      case 'bank_branch':
+      case 'account_name':
+      case 'account_number':
+        if (!value.trim()) {
+          newErrors[name] = 'This banking field is required';
+        } else {
+          delete newErrors[name];
+        }
+        break;
+      case 'signatory_name':
+        if (!value.trim()) {
+          newErrors[name] = 'Signatory name is required';
+        } else {
+          delete newErrors[name];
+        }
+        break;
+      case 'signatory_title':
+        if (!value.trim()) {
+          newErrors[name] = 'Signatory title is required';
+        } else {
+          delete newErrors[name];
+        }
+        break;
+      default:
+        break;
+    }
+    
+    setErrors(newErrors);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
+    
+    // Validate field on change
+    validateField(name, value);
+  };
+
+  const validateForm = () => {
+    const requiredFields = [
+      'name', 'email', 'country', 'address', 'city',
+      'primary_contact_name', 'primary_contact_title', 'primary_contact_email', 'primary_contact_phone',
+      'bank_name', 'bank_branch', 'account_name', 'account_number',
+      'signatory_name', 'signatory_title'
+    ];
+    
+    const newErrors: Record<string, string> = {};
+    
+    requiredFields.forEach(field => {
+      const value = formData[field as keyof typeof formData];
+      if (!value || !value.toString().trim()) {
+        newErrors[field] = 'This field is required';
+      }
+    });
+    
+    // Additional validations
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    
+    if (formData.primary_contact_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.primary_contact_email)) {
+      newErrors.primary_contact_email = 'Please enter a valid email address';
+    }
+    
+    if (formData.website && !/^https?:\/\/.+/.test(formData.website)) {
+      newErrors.website = 'Please enter a valid URL';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   return (
-    <div className="space-y-8">
-      <form onSubmit={handleSubmit} className="space-y-8">
+    <div className="space-y-6">
+      {/* Simple Title and Description */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          {organization ? 'Edit Partner' : 'Add Partner'}
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">
+          {organization ? 'Update partner organization information and details' : 'Add a new partner organization to the platform'}
+        </p>
+      </div>
+
+      <div>
+        <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Information Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
           <div className="flex items-center space-x-3 mb-6">
-            <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-              <BuildingOfficeIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <div className="w-7 h-7 bg-blue-50 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+              <BuildingOfficeIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Basic Information</h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">Basic Information</h3>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Organization Name *
@@ -1505,9 +1757,17 @@ const OrganizationForm: React.FC<{
                 value={formData.name}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
+                className={`w-full px-3 py-2.5 rounded-lg border ${errors.name ? 'border-red-300 focus:border-red-500 focus:ring-red-500/10' : 'border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500/10'} bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 transition-colors`}
                 placeholder="Enter organization name"
               />
+              {errors.name && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.name}
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -1518,7 +1778,7 @@ const OrganizationForm: React.FC<{
                 name="legal_name"
                 value={formData.legal_name}
                 onChange={handleChange}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-colors"
                 placeholder="Enter legal name"
               />
             </div>
@@ -1550,33 +1810,162 @@ const OrganizationForm: React.FC<{
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Country
+                Legal Structure
               </label>
-              <input
-                type="text"
+              <select
+                name="legal_structure"
+                value={formData.legal_structure}
+                onChange={handleChange}
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-colors"
+              >
+                <option value="">Select legal structure</option>
+                <option value="NGO">NGO</option>
+                <option value="Foundation">Foundation</option>
+                <option value="Company">Company</option>
+                <option value="Trust">Trust</option>
+                <option value="Association">Association</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Incorporation Country
+              </label>
+              <select
+                name="incorporation_country"
+                value={formData.incorporation_country}
+                onChange={handleChange}
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-colors"
+              >
+                <option value="">Select incorporation country</option>
+                {eastAfricanCountries.map(country => (
+                  <option key={country} value={country}>{country}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Operating Country *
+              </label>
+              <select
                 name="country"
                 value={formData.country}
                 onChange={handleChange}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
-                placeholder="Enter country"
+                required
+                className={`w-full px-4 py-3 rounded-lg border ${errors.country ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500/20'} bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:ring-2 transition-colors`}
+              >
+                <option value="">Select operating country</option>
+                {eastAfricanCountries.map(country => (
+                  <option key={country} value={country}>{country}</option>
+                ))}
+              </select>
+              {errors.country && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.country}
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Incorporation Date
+              </label>
+              <input
+                type="date"
+                name="incorporation_date"
+                value={formData.incorporation_date}
+                onChange={handleChange}
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-colors"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Address Information Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="w-7 h-7 bg-orange-50 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">Address Information</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Full Address *
+              </label>
+              <textarea
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                required
+                rows={3}
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-colors resize-none"
+                placeholder="Enter complete address"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                City *
+              </label>
+              <input
+                type="text"
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-colors"
+                placeholder="City name"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                State/Province
+              </label>
+              <input
+                type="text"
+                name="state_province"
+                value={formData.state_province}
+                onChange={handleChange}
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-colors"
+                placeholder="State or Province"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Postal Code
+              </label>
+              <input
+                type="text"
+                name="postal_code"
+                value={formData.postal_code}
+                onChange={handleChange}
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-colors"
+                placeholder="Postal/ZIP code"
               />
             </div>
           </div>
         </div>
 
         {/* Contact Information Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
           <div className="flex items-center space-x-3 mb-6">
-            <div className="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
-              <UserGroupIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
+            <div className="w-7 h-7 bg-green-50 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+              <UserGroupIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Contact Information</h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">Contact Information</h3>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Email Address *
+                General Email Address *
               </label>
               <input
                 type="email"
@@ -1584,20 +1973,28 @@ const OrganizationForm: React.FC<{
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
-                placeholder="contact@organization.com"
+                className={`w-full px-3 py-2.5 rounded-lg border ${errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500/20'} bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 transition-colors`}
+                placeholder="info@organization.com"
               />
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errors.email}
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Phone Number
+                General Phone Number
               </label>
               <input
                 type="tel"
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-colors"
                 placeholder="+1 (555) 123-4567"
               />
             </div>
@@ -1610,15 +2007,128 @@ const OrganizationForm: React.FC<{
                 name="website"
                 value={formData.website}
                 onChange={handleChange}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-colors"
                 placeholder="https://www.organization.com"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Contact Person Name *
+              </label>
+              <input
+                type="text"
+                name="primary_contact_name"
+                value={formData.primary_contact_name}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-colors"
+                placeholder="John Mary Vianney Mitana"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Title/Position *
+              </label>
+              <input
+                type="text"
+                name="primary_contact_title"
+                value={formData.primary_contact_title}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-colors"
+                placeholder="Executive Director"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Contact Email *
+              </label>
+              <input
+                type="email"
+                name="primary_contact_email"
+                value={formData.primary_contact_email}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-colors"
+                placeholder="contact@lgihe.org"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Contact Phone *
+              </label>
+              <input
+                type="tel"
+                name="primary_contact_phone"
+                value={formData.primary_contact_phone}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-colors"
+                placeholder="+256 xxx xxx xxx"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Authorized Signatory Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="w-7 h-7 bg-violet-50 dark:bg-violet-900/30 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">Authorized Signatory</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Person authorized to sign contracts</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Signatory Name *
+              </label>
+              <input
+                type="text"
+                name="signatory_name"
+                value={formData.signatory_name}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-colors"
+                placeholder="John Mary Vianney Mitana"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Signatory Title *
+              </label>
+              <input
+                type="text"
+                name="signatory_title"
+                value={formData.signatory_title}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-colors"
+                placeholder="Executive Director"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Signatory Email (for DocuSign)
+              </label>
+              <input
+                type="email"
+                name="signatory_email"
+                value={formData.signatory_email}
+                onChange={handleChange}
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-colors"
+                placeholder="director@lgihe.org"
               />
             </div>
           </div>
         </div>
 
         {/* Additional Information Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 shadow-lg hover:shadow-xl transition-all duration-300">
           <div className="flex items-center space-x-3 mb-6">
             <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
               <DocumentCheckIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
@@ -1629,20 +2139,7 @@ const OrganizationForm: React.FC<{
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Address
-              </label>
-              <textarea
-                name="address"
-                value={formData.address}
-                onChange={handleChange}
-                rows={3}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors resize-none"
-                placeholder="Enter full address including street, city, state, and postal code"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Description
+                Organization Description
               </label>
               <textarea
                 name="description"
@@ -1657,22 +2154,44 @@ const OrganizationForm: React.FC<{
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors font-medium"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
-          >
-            {organization ? 'Update Organization' : 'Create Organization'}
-          </button>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 shadow-lg">
+          <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-8 py-4 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm hover:bg-gray-50 dark:hover:bg-gray-600 transition-all duration-300 font-medium shadow-lg hover:shadow-xl hover:scale-105 transform"
+            >
+              <span className="flex items-center justify-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Cancel
+              </span>
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting || Object.keys(errors).length > 0}
+              className="px-10 py-4 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 transition-all duration-300 font-semibold shadow-xl hover:shadow-2xl hover:scale-105 transform relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                {isSubmitting ? (
+                  <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+                {isSubmitting ? 'Saving...' : (organization ? 'Update Organization' : 'Create Organization')}
+              </span>
+              <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            </button>
+          </div>
         </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 };

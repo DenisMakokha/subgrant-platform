@@ -4,7 +4,7 @@
 // This script creates test users for each role
 
 const { Client } = require('pg');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 // Database connection configuration

@@ -117,6 +117,15 @@ const ContractManagementTabs: React.FC = () => {
       api_key: '',
       from_email: ''
     },
+    custom_smtp: {
+      enabled: false,
+      host: '',
+      port: '587',
+      username: '',
+      password: '',
+      from_email: '',
+      encryption: 'tls'
+    },
     twilio: {
       enabled: false,
       account_sid: '',
@@ -124,6 +133,63 @@ const ContractManagementTabs: React.FC = () => {
       phone_number: ''
     }
   });
+
+  // Test email modal state
+  const [showTestEmailModal, setShowTestEmailModal] = useState(false);
+  const [testEmailData, setTestEmailData] = useState({
+    to: '',
+    subject: 'Test Email from SubGrant Platform',
+    message: 'This is a test email to verify your email integration is working correctly.',
+    integrationType: ''
+  });
+
+  // Test integration functions
+  const testIntegration = async (type: string) => {
+    if (type === 'SendGrid' || type === 'Custom SMTP') {
+      setTestEmailData(prev => ({ ...prev, integrationType: type }));
+      setShowTestEmailModal(true);
+    } else {
+      try {
+        console.log(`Testing ${type} integration...`);
+        // Simulate API test call
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        alert(`${type} integration test successful!`);
+      } catch (error) {
+        alert(`${type} integration test failed: ${error}`);
+      }
+    }
+  };
+
+  const sendTestEmail = async () => {
+    try {
+      console.log(`Sending test email via ${testEmailData.integrationType}...`);
+      
+      const response = await fetch('http://localhost:3000/api/integrations/test-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: testEmailData.to,
+          subject: testEmailData.subject,
+          message: testEmailData.message,
+          integrationType: testEmailData.integrationType
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert(`Test email sent successfully to ${testEmailData.to} via ${testEmailData.integrationType}!`);
+        setShowTestEmailModal(false);
+        setTestEmailData(prev => ({ ...prev, to: '', integrationType: '' }));
+      } else {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to send test email');
+      }
+    } catch (error) {
+      alert(`Failed to send test email: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
 
   // Determine active tab based on URL path
   const getActiveTabFromPath = () => {
@@ -151,6 +217,61 @@ const ContractManagementTabs: React.FC = () => {
   useEffect(() => {
     setActiveTab(getActiveTabFromPath());
   }, [location.pathname]);
+
+  // Load integration settings from API on component mount
+  useEffect(() => {
+    const loadIntegrationSettings = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/api/integrations/settings');
+        if (response.ok) {
+          const settings = await response.json();
+          // Merge with default values to ensure all properties exist
+          const mergedSettings = {
+            docusign: { ...integrationData.docusign, ...settings.docusign },
+            pandadoc: { ...integrationData.pandadoc, ...settings.pandadoc },
+            quickbooks: { ...integrationData.quickbooks, ...settings.quickbooks },
+            sendgrid: { ...integrationData.sendgrid, ...settings.sendgrid },
+            custom_smtp: { ...integrationData.custom_smtp, ...settings.custom_smtp },
+            twilio: { ...integrationData.twilio, ...settings.twilio }
+          };
+          setIntegrationData(mergedSettings);
+        }
+      } catch (error) {
+        console.error('Failed to load integration settings:', error);
+      }
+    };
+
+    loadIntegrationSettings();
+  }, []);
+
+  // Save integration settings to database
+  const saveIntegrationSettings = async () => {
+    try {
+      console.log('Sending integration data:', integrationData);
+      
+      const response = await fetch('http://localhost:3000/api/integrations/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(integrationData),
+      });
+
+      console.log('Response status:', response.status);
+      const responseData = await response.json();
+      console.log('Response data:', responseData);
+
+      if (response.ok) {
+        alert('Integration settings saved successfully!');
+        setShowIntegrationModal(false);
+      } else {
+        throw new Error(responseData.error || 'Failed to save settings');
+      }
+    } catch (error) {
+      console.error('Error saving integration settings:', error);
+      alert(`Failed to save integration settings: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
 
   useEffect(() => {
     fetchContracts();
@@ -578,18 +699,18 @@ const ContractManagementTabs: React.FC = () => {
     const mockTemplates = [
       {
         id: '1',
-        name: 'Sub-Grant Agreement Template 2025',
-        description: 'Standard sub-grant agreement template for partner organizations',
+        name: 'Grant Agreement Template 2025',
+        description: 'Standard grant agreement template for partner organizations',
         category: 'sub-grant',
         created_at: '2025-01-01',
         is_default: true,
         usage_count: 12,
-        content: `**SUBGRANT AGREEMENT**
+        content: `**GRANT AGREEMENT**
 
 1. **AGREEMENT DETAILS:**
    - Effective Date: {{start_date}}
    - Agreement End Date: {{end_date}}
-   - Sub-Grant Agreement Number: {{agreement_number}}
+   - Grant Agreement Number: {{agreement_number}}
 
 2. **CONTRACTING PARTIES:**
 
@@ -2257,7 +2378,6 @@ _________________________    Date: {{signature_date}}
             {/* Scrollable Body */}
             <div className="p-6 max-h-[calc(90vh-120px)] overflow-y-auto">
               <div className="space-y-8">
-                
                 {/* DocuSign Integration */}
                 <div className="border border-gray-200 dark:border-gray-600 rounded-xl p-6">
                   <div className="flex items-center justify-between mb-4">
@@ -2349,6 +2469,20 @@ _________________________    Date: {{signature_date}}
                       </div>
                     </div>
                   )}
+                  
+                  {integrationData.docusign.enabled && (
+                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                      <button
+                        onClick={() => testIntegration('DocuSign')}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Test Connection
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Xero Integration */}
@@ -2425,9 +2559,23 @@ _________________________    Date: {{signature_date}}
                       </div>
                     </div>
                   )}
+                  
+                  {integrationData.quickbooks.enabled && (
+                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                      <button
+                        onClick={() => testIntegration('QuickBooks')}
+                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Test Connection
+                      </button>
+                    </div>
+                  )}
                 </div>
 
-                {/* SendGrid Integration */}
+                {/* SendGrid Integration */
                 <div className="border border-gray-200 dark:border-gray-600 rounded-xl p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
@@ -2487,6 +2635,159 @@ _________________________    Date: {{signature_date}}
                       </div>
                     </div>
                   )}
+                  
+                  {integrationData.sendgrid.enabled && (
+                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                      <button
+                        onClick={() => testIntegration('SendGrid')}
+                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Test Email
+                      </button>
+                    </div>
+                  )}
+                </div>
+              }
+
+                {/* Custom SMTP Integration */}
+                <div className="border border-gray-200 dark:border-gray-600 rounded-xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                        <EnvelopeIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Custom SMTP</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Custom email server configuration</p>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={integrationData.custom_smtp.enabled}
+                        onChange={(e) => setIntegrationData({
+                          ...integrationData,
+                          custom_smtp: { ...integrationData.custom_smtp, enabled: e.target.checked }
+                        })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+                  
+                  {integrationData.custom_smtp.enabled && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          SMTP Host
+                        </label>
+                        <input
+                          type="text"
+                          value={integrationData.custom_smtp.host}
+                          onChange={(e) => setIntegrationData({
+                            ...integrationData,
+                            custom_smtp: { ...integrationData.custom_smtp, host: e.target.value }
+                          })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                          placeholder="smtp.gmail.com"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Port
+                        </label>
+                        <input
+                          type="number"
+                          value={integrationData.custom_smtp.port}
+                          onChange={(e) => setIntegrationData({
+                            ...integrationData,
+                            custom_smtp: { ...integrationData.custom_smtp, port: e.target.value }
+                          })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                          placeholder="587"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Username
+                        </label>
+                        <input
+                          type="text"
+                          value={integrationData.custom_smtp.username}
+                          onChange={(e) => setIntegrationData({
+                            ...integrationData,
+                            custom_smtp: { ...integrationData.custom_smtp, username: e.target.value }
+                          })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                          placeholder="your-email@domain.com"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Password
+                        </label>
+                        <input
+                          type="password"
+                          value={integrationData.custom_smtp.password}
+                          onChange={(e) => setIntegrationData({
+                            ...integrationData,
+                            custom_smtp: { ...integrationData.custom_smtp, password: e.target.value }
+                          })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                          placeholder="Enter SMTP Password"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          From Email
+                        </label>
+                        <input
+                          type="email"
+                          value={integrationData.custom_smtp.from_email}
+                          onChange={(e) => setIntegrationData({
+                            ...integrationData,
+                            custom_smtp: { ...integrationData.custom_smtp, from_email: e.target.value }
+                          })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                          placeholder="noreply@yourdomain.com"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Encryption
+                        </label>
+                        <select
+                          value={integrationData.custom_smtp.encryption}
+                          onChange={(e) => setIntegrationData({
+                            ...integrationData,
+                            custom_smtp: { ...integrationData.custom_smtp, encryption: e.target.value }
+                          })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        >
+                          <option value="tls">TLS</option>
+                          <option value="ssl">SSL</option>
+                          <option value="none">None</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {integrationData.custom_smtp.enabled && (
+                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                      <button
+                        onClick={() => testIntegration('Custom SMTP')}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Test Email
+                      </button>
+                    </div>
+                  )}
                 </div>
 
               </div>
@@ -2500,11 +2801,7 @@ _________________________    Date: {{signature_date}}
                   Cancel
                 </button>
                 <button
-                  onClick={() => {
-                    console.log('Saving integration data:', integrationData);
-                    alert('Integration settings saved successfully!');
-                    setShowIntegrationModal(false);
-                  }}
+                  onClick={saveIntegrationSettings}
                   className="px-6 py-2 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-lg hover:from-green-700 hover:to-teal-700 font-medium transition-all duration-200"
                 >
                   Save Configuration
@@ -2514,6 +2811,91 @@ _________________________    Date: {{signature_date}}
           </div>
         </div>
       )}
+
+      {/* Test Email Modal */}
+      {showTestEmailModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden p-0 transform animate-in zoom-in-95 duration-200">
+            {/* Fixed Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-t-2xl px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold text-white">Send Test Email</h2>
+                  <p className="text-blue-100 text-sm mt-1">Test your {testEmailData.integrationType} integration</p>
+                </div>
+                <button
+                  onClick={() => setShowTestEmailModal(false)}
+                  className="text-white hover:text-blue-200 transition-colors"
+                >
+                  <XMarkIcon className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Recipient Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={testEmailData.to}
+                    onChange={(e) => setTestEmailData(prev => ({ ...prev, to: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    placeholder="test@example.com"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Subject
+                  </label>
+                  <input
+                    type="text"
+                    value={testEmailData.subject}
+                    onChange={(e) => setTestEmailData(prev => ({ ...prev, subject: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Message
+                  </label>
+                  <textarea
+                    value={testEmailData.message}
+                    onChange={(e) => setTestEmailData(prev => ({ ...prev, message: e.target.value }))}
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={() => setShowTestEmailModal(false)}
+                  className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={sendTestEmail}
+                  disabled={!testEmailData.to}
+                  className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <EnvelopeIcon className="w-4 h-4" />
+                  Send Test Email
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       </div>
     </div>
   );

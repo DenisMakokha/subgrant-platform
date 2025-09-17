@@ -7,6 +7,7 @@ interface User {
   lastName: string;
   email: string;
   role: string;
+  email_verified?: boolean;
   organization?: {
     id: string;
     name: string;
@@ -56,6 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       lastName: userData.last_name || userData.lastName,
       email: userData.email,
       role: userData.role,
+      email_verified: userData.email_verified || (userData.role !== 'partner_user'),
       organization: userData.organization || {
         id: userData.org_id || 'default-org',
         name: userData.organization_name || 'Default Organization',

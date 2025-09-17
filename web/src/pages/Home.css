@@ -1,3 +1,4 @@
+/* Updated to remove all wave animations and replace with cloud hosting SVG - v3 - CACHE BUST */
 .home {
   min-height: 100vh;
   background: #f8fafc;
@@ -9,6 +10,40 @@
   padding: 4rem 2rem;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   margin-bottom: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 50%;
+  background-image: url('../assets/Partnership-bro.svg');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center right;
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 50%;
+  background-image: url('../assets/taking-notes-bro.svg');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center left;
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 1;
 }
 
 .hero h1 {
@@ -18,6 +53,8 @@
   font-weight: 700;
   text-shadow: 0 2px 4px rgba(0,0,0,0.3);
   line-height: 1.2;
+  position: relative;
+  z-index: 2;
 }
 
 .hero p {
@@ -25,14 +62,19 @@
   margin-bottom: 3rem;
   color: rgba(255, 255, 255, 0.9);
   font-weight: 300;
+  position: relative;
+  z-index: 2;
 }
 
 .cta-buttons {
   display: flex;
   justify-content: center;
   gap: 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 0;
+  position: relative;
+  z-index: 2;
 }
+
 
 .cta-button {
   padding: 1rem 2rem;
@@ -73,10 +115,12 @@
   box-shadow: 0 6px 20px rgba(0,0,0,0.3);
 }
 
+
 .features {
   background: #ffffff;
   padding: 3rem 2rem 6rem;
   position: relative;
+  overflow: hidden;
 }
 
 .features::before {
@@ -87,6 +131,17 @@
   right: 0;
   height: 100px;
   background: linear-gradient(to bottom, #f8fafc, #ffffff);
+}
+
+.features::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 150px;
+  background: linear-gradient(to top, rgba(102, 126, 234, 0.02), transparent);
+  pointer-events: none;
 }
 
 .features-container {
@@ -231,6 +286,7 @@
     width: 100%;
     max-width: 280px;
   }
+  
   
   .features {
     padding: 4rem 1rem;

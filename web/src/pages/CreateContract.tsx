@@ -75,7 +75,7 @@ const CreateContract: React.FC = () => {
           { id: 'partner-003', name: 'Water for All Foundation', registration: 'NGO Reg. No. 6432' },
         ]),
         Promise.resolve([
-          { id: 'template-001', name: 'Standard Sub-Grant Agreement', category: 'Standard' },
+          { id: 'template-001', name: 'Standard Grant Agreement', category: 'Standard' },
           { id: 'template-002', name: 'Education Program Contract', category: 'Education' },
           { id: 'template-003', name: 'Healthcare Services Agreement', category: 'Healthcare' },
         ])
@@ -164,7 +164,7 @@ const CreateContract: React.FC = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-white">Create New Contract</h1>
-                <p className="text-blue-100">Generate a new sub-grant agreement</p>
+                <p className="text-blue-100">Generate a new grant agreement</p>
               </div>
             </div>
             <button
@@ -214,7 +214,7 @@ const CreateContract: React.FC = () => {
                   value={formData.title}
                   onChange={handleInputChange}
                   className="w-full px-5 py-4 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-3 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-lg font-medium shadow-sm"
-                  placeholder="Sub-Grant Agreement 2025"
+                  placeholder="Grant Agreement 2025"
                   required
                 />
               </div>
