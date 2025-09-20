@@ -119,7 +119,7 @@ export default function PartnerSidebar({ isOpen = false, setIsOpen, disabled = f
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="flex h-full flex-col pt-20 lg:pt-6">
-          <nav className="bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-3xl p-4 sticky top-24 mx-4 shadow-xl shadow-gray-200/20 dark:shadow-gray-900/20">
+          <nav className="bg-white/90 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200/50 dark:border-gray-600/50 rounded-3xl p-4 sticky top-24 mx-4 shadow-xl shadow-gray-200/20 dark:shadow-black/40">
             {/* Navigation Items */}
             <div className="space-y-2">
               {items.map((item) => {
@@ -137,7 +137,7 @@ export default function PartnerSidebar({ isOpen = false, setIsOpen, disabled = f
                         ? 'opacity-50 cursor-pointer' 
                         : isActive 
                         ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25 transform scale-[1.02]' 
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:shadow-md hover:scale-[1.01]'
+                        : 'text-gray-700 dark:text-gray-200 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 dark:hover:from-gray-700/80 dark:hover:to-gray-600/80 dark:hover:text-white hover:shadow-md hover:scale-[1.01] dark:hover:shadow-gray-900/20'
                       }
                     `}
                   >

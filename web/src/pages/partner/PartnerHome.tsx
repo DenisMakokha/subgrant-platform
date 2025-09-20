@@ -40,8 +40,8 @@ export default function PartnerHome() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="space-y-6">
+    <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+      <div className="space-y-4 sm:space-y-6">
         {/* Welcome Header with Enhanced Gradient */}
         <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-3xl shadow-2xl border border-white/10">
           <div className="absolute inset-0 bg-black/10"></div>
@@ -51,26 +51,26 @@ export default function PartnerHome() {
               backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
             }}></div>
           </div>
-          <div className="relative p-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-4 mb-3">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm flex items-center justify-center border border-white/20 shadow-lg">
-                    <span className="text-3xl font-bold text-white">
+          <div className="relative p-4 sm:p-6 lg:p-8">
+            <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
+              <div className="flex-1">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shadow-xl flex-shrink-0">
+                    <span className="text-lg sm:text-2xl font-bold text-white">
                       {getUserDisplayName(user).charAt(0).toUpperCase()}
                     </span>
                   </div>
-                  <div>
-                    <h1 className="text-4xl font-bold text-white mb-1">
-                      Welcome back, {getUserDisplayName(user)}!
+                  <div className="min-w-0 flex-1">
+                    <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-1 truncate">
+                      {getUserDisplayName(user)}
                     </h1>
-                    <p className="text-blue-100 flex items-center gap-3">
-                      <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-white/20 to-white/10 text-white border border-white/20 backdrop-blur-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                      <span className="inline-flex px-2 sm:px-3 py-1 bg-white/20 rounded-full text-xs sm:text-sm font-medium backdrop-blur-sm border border-white/30 w-fit">
                         ✨ PARTNER
                       </span>
-                      <span className="text-white/80">•</span>
-                      <span className="font-medium">{(organization as any)?.name || 'Your Organization'}</span>
-                    </p>
+                      <span className="text-white/80 hidden sm:inline">•</span>
+                      <span className="font-medium text-white/90 text-sm sm:text-base truncate">{(organization as any)?.name || 'Your Organization'}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -114,15 +114,15 @@ export default function PartnerHome() {
         </div>
 
         {/* Enhanced Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {/* Enhanced Applications Card */}
           <div className="group relative overflow-hidden bg-white dark:bg-gray-800 rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-700 hover:-translate-y-1">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-100/50 to-indigo-100/50 dark:from-blue-800/20 dark:to-indigo-800/20 rounded-full -translate-y-10 translate-x-10 group-hover:scale-110 transition-transform duration-300"></div>
-            <div className="relative p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-xl group-hover:shadow-2xl group-hover:scale-110 transition-all duration-300">
-                  <DocumentIcon className="w-7 h-7 text-white" />
+            <div className="relative p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-xl group-hover:shadow-2xl group-hover:scale-110 transition-all duration-300">
+                  <DocumentIcon className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
                 </div>
                 <div className="text-right">
                   {modules.applications?.drafts > 0 && (

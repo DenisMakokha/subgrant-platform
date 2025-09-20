@@ -228,13 +228,13 @@ export default function OnboardingLanding() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-900">
-      <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-3 py-4 sm:px-4 sm:py-6 md:px-6 lg:px-8 lg:py-8">
         {/* Clean Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-2">
             Complete Your Partner Onboarding
           </h1>
-          <p className="text-lg text-slate-600 dark:text-slate-400 mb-4">
+          <p className="text-base sm:text-lg text-emerald-600 dark:text-emerald-400 font-semibold mb-4">
             Welcome, {getUserDisplayName(user)}
           </p>
           
@@ -251,15 +251,15 @@ export default function OnboardingLanding() {
         </div>
 
         {/* Progress Overview Card */}
-        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 dark:border-slate-700/50 p-8 mb-6">
+        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 dark:border-slate-700/50 p-4 sm:p-6 lg:p-8 mb-4 sm:mb-6">
           {/* Prominent Progress Header */}
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 space-y-3 sm:space-y-0">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
               Your Progress
             </h2>
-            <div className="flex items-center space-x-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-full px-4 py-2 border border-blue-200/50 dark:border-blue-700/50">
+            <div className="flex items-center space-x-2 sm:space-x-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-full px-3 sm:px-4 py-1.5 sm:py-2 border border-blue-200/50 dark:border-blue-700/50 w-fit">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+              <span className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
                 {sections.filter(s => s.done).length} of {sections.length} sections completed
               </span>
             </div>
