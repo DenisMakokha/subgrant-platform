@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import Layout from './components/Layout';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -45,6 +47,15 @@ import SectionA from './components/onboarding/SectionA';
 import ReviewStatus from './components/onboarding/ReviewStatus';
 import PartnerDashboard from './pages/PartnerDashboard';
 import ProtectedOnboardingRoute from './components/ProtectedOnboardingRoute';
+import PartnerShell from './components/PartnerShell';
+import PartnerHome from './pages/partner/PartnerHome';
+import RoleLanding from './components/RoleLanding';
+import GMShell from './components/GMShell';
+import COOShell from './components/COOShell';
+import GMDashboard from './pages/gm/GMDashboard';
+import COODashboard from './pages/coo/COODashboard';
+import OnboardingMain from './pages/partner/OnboardingMain';
+import OnboardingLanding from './pages/partner/OnboardingLanding';
 
 // Dashboard Router Component
 const DashboardRouter: React.FC = () => {
@@ -55,7 +66,7 @@ const DashboardRouter: React.FC = () => {
   
   if (user?.role === 'partner_user') {
     console.log('DashboardRouter - Redirecting to partner dashboard');
-    return <Navigate to="/partner/dashboard" replace />;
+    return <Navigate to="/partner" replace />;
   }
   
   console.log('DashboardRouter - Showing admin dashboard');
@@ -179,16 +190,74 @@ const App: React.FC = () => {
             </div>
           } />
           
+          {/* Partner routes - separate from main layout to avoid double sidebar */}
+          <Route path="/partner" element={
+            <ProtectedRoute requireRole="partner_user">
+              <PartnerShell />
+            </ProtectedRoute>
+          }>
+            <Route index element={<PartnerHome />} />
+            <Route path="onboarding" element={<OnboardingLanding />} />
+            <Route path="onboarding/landing" element={<OnboardingLanding />} />
+            <Route path="onboarding/section-a" element={<OnboardingMain />} />
+            <Route path="onboarding/section-b" element={<OnboardingMain />} />
+            <Route path="onboarding/section-c" element={<OnboardingMain />} />
+            <Route path="onboarding/review-status" element={<OnboardingMain />} />
+            {/* Dashboard route disabled - redirects to /partner/ instead */}
+            <Route path="dashboard" element={<Navigate to="/partner/" replace />} />
+            <Route path="applications/*" element={<div>Applications Module - Coming Soon</div>} />
+            <Route path="compliance/*" element={<div>Compliance Module - Coming Soon</div>} />
+            <Route path="me/*" element={<div>M&E Reports Module - Coming Soon</div>} />
+            <Route path="finance/*" element={<div>Finance Module - Coming Soon</div>} />
+            <Route path="messages/*" element={<div>Messages Module - Coming Soon</div>} />
+            <Route path="settings/*" element={<div>Settings Module - Coming Soon</div>} />
+          </Route>
+
           {/* Protected routes with layout */}
           <Route path="/*" element={
             <ProtectedRoute>
               <Layout>
                 <Routes>
-                  <Route path="/dashboard" element={
-                    <ProtectedRoute>
+                  {/* Admin Dashboard */}
+                  <Route path="/dashboard/*" element={
+                    <ProtectedRoute requireRole="admin">
                       <DashboardRouter />
                     </ProtectedRoute>
                   } />
+                  
+                  {/* GM Dashboard */}
+                  <Route path="/gm/*" element={
+                    <ProtectedRoute requireRole="grants_manager">
+                      <GMShell />
+                    </ProtectedRoute>
+                  }>
+                    <Route index element={<GMDashboard />} />
+                    <Route path="analytics" element={<div>GM Analytics - Coming Soon</div>} />
+                    <Route path="settings" element={<div>GM Settings - Coming Soon</div>} />
+                  </Route>
+                  
+                  {/* COO Dashboard */}
+                  <Route path="/coo/*" element={
+                    <ProtectedRoute requireRole="chief_operations_officer">
+                      <COOShell />
+                    </ProtectedRoute>
+                  }>
+                    <Route index element={<COODashboard />} />
+                    <Route path="reports" element={<div>COO Reports - Coming Soon</div>} />
+                    <Route path="analytics" element={<div>COO Analytics - Coming Soon</div>} />
+                    <Route path="settings" element={<div>COO Settings - Coming Soon</div>} />
+                  </Route>
+                  
+                  {/* Donor Dashboard */}
+                  <Route path="/donor/*" element={
+                    <ProtectedRoute requireRole="donor">
+                      <div>Donor Dashboard - Coming Soon</div>
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Partner routes moved outside Layout to avoid double sidebar */}
+                  
+                  {/* Legacy routes */}
                   <Route path="/projects" element={<ProjectManagementTabs />} />
                   <Route path="/projects/create" element={<ProjectManagementTabs />} />
                   <Route path="/projects/timeline" element={<ProjectManagementTabs />} />
@@ -196,7 +265,6 @@ const App: React.FC = () => {
                   <Route path="/partners" element={<PartnerManagementTabs />} />
                   <Route path="/partners/add-partner" element={<PartnerManagementTabs />} />
                   <Route path="/partners/onboarding" element={<PartnerOnboarding />} />
-                  <Route path="/partner/dashboard" element={<PartnerDashboard />} />
                   <Route path="/onboarding/section-c" element={
                     <ProtectedOnboardingRoute requiredStatus={['attachments_pending', 'changes_requested']}>
                       <SectionC />
@@ -280,6 +348,17 @@ const App: React.FC = () => {
             </ProtectedRoute>
           } />
         </Routes>
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+        />
       </Router>
     </AuthProvider>
   );

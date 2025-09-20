@@ -41,6 +41,7 @@ const requireAuth = async (req, res, next) => {
     }
 
     req.user = userResult.rows[0];
+    req.auth = decoded; // Also set req.auth for compatibility
     next();
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {
@@ -179,7 +180,7 @@ const requireAdminRole = async (req, res, next) => {
 const getUserOrganization = async (req, res, next) => {
   try {
     const orgResult = await db.pool.query(
-      'SELECT id, status, finalized_at, created_at, updated_at FROM organizations WHERE owner_user_id = $1',
+      'SELECT id, status, created_at, updated_at FROM organizations WHERE owner_user_id = $1',
       [req.user.id]
     );
 

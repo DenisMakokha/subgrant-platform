@@ -118,10 +118,10 @@ router.post('/login',
 
       // Get user with organization info
       const userResult = await db.pool.query(
-        `SELECT u.id, u.email, u.password_hash, u.first_name, u.last_name, u.email_verified_at,
-                o.id as organization_id, o.status as organization_status, o.finalized_at
+        `SELECT u.id, u.email, u.password_hash, u.first_name, u.last_name, u.email_verified_at, u.role, u.organization_id,
+                o.id as org_id, o.status as organization_status, o.name as organization_name
          FROM users u
-         LEFT JOIN organizations o ON o.owner_user_id = u.id
+         LEFT JOIN organizations o ON u.organization_id = o.id
          WHERE u.email = $1`,
         [email.toLowerCase()]
       );
@@ -138,16 +138,16 @@ router.post('/login',
         return res.status(401).json({ error: 'Invalid credentials' });
       }
 
-      // Generate JWT token
+      // Generate JWT token with canonical role
+      const role = 'partner_user'; // All onboarding users are partner_user
       const token = jwt.sign(
         { 
           sub: user.id,
-          email: user.email,
-          firstName: user.first_name,
-          lastName: user.last_name
+          role,
+          organization_id: user.organization_id
         },
         process.env.JWT_SECRET,
-        { expiresIn: '24h' }
+        { expiresIn: '12h' }
       );
 
       res.json({
@@ -157,13 +157,15 @@ router.post('/login',
           email: user.email,
           firstName: user.first_name,
           lastName: user.last_name,
-          emailVerified: !!user.email_verified_at,
-          organization: user.organization_id ? {
-            id: user.organization_id,
-            status: user.organization_status,
-            finalized: !!user.finalized_at
-          } : null
-        }
+          role: user.role || role,
+          email_verified: !!user.email_verified_at,
+          organization_id: user.organization_id
+        },
+        organization: user.organization_id ? {
+          id: user.organization_id,
+          name: user.organization_name,
+          status: user.organization_status
+        } : null
       });
 
     } catch (error) {
@@ -212,10 +214,10 @@ router.get('/verify',
           [verification.user_id]
         );
 
-        // Update organization status to attachments_pending
+        // Update organization status to a_pending (new linear flow)
         await client.query(
           'UPDATE organizations SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE owner_user_id = $2',
-          ['attachments_pending', verification.user_id]
+          ['a_pending', verification.user_id]
         );
 
         // Delete verification token
@@ -226,8 +228,8 @@ router.get('/verify',
 
         await client.query('COMMIT');
 
-        // Redirect to onboarding section C
-        const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/onboarding/section-c?verified=true`;
+        // Redirect to onboarding section A (new linear flow start)
+        const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/onboarding/section-a?verified=true`;
         res.redirect(redirectUrl);
 
       } catch (error) {

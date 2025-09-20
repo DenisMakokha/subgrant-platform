@@ -48,16 +48,13 @@ class Organization {
 
   // Create a new organization
   static async create(organizationData) {
+    // Use only the basic columns that exist in the database
     const query = `
       INSERT INTO organizations (
         name, legal_name, registration_number, tax_id, address, country, phone, email,
         website, description, status, compliance_status, due_diligence_completed,
-        due_diligence_date, primary_contact_name, primary_contact_title, primary_contact_phone,
-        primary_contact_email, city, state_province, postal_code, bank_name, bank_branch,
-        account_name, account_number, swift_code, signatory_name, signatory_title,
-        signatory_email, legal_structure, incorporation_country, incorporation_date,
-        created_by, updated_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34)
+        due_diligence_date, created_by, updated_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       RETURNING *;
     `;
     
@@ -76,24 +73,6 @@ class Organization {
       organizationData.compliance_status || 'pending',
       organizationData.due_diligence_completed || false,
       organizationData.due_diligence_date,
-      organizationData.primary_contact_name,
-      organizationData.primary_contact_title,
-      organizationData.primary_contact_phone,
-      organizationData.primary_contact_email,
-      organizationData.city,
-      organizationData.state_province,
-      organizationData.postal_code,
-      organizationData.bank_name,
-      organizationData.bank_branch,
-      organizationData.account_name,
-      organizationData.account_number,
-      organizationData.swift_code,
-      organizationData.signatory_name,
-      organizationData.signatory_title,
-      organizationData.signatory_email,
-      organizationData.legal_structure,
-      organizationData.incorporation_country,
-      organizationData.incorporation_date,
       organizationData.created_by,
       organizationData.updated_by
     ];
@@ -113,6 +92,17 @@ class Organization {
   static async findByEmail(email) {
     const query = 'SELECT * FROM organizations WHERE email = $1';
     const result = await db.pool.query(query, [email]);
+    return result.rows.length ? new Organization(result.rows[0]) : null;
+  }
+
+  // Find organization by owner user ID (via users table)
+  static async findByOwnerId(userId) {
+    const query = `
+      SELECT o.* FROM organizations o
+      JOIN users u ON u.organization_id = o.id
+      WHERE u.id = $1
+    `;
+    const result = await db.pool.query(query, [userId]);
     return result.rows.length ? new Organization(result.rows[0]) : null;
   }
 

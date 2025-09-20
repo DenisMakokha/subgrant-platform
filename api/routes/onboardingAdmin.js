@@ -256,8 +256,13 @@ router.post('/review/:organizationId/decision',
 
         switch (decision) {
           case 'approve':
-            newStatus = 'approved';
-            emailFunction = () => sendApprovedEmail(organization.email, organization.first_name);
+            newStatus = 'finalized';
+            const { sendOnboardingCompletedEmail } = require('../services/emailService');
+            emailFunction = () => sendOnboardingCompletedEmail(
+              organization.email,
+              organization.first_name,
+              'Your Organization'
+            );
             break;
           case 'changes':
             newStatus = 'changes_requested';

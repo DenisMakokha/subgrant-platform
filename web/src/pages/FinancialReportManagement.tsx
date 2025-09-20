@@ -664,7 +664,7 @@ const FinancialReportManagement: React.FC = () => {
                             </button>
                           </>
                         )}
-                        {report.status === 'submitted' && user?.role === 'finance_officer' && (
+                        {report.status === 'submitted' && user?.role === 'admin' && (
                           <button
                             onClick={() => handleApprove(report.id)}
                             className="p-2 text-gray-400 hover:text-green-600 dark:hover:text-green-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"

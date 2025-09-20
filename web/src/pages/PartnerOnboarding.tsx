@@ -277,8 +277,8 @@ const PartnerOnboarding: React.FC = () => {
 
   // Calculate metrics
   const totalOrganizations = organizations.length;
-  const pendingCount = organizations.filter(org => org.status === 'pending').length;
-  const approvedCount = organizations.filter(org => org.status === 'approved').length;
+  const pendingCount = organizations.filter(org => org.status === 'email_pending' || org.status === 'a_pending' || org.status === 'b_pending' || org.status === 'c_pending').length;
+  const approvedCount = organizations.filter(org => org.status === 'finalized').length;
 
   return (
     <div className="space-y-6">

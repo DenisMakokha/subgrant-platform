@@ -79,12 +79,11 @@ export const validateUserName = (name: string): boolean => {
 // Validate role
 export const validateRole = (role: string): boolean => {
   const validRoles = [
-    'system_administrator',
-    'accountant',
-    'budget_holder',
-    'finance_manager',
+    'admin',
     'partner_user',
-    'auditor'
+    'grants_manager',
+    'chief_operations_officer',
+    'donor'
   ];
   return validRoles.includes(role);
 };

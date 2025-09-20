@@ -22,7 +22,7 @@ const testUsers = [
     first_name: 'System',
     last_name: 'Administrator',
     email: 'admin@example.com',
-    role: 'system_administrator',
+    role: 'admin',
     password: 'admin123'
   },
   {

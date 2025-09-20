@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import OnboardingLayout from './OnboardingLayout';
 import { fetchWithAuth } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface MoneyYear {
   amountUsd: number;
@@ -24,6 +25,7 @@ interface SectionBData {
 
 const SectionB: React.FC = () => {
   const navigate = useNavigate();
+  const { organization, refreshSession } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -91,10 +93,12 @@ const SectionB: React.FC = () => {
         body: JSON.stringify(assessment)
       });
 
-      const result = await response.json();
-      
-      if (result.nextStep === 'review') {
-        navigate('/onboarding/review');
+      if (response.ok) {
+        await refreshSession(); // Refresh to get updated organization status
+        navigate('/onboarding/section-c');
+      } else {
+        const errorData = await response.json();
+        console.error('Submission failed:', errorData.error);
       }
     } catch (error) {
       console.error('Failed to submit Section B:', error);
@@ -171,9 +175,9 @@ const SectionB: React.FC = () => {
       <div className="p-8">
         {/* Header */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Financial Assessment</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Section B: Financial Assessment</h2>
           <p className="text-lg text-gray-600">
-            Help us understand your organization's financial capacity and grant management experience. This information helps us determine appropriate funding levels and support needs.
+            Help us understand your organization's financial capacity and grant management experience. This information helps us determine appropriate funding levels and support needs. Complete this section to proceed to Section C.
           </p>
         </div>
 
@@ -288,10 +292,10 @@ const SectionB: React.FC = () => {
         {/* Footer Actions */}
         <div className="flex justify-between">
           <button
-            onClick={() => navigate('/onboarding/section-c')}
+            onClick={() => navigate('/onboarding/section-a')}
             className="px-6 py-3 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
-            ← Back to Document Upload
+            ← Back to Section A
           </button>
           
           <div className="flex space-x-4">
@@ -308,7 +312,7 @@ const SectionB: React.FC = () => {
               disabled={submitting}
               className="px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
             >
-              {submitting ? 'Submitting...' : 'Submit for Review'}
+              {submitting ? 'Submitting...' : 'Continue to Section C'}
             </button>
           </div>
         </div>

@@ -9,7 +9,7 @@ const mockUsers = [
   {
     id: '1',
     email: 'admin@example.com',
-    role: 'system_administrator'
+    role: 'admin'
   },
   {
     id: '2',

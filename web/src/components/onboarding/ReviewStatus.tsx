@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import OnboardingLayout from './OnboardingLayout';
 import { fetchWithAuth } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface ReviewFlag {
   id: string;
@@ -22,6 +23,7 @@ interface ReviewData {
 
 const ReviewStatus: React.FC = () => {
   const navigate = useNavigate();
+  const { organization, refreshSession } = useAuth();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<ReviewData | null>(null);
 
@@ -67,10 +69,10 @@ const ReviewStatus: React.FC = () => {
           color: 'orange',
           icon: '📝'
         };
-      case 'approved':
+      case 'finalized':
         return {
-          title: 'Approved!',
-          description: 'Congratulations! Your application has been approved.',
+          title: 'Application Finalized!',
+          description: 'Congratulations! Your application has been finalized and you can now access the partner dashboard.',
           color: 'green',
           icon: '✅'
         };
@@ -149,17 +151,17 @@ const ReviewStatus: React.FC = () => {
               </div>
             )}
 
-            {data.organizationStatus === 'approved' && (
+            {data.organizationStatus === 'finalized' && (
               <div>
-                <h3 className="text-xl font-semibold text-green-800 mb-4">Ready for Final Step!</h3>
+                <h3 className="text-xl font-semibold text-green-800 mb-4">Application Complete!</h3>
                 <p className="text-green-700 mb-6">
-                  Your application has been approved! Please complete your final organization profile to gain full access to the platform.
+                  Your application has been finalized! You now have full access to the partner dashboard and can begin managing your grants.
                 </p>
                 <button
-                  onClick={() => navigate('/onboarding/section-a')}
+                  onClick={() => navigate('/partner/')}
                   className="px-8 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
                 >
-                  Complete Final Profile →
+                  Go to Partner Home →
                 </button>
               </div>
             )}
@@ -204,16 +206,22 @@ const ReviewStatus: React.FC = () => {
             {data.organizationStatus === 'changes_requested' && (
               <div className="mt-8 flex justify-center space-x-4">
                 <button
-                  onClick={() => navigate('/onboarding/section-c')}
+                  onClick={() => navigate('/onboarding/section-a')}
                   className="px-6 py-3 border border-indigo-600 text-indigo-600 rounded-lg font-medium hover:bg-indigo-50 transition-colors"
                 >
-                  Update Documents
+                  Update Profile
                 </button>
                 <button
                   onClick={() => navigate('/onboarding/section-b')}
-                  className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+                  className="px-6 py-3 border border-indigo-600 text-indigo-600 rounded-lg font-medium hover:bg-indigo-50 transition-colors"
                 >
                   Update Financial Info
+                </button>
+                <button
+                  onClick={() => navigate('/onboarding/section-c')}
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+                >
+                  Update Documents
                 </button>
               </div>
             )}
@@ -231,8 +239,8 @@ const ReviewStatus: React.FC = () => {
                 </svg>
               </div>
               <div>
-                <p className="font-medium text-gray-900">Section C: Documents Submitted</p>
-                <p className="text-sm text-gray-500">All required documents uploaded</p>
+                <p className="font-medium text-gray-900">Section A: Organization Profile</p>
+                <p className="text-sm text-gray-500">Organization details submitted</p>
               </div>
             </div>
 
@@ -243,17 +251,29 @@ const ReviewStatus: React.FC = () => {
                 </svg>
               </div>
               <div>
-                <p className="font-medium text-gray-900">Section B: Financial Assessment Submitted</p>
+                <p className="font-medium text-gray-900">Section B: Financial Assessment</p>
                 <p className="text-sm text-gray-500">Financial capacity information provided</p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">Section C: Documents Submitted</p>
+                <p className="text-sm text-gray-500">All required documents uploaded</p>
               </div>
             </div>
 
             <div className="flex items-center space-x-4">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                 data.organizationStatus === 'under_review' ? 'bg-yellow-500' :
-                ['approved', 'changes_requested'].includes(data.organizationStatus) ? 'bg-green-500' : 'bg-gray-300'
+                ['finalized', 'changes_requested'].includes(data.organizationStatus) ? 'bg-green-500' : 'bg-gray-300'
               }`}>
-                {['approved', 'changes_requested'].includes(data.organizationStatus) ? (
+                {['finalized', 'changes_requested'].includes(data.organizationStatus) ? (
                   <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
@@ -267,27 +287,9 @@ const ReviewStatus: React.FC = () => {
                 <p className="font-medium text-gray-900">Review Process</p>
                 <p className="text-sm text-gray-500">
                   {data.organizationStatus === 'under_review' ? 'Currently in progress...' :
-                   data.organizationStatus === 'approved' ? 'Completed - Approved!' :
+                   data.organizationStatus === 'finalized' ? 'Completed - Finalized!' :
                    data.organizationStatus === 'changes_requested' ? 'Completed - Changes requested' :
                    'Pending'}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                data.organizationStatus === 'approved' ? 'bg-indigo-500' : 'bg-gray-300'
-              }`}>
-                {data.organizationStatus === 'approved' ? (
-                  <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
-                ) : (
-                  <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
-                )}
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">Section A: Final Profile</p>
-                <p className="text-sm text-gray-500">
-                  {data.organizationStatus === 'approved' ? 'Ready to complete' : 'Waiting for approval'}
                 </p>
               </div>
             </div>

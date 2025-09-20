@@ -49,29 +49,32 @@ const Login: React.FC = () => {
     setError('');
 
     try {
-      // Call the login API
-      const response = await authApi.login(email, password);
+      // Use the new login function that handles token and session
+      const { role, sessionData } = await login({ email, password });
       
-      // Save the token
-      saveToken(response.token);
-      
-      // Update auth context
-      login(response.user);
-      
-      // Role-based redirect
-      console.log('User role:', response.user.role);
+      // Role-based redirect using session data, not login response
+      console.log('User role from session:', role);
       let redirectPath = '/dashboard';
-      if (response.user.role === 'partner_user') {
-        redirectPath = '/partner/dashboard';
+      if (role === 'partner_user') {
+        redirectPath = '/partner';
         console.log('Redirecting partner to:', redirectPath);
+      } else if (role === 'grants_manager') {
+        redirectPath = '/gm';
+      } else if (role === 'chief_operations_officer') {
+        redirectPath = '/coo';
       } else {
-        console.log('Redirecting admin to:', redirectPath);
+        console.log('Redirecting to default dashboard:', redirectPath);
       }
       
       // Use intended destination if it exists, otherwise use role-based default
       const from = location.state?.from?.pathname || redirectPath;
       console.log('Final redirect path:', from);
-      navigate(from, { replace: true });
+      
+      // Small delay to ensure auth state is fully updated
+      setTimeout(() => {
+        console.log('About to navigate to:', from);
+        navigate(from, { replace: true });
+      }, 100);
     } catch (err: any) {
       // Check if it's an email verification error and user is a partner
       if (err.message === 'Email not verified' && err.userRole === 'partner_user') {

@@ -4,7 +4,7 @@ const notificationService = require('../services/notificationService');
 const { requireRole, requirePermission } = require('../middleware/rbac');
 
 // Get notifications for the current user
-router.get('/', requireRole(['system_administrator', 'accountant', 'budget_holder', 'finance_manager', 'partner_user', 'auditor']), async (req, res) => {
+router.get('/', requireRole(['admin', 'accountant', 'budget_holder', 'finance_manager', 'partner_user', 'auditor']), async (req, res) => {
   try {
     const userId = req.user.id;
     const notifications = await notificationService.getUserNotifications(userId);
@@ -16,7 +16,7 @@ router.get('/', requireRole(['system_administrator', 'accountant', 'budget_holde
 });
 
 // Mark a notification as read
-router.put('/:id/read', requireRole(['system_administrator', 'accountant', 'budget_holder', 'finance_manager', 'partner_user', 'auditor']), async (req, res) => {
+router.put('/:id/read', requireRole(['admin', 'accountant', 'budget_holder', 'finance_manager', 'partner_user', 'auditor']), async (req, res) => {
   try {
     const notificationId = req.params.id;
     const userId = req.user.id;
@@ -35,7 +35,7 @@ router.put('/:id/read', requireRole(['system_administrator', 'accountant', 'budg
 });
 
 // Create a new notification (admin only)
-router.post('/', requireRole(['system_administrator']), async (req, res) => {
+router.post('/', requireRole(['admin']), async (req, res) => {
   try {
     const { type, title, message, priority, audienceType, audienceId, relatedEntityType, relatedEntityId, scheduledAt } = req.body;
     

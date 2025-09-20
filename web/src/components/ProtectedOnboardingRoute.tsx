@@ -111,7 +111,7 @@ const ProtectedOnboardingRoute: React.FC<ProtectedOnboardingRouteProps> = ({
       case 'approved':
         return '/onboarding/section-a';
       case 'finalized':
-        return '/partner/dashboard';
+        return '/partner/';
       default:
         return '/onboarding/section-c';
     }

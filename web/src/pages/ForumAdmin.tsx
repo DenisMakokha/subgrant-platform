@@ -413,7 +413,7 @@ const Forum: React.FC = () => {
   };
 
   // Check if user is admin
-  const isAdmin = user?.role === 'system_administrator' || user?.role === 'admin';
+  const isAdmin = user?.role === 'admin';
 
   const tabs = [
     { id: 'posts', name: 'Forum Posts', icon: ChatBubbleLeftRightIcon, count: posts.length },

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import OnboardingLayout from './OnboardingLayout';
 import { fetchWithAuth } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 import { BuildingOfficeIcon, UserGroupIcon, BanknotesIcon, DocumentCheckIcon } from '@heroicons/react/24/outline';
 
 interface OrganizationProfile {
@@ -52,7 +53,8 @@ interface OnboardingData {
 
 const SectionA: React.FC = () => {
   const navigate = useNavigate();
-  const [data, setData] = useState<OnboardingData>({ organizationStatus: 'section_a' });
+  const { organization, refreshSession } = useAuth();
+  const [data, setData] = useState<OnboardingData>({ organizationStatus: 'a_pending' });
   const [profile, setProfile] = useState<OrganizationProfile>({
     name: '',
     legal_name: '',
@@ -99,16 +101,16 @@ const SectionA: React.FC = () => {
 
   const loadOnboardingData = async () => {
     try {
-      const response = await fetchWithAuth('/api/onboarding/status');
+      const response = await fetchWithAuth('/api/onboarding/section-a');
       if (response.ok) {
-        const onboardingData = await response.json();
-        setData(onboardingData);
-        if (onboardingData.sectionAData) {
-          setProfile(prev => ({ ...prev, ...onboardingData.sectionAData }));
+        const sectionData = await response.json();
+        if (sectionData.sectionAData) {
+          setProfile(prev => ({ ...prev, ...sectionData.sectionAData }));
         }
+        setData({ organizationStatus: organization?.status || 'a_pending', sectionAData: sectionData.sectionAData });
       }
     } catch (error) {
-      console.error('Error loading onboarding data:', error);
+      console.error('Error loading Section A data:', error);
     }
   };
 
@@ -145,7 +147,11 @@ const SectionA: React.FC = () => {
       });
 
       if (response.ok) {
-        navigate('/onboarding/complete');
+        await refreshSession(); // Refresh to get updated organization status
+        navigate('/onboarding/section-b');
+      } else {
+        const errorData = await response.json();
+        console.error('Submission failed:', errorData.error);
       }
     } catch (error) {
       console.error('Error submitting section:', error);
@@ -159,9 +165,9 @@ const SectionA: React.FC = () => {
       <div className="p-8">
         {/* Header */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Complete Your Organization Profile</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Section A: Organization Profile</h2>
           <p className="text-lg text-gray-600">
-            Provide your organization's comprehensive details to finalize your partnership with Zizi Afrique Foundation. This information will be used for contracts, payments, and official communications.
+            Provide your organization's comprehensive details. This information will be used for contracts, payments, and official communications. Complete this section to proceed to Section B.
           </p>
         </div>
 
@@ -591,7 +597,7 @@ const SectionA: React.FC = () => {
               disabled={submitting}
               className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 transition-all font-medium shadow-lg"
             >
-              {submitting ? 'Submitting...' : 'Complete Onboarding'}
+              {submitting ? 'Submitting...' : 'Continue to Section B'}
             </button>
           </div>
         </form>

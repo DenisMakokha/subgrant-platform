@@ -238,16 +238,16 @@ const Dashboard: React.FC = () => {
                   <div className="flex items-center gap-3 mb-2">
                     <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
                       <span className="text-2xl font-bold text-white">
-                        {(user.firstName || user.email).charAt(0).toUpperCase()}
+                        {(user.firstName || user.first_name || user.email || 'U').charAt(0).toUpperCase()}
                       </span>
                     </div>
                     <div>
                       <h1 className="text-3xl font-bold text-white">
-                        Welcome back, {user.firstName || user.email}!
+                        Welcome back, {user.firstName || user.first_name || user.email}!
                       </h1>
                       <p className="text-blue-100 mt-1 flex items-center gap-2">
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-white/20 text-white">
-                          {user.role.replace('_', ' ').toUpperCase()}
+                          {(user.role || 'user').replace('_', ' ').toUpperCase()}
                         </span>
                         • Grants Platform
                       </p>

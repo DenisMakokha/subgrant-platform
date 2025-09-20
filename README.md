@@ -40,7 +40,6 @@ subgrant-platform/
 │   ├── config/          # Configuration files
 │   ├── scripts/         # Database scripts
 │   ├── tests/           # Unit and integration tests
-│   ├── Dockerfile       # API Docker configuration
 │   └── package.json     # API dependencies
 ├── web/                 # Web frontend application
 │   ├── public/          # Static assets
@@ -52,10 +51,8 @@ subgrant-platform/
 │   │   ├── utils/       # Utility functions
 │   │   ├── App.tsx      # Main application component
 │   │   └── index.tsx    # Entry point
-│   ├── Dockerfile       # Web Docker configuration
 │   └── package.json     # Web dependencies
 ├── docs/                # Documentation
-├── docker-compose.yml   # Docker Compose configuration
 └── README.md            # This file
 ```
 
@@ -66,55 +63,24 @@ subgrant-platform/
 - PostgreSQL database
 - Redis for caching and sessions
 - JWT for authentication
-- Docker for containerization
 
 ### Frontend (Web)
 - React.js with TypeScript
 - React Router for navigation
 - CSS Modules for styling
-- Docker for containerization
+- Tailwind CSS
 
 ## Local Development Setup
 
 The platform can be fully developed and tested on a local machine before deployment. Follow these steps to set up your local development environment:
 
 ### Prerequisites
-- Docker and Docker Compose
+- PostgreSQL (installed locally)
+- Node.js (version 14 or higher)
 - Git
 - Code editor (VS Code recommended)
 
-### Quick Start
-```bash
-# Clone the repository
-git clone <repository-url>
-cd subgrant-platform
-
-# Option 1: Use the Docker setup script (Linux/Mac)
-./scripts/setup.sh
-
-# Option 2: Use the Docker setup script (Windows)
-scripts\setup.bat
-
-# Option 3: Use the manual setup script (Linux/Mac)
-./scripts/manual-setup.sh
-
-# Option 4: Use the manual setup script (Windows)
-scripts\manual-setup.bat
-
-# Option 5: Manual setup with Docker Compose
-docker-compose up -d
-
-# The services will be available at:
-# API: http://localhost:3000
-# Web: http://localhost:3001
-```
-
-### Manual Setup (without Docker)
-If you prefer to run services manually without Docker:
-
-#### Prerequisites
-- PostgreSQL (superuser password: makokha300)
-- Node.js (version 14 or higher)
+### Setup Instructions
 
 #### Database Setup
 1. Create the database and user:
@@ -169,9 +135,9 @@ All technical documentation is available in the [docs](docs/) directory:
 
 ## Deployment
 
-The platform can be deployed to cloud environments (AWS, Azure, GCP) using the Docker Compose configuration or by deploying individual services.
+The platform can be deployed to cloud environments (AWS, Azure, GCP) by deploying individual services.
 
-For local development, all services can run on a developer's machine using Docker.
+For local development, all services can run on a developer's machine with PostgreSQL installed locally.
 
 ## Contributing
 

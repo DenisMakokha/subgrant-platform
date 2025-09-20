@@ -40,7 +40,7 @@ Represents system users including administrators, approvers, and partner represe
 - last_name (VARCHAR)
 - email (VARCHAR, unique)
 - phone (VARCHAR)
-- role (VARCHAR) - system_administrator, admin, accountant, budget_holder, finance_manager, m&e_officer, donor, partner_user
+- role (VARCHAR) - admin, partner_user, grants_manager, chief_operations_officer, donor
 - status (VARCHAR) - active, inactive, suspended
 - mfa_enabled (BOOLEAN)
 - mfa_secret (VARCHAR)

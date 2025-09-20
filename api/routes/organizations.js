@@ -1,25 +1,56 @@
 const express = require('express');
 const router = express.Router();
 const Organization = require('../models/organization');
+const db = require('../config/database'); // Fix the db import path
+const authenticateToken = require('../middleware/auth');
 
 // Create a new organization
-router.post('/', async (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
   try {
+    console.log('Organization creation request received');
+    console.log('Request body:', req.body);
+    console.log('User from token:', req.user);
+    
     const organizationData = req.body;
+    const userId = req.user?.id || req.user?.sub;
+    
+    console.log('Extracted userId:', userId);
     
     // Validate required fields
     if (!organizationData.name || !organizationData.email) {
       return res.status(400).json({ error: 'Name and email are required' });
     }
 
+    // Check if user already has an organization
+    if (userId) {
+      const existingOrg = await Organization.findByOwnerId(userId);
+      if (existingOrg) {
+        return res.status(400).json({ error: 'User already has an organization' });
+      }
+    }
+
     // Create the organization
-    const organization = await Organization.create(organizationData);
+    const organization = await Organization.create({
+      ...organizationData,
+      status: organizationData.status || 'pending',
+      created_by: userId,
+      updated_by: userId
+    });
+    
+    // Update user's organization_id to link them to this organization
+    if (userId) {
+      await db.pool.query(
+        'UPDATE users SET organization_id = $1 WHERE id = $2',
+        [organization.id, userId]
+      );
+    }
     
     res.status(201).json({
       message: 'Organization created successfully',
       organization
     });
   } catch (error) {
+    console.error('Organization creation error:', error);
     res.status(500).json({ error: error.message });
   }
 });

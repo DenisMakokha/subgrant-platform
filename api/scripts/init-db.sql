@@ -49,7 +49,7 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 
 -- Insert default admin user
 INSERT INTO users (first_name, last_name, email, role, password_hash)
-VALUES ('Admin', 'User', 'admin@example.com', 'system_administrator', '$2b$10$example_hash_here');
+VALUES ('Admin', 'User', 'admin@example.com', 'admin', '$2b$10$example_hash_here');
 
 -- Insert default organization
 INSERT INTO organizations (name, legal_name, status, compliance_status)

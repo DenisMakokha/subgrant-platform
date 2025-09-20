@@ -56,41 +56,16 @@ const PartnerLogin: React.FC = () => {
           return;
         }
 
-        // Check organization status and redirect accordingly
-        if (data.organization) {
-          const orgStatus = data.organization.status;
-          
-          switch (orgStatus) {
-            case 'email_pending':
-              navigate('/auth/verify-email', { 
-                state: { 
-                  email: formData.email,
-                  message: 'Please verify your email to continue.' 
-                }
-              });
-              break;
-            case 'attachments_pending':
-              navigate('/onboarding/section-c');
-              break;
-            case 'financials_pending':
-              navigate('/onboarding/section-b');
-              break;
-            case 'under_review':
-            case 'changes_requested':
-              navigate('/onboarding/review-status');
-              break;
-            case 'approved':
-              navigate('/onboarding/section-a');
-              break;
-            case 'finalized':
-              navigate('/partner/dashboard');
-              break;
-            default:
-              navigate('/onboarding/section-c');
-          }
-        } else {
-          // No organization yet, start onboarding
-          navigate('/onboarding/section-c');
+        const orgStatus = data.organization?.status;
+        switch (orgStatus) {
+          case 'email_pending':
+          case 'a_pending': navigate('/onboarding/section-a'); break;
+          case 'b_pending': navigate('/onboarding/section-b'); break;
+          case 'c_pending': navigate('/onboarding/section-c'); break;
+          case 'under_review':
+          case 'changes_requested': navigate('/onboarding/review-status'); break;
+          case 'finalized': navigate('/partner/'); break;
+          default: navigate('/onboarding/section-a');
         }
       } else {
         setError(data.error || 'Login failed');

@@ -10,7 +10,7 @@ router.use(authenticateToken);
 // Create a new contract (Admin only)
 router.post(
   '/',
-  authorizeRole(['system_administrator', 'admin']),
+  authorizeRole(['admin', 'admin']),
   checkPermission('contracts', 'create'),
   ContractController.createContract
 );
@@ -39,7 +39,7 @@ router.get(
 // Update a contract (Admin only)
 router.put(
   '/:id',
-  authorizeRole(['system_administrator', 'admin']),
+  authorizeRole(['admin', 'admin']),
   checkPermission('contracts', 'update'),
   ContractController.updateContract
 );
@@ -47,7 +47,7 @@ router.put(
 // Delete a contract (Admin only)
 router.delete(
   '/:id',
-  authorizeRole(['system_administrator', 'admin']),
+  authorizeRole(['admin', 'admin']),
   checkPermission('contracts', 'delete'),
   ContractController.deleteContract
 );
@@ -55,7 +55,7 @@ router.delete(
 // Upload a signed contract document (Admin only)
 router.post(
   '/:contractId/artifacts',
-  authorizeRole(['system_administrator', 'admin']),
+  authorizeRole(['admin', 'admin']),
   checkPermission('contracts', 'update'),
   ContractController.uploadContractDocument
 );
@@ -77,7 +77,7 @@ router.get(
 // Send contract for signing (Admin only)
 router.post(
   '/:contractId/send-for-signing',
-  authorizeRole(['system_administrator', 'admin']),
+  authorizeRole(['admin', 'admin']),
   checkPermission('contracts', 'update'),
   ContractController.sendContractForSigning
 );
@@ -92,7 +92,7 @@ router.get(
 // Generate contract PDF
 router.post(
   '/:contractId/generate-pdf',
-  authorizeRole(['system_administrator', 'admin']),
+  authorizeRole(['admin', 'admin']),
   checkPermission('contracts', 'update'),
   ContractController.generateContractPDF
 );

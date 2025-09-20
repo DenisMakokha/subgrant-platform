@@ -70,7 +70,7 @@ export const formatStatus = (status: string): string => {
 export const formatRole = (role: string): string => {
   // Convert role to readable format
   const roleMap: { [key: string]: string } = {
-    'system_administrator': 'System Administrator',
+    'admin': 'System Administrator',
     'accountant': 'Accountant',
     'budget_holder': 'Budget Holder',
     'finance_manager': 'Finance Manager',

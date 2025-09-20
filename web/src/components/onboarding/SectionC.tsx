@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import OnboardingLayout from './OnboardingLayout';
 import { fetchWithAuth } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface FileUpload {
   key: string;
@@ -37,6 +38,7 @@ interface SectionCData {
 
 const SectionC: React.FC = () => {
   const navigate = useNavigate();
+  const { organization, refreshSession } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -186,7 +188,7 @@ const SectionC: React.FC = () => {
     }
   };
 
-  const submitSection = async () => {
+  const submitApplication = async () => {
     setSubmitting(true);
     try {
       const documents = Object.entries(responses).map(([code, response]) => ({
@@ -194,19 +196,29 @@ const SectionC: React.FC = () => {
         ...response
       }));
 
-      const response = await fetchWithAuth('/api/onboarding/section-c/submit', {
+      // First save the documents
+      await fetchWithAuth('/api/onboarding/section-c/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ documents })
       });
 
-      const result = await response.json();
-      
-      if (result.nextStep === 'section-b') {
-        navigate('/onboarding/section-b');
+      // Then submit the complete application
+      const response = await fetchWithAuth('/api/onboarding/section-c/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+
+      if (response.ok) {
+        await refreshSession(); // Refresh to get updated organization status
+        navigate('/onboarding/review-status');
+      } else {
+        const errorData = await response.json();
+        console.error('Submission failed:', errorData.error);
       }
     } catch (error) {
-      console.error('Failed to submit Section C:', error);
+      console.error('Failed to submit application:', error);
     } finally {
       setSubmitting(false);
     }
@@ -250,9 +262,9 @@ const SectionC: React.FC = () => {
       <div className="p-8">
         {/* Header */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Document Upload</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Section C: Document Upload</h2>
           <p className="text-lg text-gray-600">
-            Upload the required documents for your organization's verification. You can upload files directly or mark items as not applicable with an explanation if they don't apply to your organization type.
+            Upload the required documents for your organization's verification. You can upload files directly or mark items as not applicable with an explanation if they don't apply to your organization type. Complete this section to submit your application for review.
           </p>
         </div>
 
@@ -383,20 +395,29 @@ const SectionC: React.FC = () => {
         {/* Footer Actions */}
         <div className="mt-8 flex justify-between">
           <button
-            onClick={saveDraft}
-            disabled={saving}
-            className="px-6 py-3 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+            onClick={() => navigate('/onboarding/section-b')}
+            className="px-6 py-3 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
-            {saving ? 'Saving...' : 'Save Draft'}
+            ← Back to Section B
           </button>
           
-          <button
-            onClick={submitSection}
-            disabled={submitting}
-            className="px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-          >
-            {submitting ? 'Submitting...' : 'Submit & Continue'}
-          </button>
+          <div className="flex space-x-4">
+            <button
+              onClick={saveDraft}
+              disabled={saving}
+              className="px-6 py-3 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+            >
+              {saving ? 'Saving...' : 'Save Draft'}
+            </button>
+            
+            <button
+              onClick={submitApplication}
+              disabled={submitting}
+              className="px-8 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 font-semibold"
+            >
+              {submitting ? 'Submitting Application...' : 'Submit Application'}
+            </button>
+          </div>
         </div>
       </div>
     </OnboardingLayout>

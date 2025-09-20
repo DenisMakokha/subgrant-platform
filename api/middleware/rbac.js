@@ -81,7 +81,7 @@ const rolePermissions = {
     financial_reports: ['read'],
     audit_logs: ['read']
   },
-  system_administrator: {
+  admin: {
     organizations: ['create', 'read', 'update', 'delete'],
     users: ['create', 'read', 'update', 'delete'],
     projects: ['create', 'read', 'update', 'delete'],

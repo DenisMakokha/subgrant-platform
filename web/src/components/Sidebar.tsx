@@ -102,10 +102,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       // Partner-specific menu items
       return [
         {
-          id: 'dashboard',
-          name: 'Dashboard',
+          id: 'home',
+          name: 'Home',
           icon: DashboardIcon,
-          path: '/partner/dashboard'
+          path: '/partner/'
         },
         {
           id: 'contracts',

@@ -10,7 +10,7 @@ export interface Organization {
   email: string;
   website?: string;
   description?: string;
-  status: 'pending' | 'approved' | 'rejected' | 'suspended';
+  status: 'email_pending' | 'a_pending' | 'b_pending' | 'c_pending' | 'under_review' | 'changes_requested' | 'finalized' | 'rejected' | 'pending' | 'approved' | 'suspended';
   compliance_status: 'pending' | 'in_review' | 'approved' | 'rejected';
   due_diligence_completed: boolean;
   due_diligence_date?: string;
@@ -54,7 +54,7 @@ export interface OrganizationFormData {
   email: string;
   website: string;
   description: string;
-  status?: 'pending' | 'approved' | 'rejected' | 'suspended';
+  status?: 'email_pending' | 'a_pending' | 'b_pending' | 'c_pending' | 'under_review' | 'changes_requested' | 'finalized' | 'rejected' | 'pending' | 'approved' | 'suspended';
   compliance_status?: 'pending' | 'in_review' | 'approved' | 'rejected';
   // Primary Contact Information
   primary_contact_name: string;

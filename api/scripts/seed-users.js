@@ -19,7 +19,7 @@ const testUsers = [
     password: 'admin123',
     first_name: 'Admin',
     last_name: 'User',
-    role: 'system_administrator',
+    role: 'admin',
     organization_id: null
   },
   {
@@ -27,7 +27,7 @@ const testUsers = [
     password: 'admin123',
     first_name: 'Admin',
     last_name: 'User',
-    role: 'system_administrator',
+    role: 'admin',
     organization_id: null
   },
   {

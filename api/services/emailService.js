@@ -4,38 +4,17 @@ const dotenv = require('dotenv');
 // Load environment variables
 dotenv.config();
 
-// Create transporter for sending emails
-const createTransporter = () => {
-  // For development, we'll use ethereal.email to test emails
-  // In production, you would use a real email service like Gmail, SendGrid, etc.
-  if (process.env.NODE_ENV === 'development') {
-    return nodemailer.createTransporter({
-      host: 'smtp.ethereal.email',
-      port: 587,
-      auth: {
-        user: process.env.ETHEREAL_USER || 'test@example.com',
-        pass: process.env.ETHEREAL_PASS || 'password'
-      }
-    });
-  } else {
-    // Production email configuration
-    return nodemailer.createTransporter({
-      host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-      port: process.env.EMAIL_PORT || 587,
-      secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
-    });
-  }
-};
+// Single unified transporter
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST,
+  port: Number(process.env.EMAIL_PORT || 587),
+  secure: process.env.EMAIL_SECURE === 'true',
+  auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+});
 
 // Send email notification
 const sendEmail = async (to, subject, html, text) => {
   try {
-    // Create transporter
-    const transporter = createTransporter();
     
     // Define email options
     const mailOptions = {

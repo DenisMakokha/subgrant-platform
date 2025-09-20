@@ -19,8 +19,23 @@ router.get('/section-b',
   requireAuth,
   requireEmailVerified,
   getUserOrganization,
-  requireOrgStatus('financials_pending', 'changes_requested'),
   async (req, res) => {
+    // Check if organization exists
+    if (!req.userOrganization) {
+      return res.status(400).json({ 
+        error: 'Organization not found. Please create an organization first.',
+        userId: req.user.id
+      });
+    }
+
+    // Check if organization is in the right status (allow a_pending or b_pending)
+    if (!['a_pending', 'b_pending', 'c_pending'].includes(req.userOrganization.status)) {
+      return res.status(400).json({ 
+        error: 'Organization must complete Section A first',
+        currentStatus: req.userOrganization.status,
+        requiredStatus: 'a_pending, b_pending, or c_pending'
+      });
+    }
     try {
       // Get existing financial assessment
       const assessmentResult = await db.pool.query(
@@ -75,15 +90,31 @@ router.get('/section-b',
   }
 );
 
-// Save Section B draft
+// Save Section B and move to Section C
 router.post('/section-b/save',
   requireAuth,
   requireEmailVerified,
   getUserOrganization,
-  requireOrgStatus('financials_pending', 'changes_requested'),
+  requireOrgOwnership,
   validateSchema(FinancialAssessmentSchema),
   auditLog('section_b_save'),
   async (req, res) => {
+    // Check if organization exists
+    if (!req.userOrganization) {
+      return res.status(400).json({ 
+        error: 'Organization not found. Please create an organization first.',
+        userId: req.user.id
+      });
+    }
+
+    // Check if organization is in the right status (allow a_pending or b_pending)
+    if (!['a_pending', 'b_pending'].includes(req.userOrganization.status)) {
+      return res.status(400).json({ 
+        error: 'Organization must complete Section A first',
+        currentStatus: req.userOrganization.status,
+        requiredStatus: 'a_pending or b_pending'
+      });
+    }
     try {
       const { 
         currentAnnualBudget,
@@ -130,7 +161,13 @@ router.post('/section-b/save',
         ]
       );
 
-      res.json({ message: 'Draft saved successfully' });
+      // Update organization status to c_pending (B→C transition)
+      await db.pool.query(
+        'UPDATE organizations SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+        ['c_pending', req.userOrganization.id]
+      );
+
+      res.json({ ok: true, nextStep: 'section-c' });
 
     } catch (error) {
       console.error('Save Section B error:', error);
@@ -139,102 +176,5 @@ router.post('/section-b/save',
   }
 );
 
-// Submit Section B
-router.post('/section-b/submit',
-  requireAuth,
-  requireEmailVerified,
-  getUserOrganization,
-  requireOrgStatus('financials_pending', 'changes_requested'),
-  validateSchema(FinancialAssessmentSchema),
-  auditLog('section_b_submit'),
-  async (req, res) => {
-    try {
-      const { 
-        currentAnnualBudget,
-        nextYearAnnualBudgetEstimate,
-        largestGrantEverManaged,
-        currentDonorFunding,
-        otherFunds
-      } = req.validatedData;
-
-      const client = await db.pool.connect();
-      try {
-        await client.query('BEGIN');
-
-        // Save financial assessment with submission timestamp
-        await client.query(
-          `INSERT INTO financial_assessments (
-             organization_id,
-             current_annual_budget_amount_usd, current_annual_budget_year,
-             next_year_annual_budget_estimate_amount_usd, next_year_annual_budget_estimate_year,
-             largest_grant_ever_managed_amount_usd, largest_grant_ever_managed_year,
-             current_donor_funding_amount_usd, current_donor_funding_year,
-             other_funds_amount_usd, other_funds_year,
-             submitted_at
-           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, CURRENT_TIMESTAMP)
-           ON CONFLICT (organization_id)
-           DO UPDATE SET
-             current_annual_budget_amount_usd = EXCLUDED.current_annual_budget_amount_usd,
-             current_annual_budget_year = EXCLUDED.current_annual_budget_year,
-             next_year_annual_budget_estimate_amount_usd = EXCLUDED.next_year_annual_budget_estimate_amount_usd,
-             next_year_annual_budget_estimate_year = EXCLUDED.next_year_annual_budget_estimate_year,
-             largest_grant_ever_managed_amount_usd = EXCLUDED.largest_grant_ever_managed_amount_usd,
-             largest_grant_ever_managed_year = EXCLUDED.largest_grant_ever_managed_year,
-             current_donor_funding_amount_usd = EXCLUDED.current_donor_funding_amount_usd,
-             current_donor_funding_year = EXCLUDED.current_donor_funding_year,
-             other_funds_amount_usd = EXCLUDED.other_funds_amount_usd,
-             other_funds_year = EXCLUDED.other_funds_year,
-             submitted_at = CURRENT_TIMESTAMP,
-             updated_at = CURRENT_TIMESTAMP`,
-          [
-            req.userOrganization.id,
-            currentAnnualBudget.amountUsd,
-            currentAnnualBudget.year,
-            nextYearAnnualBudgetEstimate.amountUsd,
-            nextYearAnnualBudgetEstimate.year,
-            largestGrantEverManaged.amountUsd,
-            largestGrantEverManaged.year,
-            currentDonorFunding.amountUsd,
-            currentDonorFunding.year,
-            otherFunds.amountUsd,
-            otherFunds.year
-          ]
-        );
-
-        // Update organization status to under_review
-        await client.query(
-          'UPDATE organizations SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
-          ['under_review', req.userOrganization.id]
-        );
-
-        await client.query('COMMIT');
-
-        // Send confirmation email
-        await sendSubmissionReceivedEmail(
-          req.user.email,
-          req.user.first_name,
-          'Section B (Financial Assessment)'
-        );
-
-        // TODO: Notify admin reviewers about new submission
-
-        res.json({ 
-          message: 'Section B submitted successfully. Your application is now under review.',
-          nextStep: 'review'
-        });
-
-      } catch (error) {
-        await client.query('ROLLBACK');
-        throw error;
-      } finally {
-        client.release();
-      }
-
-    } catch (error) {
-      console.error('Submit Section B error:', error);
-      res.status(500).json({ error: 'Failed to submit Section B' });
-    }
-  }
-);
 
 module.exports = router;

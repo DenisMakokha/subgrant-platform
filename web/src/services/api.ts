@@ -48,6 +48,20 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     
+    // Handle 423 Locked (onboarding required)
+    if (response.status === 423) {
+      try {
+        const lockData = await response.clone().json();
+        if (lockData?.code === 'ONBOARDING_REQUIRED' && lockData?.next) {
+          console.warn('Onboarding required, redirecting to:', lockData.next);
+          window.location.assign(lockData.next);
+          return response;
+        }
+      } catch (e) {
+        // If we can't parse the lock response, fall through to default handling
+      }
+    }
+    
     // Handle 401 Unauthorized (token expired/invalid)
     if (response.status === 401) {
       console.warn('Unauthorized response, logging out user');

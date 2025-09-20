@@ -109,7 +109,7 @@ export const isTokenExpired = (token: string): boolean => {
 
 // Check if user is admin
 export const isAdmin = (): boolean => {
-  return hasRole('system_administrator');
+  return hasRole('admin');
 };
 
 // Check if user is a partner user
