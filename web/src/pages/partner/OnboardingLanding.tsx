@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { fetchWithAuth } from '../../services/api';
 import { toast } from 'react-toastify';
 import StatusBadge from '../../components/StatusBadge';
-import { formatOrgStatus } from '../../utils/format';
+import { formatOrgStatus, getUserDisplayName } from '../../utils/format';
 
 export default function OnboardingLanding() {
   const { organization, nextStep, user, refreshSession } = useAuth();
@@ -235,7 +235,7 @@ export default function OnboardingLanding() {
             Complete Your Partner Onboarding
           </h1>
           <p className="text-lg text-slate-600 dark:text-slate-400 mb-4">
-            Welcome, {user?.email}
+            Welcome, {getUserDisplayName(user)}
           </p>
           
           {/* Current Status Display */}

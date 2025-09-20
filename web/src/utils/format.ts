@@ -144,6 +144,29 @@ export const getStatusDescription = (status: string): string => {
   return descriptionMap[status] || 'Status information not available.';
 };
 
+// Get user display name with fallbacks
+export const getUserDisplayName = (user: any): string => {
+  if (!user) return 'User';
+  
+  // Try different name fields in order of preference
+  if (user.name) return user.name;
+  if (user.firstName && user.lastName) return `${user.firstName} ${user.lastName}`;
+  if (user.first_name && user.last_name) return `${user.first_name} ${user.last_name}`;
+  if (user.firstName) return user.firstName;
+  if (user.first_name) return user.first_name;
+  
+  // Fallback to email username (part before @)
+  if (user.email) {
+    const emailUsername = user.email.split('@')[0];
+    // Capitalize first letter and replace dots/underscores with spaces
+    return emailUsername
+      .replace(/[._]/g, ' ')
+      .replace(/\b\w/g, (char: string) => char.toUpperCase());
+  }
+  
+  return 'Partner';
+};
+
 // Get status color classes for consistent styling
 export const getStatusColor = (status: string): { bg: string; text: string; border: string } => {
   const colorMap: { [key: string]: { bg: string; text: string; border: string } } = {
