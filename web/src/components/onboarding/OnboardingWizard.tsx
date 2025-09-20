@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import StatusBadge from '../StatusBadge';
 
 // Modern SVG Icons for better UI
 const StepIcons = {
@@ -62,6 +64,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
   isSaving = false
 }) => {
   const navigate = useNavigate();
+  const { organization } = useAuth();
   const currentStepIndex = steps.findIndex(s => s.id === currentStepId);
   const currentStep = steps[currentStepIndex];
 
@@ -97,9 +100,17 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Partner Onboarding</h1>
               <p className="text-gray-600 dark:text-gray-400 mt-1">Complete your profile to start partnering with us</p>
             </div>
-            <div className="text-right">
-              <div className="text-sm text-gray-600 dark:text-gray-400">Overall Progress</div>
-              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{progress}%</div>
+            <div className="text-right space-y-3">
+              <div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Overall Progress</div>
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{progress}%</div>
+              </div>
+              {organization?.status && (
+                <div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Current Status</div>
+                  <StatusBadge status={organization.status} size="sm" />
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { fetchWithAuth } from '../../services/api';
 import { toast } from 'react-toastify';
+import StatusBadge from '../../components/StatusBadge';
 
 export default function OnboardingLanding() {
   const { organization, nextStep, user, refreshSession } = useAuth();
@@ -232,9 +233,15 @@ export default function OnboardingLanding() {
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
             Complete Your Partner Onboarding
           </h1>
-          <p className="text-lg text-slate-600 dark:text-slate-400 mb-2">
+          <p className="text-lg text-slate-600 dark:text-slate-400 mb-4">
             Welcome, {user?.email}
           </p>
+          
+          {/* Current Status Display */}
+          <div className="flex justify-center mb-4">
+            <StatusBadge status={current} showDescription={true} />
+          </div>
+          
           <p className="text-sm text-slate-500 dark:text-slate-500">
             To unlock the full Partner Dashboard, please complete all onboarding steps below.
           </p>
