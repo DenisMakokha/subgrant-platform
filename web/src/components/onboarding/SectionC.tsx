@@ -290,7 +290,7 @@ const SectionC: React.FC = () => {
                         <div className="grid grid-cols-12 gap-4 items-start">
                           {/* Document Title */}
                           <div className="col-span-5">
-                            <p className="text-xs font-light text-gray-600 leading-tight">{req.title}</p>
+                            <p className="text-xs font-light text-gray-600 leading-tight" style={{ fontSize: '0.9rem' }}>{req.title}</p>
                             {!req.isOptional && (
                               <span className="inline-block mt-1 px-2 py-1 text-xs bg-red-100 text-red-800 rounded">
                                 Required

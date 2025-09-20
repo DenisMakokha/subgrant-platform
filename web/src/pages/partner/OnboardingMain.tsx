@@ -1507,9 +1507,16 @@ const OnboardingMain: React.FC = () => {
 
                 return (
                   <div key={category} className="bg-gray-50 rounded-xl p-6">
-                    <h4 className="text-xl font-semibold text-gray-900 mb-6">
-                      {getCategoryTitle(category)}
-                    </h4>
+                    <div className="flex items-center space-x-3 mb-6">
+                      <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                      </div>
+                      <h4 className="text-xl font-semibold text-gray-900">
+                        {getCategoryTitle(category)}
+                      </h4>
+                    </div>
                     
                     <div className="space-y-6">
                       {requirements.map(req => {
@@ -1521,18 +1528,30 @@ const OnboardingMain: React.FC = () => {
                             <div className="grid grid-cols-12 gap-4 items-start">
                               {/* Document Title */}
                               <div className="col-span-5">
-                                <h5 className="font-medium text-gray-900">{req.title}</h5>
-                                {!req.isOptional && (
-                                  <span className="inline-block mt-1 px-2 py-1 text-xs bg-red-100 text-red-800 rounded">
-                                    Required
-                                  </span>
-                                )}
+                                <div className="flex items-start space-x-3">
+                                  <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                  </div>
+                                  <div className="flex-1">
+                                    <p className="text-sm font-medium text-gray-800 leading-tight mb-1">{req.title}</p>
+                                    {!req.isOptional && (
+                                      <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-red-50 text-red-700 rounded-full border border-red-200">
+                                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                        </svg>
+                                        Required
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
 
                               {/* Available Dropdown */}
-                              <div className="col-span-2">
+                              <div className="col-span-1">
                                 <select
-                                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm py-2.5"
                                   value={response?.available || 'yes'}
                                   onChange={(e) => handleDocumentResponseChange(req.code, 'available', e.target.value)}
                                 >
@@ -1594,21 +1613,21 @@ const OnboardingMain: React.FC = () => {
                                   </div>
                                 ) : (
                                   <textarea
-                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                    rows={3}
-                                    placeholder="Explain why this document is not available..."
-                                    value={response?.naExplanation || ''}
-                                    onChange={(e) => handleDocumentResponseChange(req.code, 'naExplanation', e.target.value)}
-                                  />
+                                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                  rows={3}
+                                  placeholder="Explain why this document is not available..."
+                                  value={response?.naExplanation || ''}
+                                  onChange={(e) => handleDocumentResponseChange(req.code, 'naExplanation', e.target.value)}
+                                />  
                                 )}
                               </div>
 
                               {/* Notes */}
-                              <div className="col-span-2">
-                                <input
-                                  type="text"
-                                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                              <div className="col-span-3">
+                                <textarea
+                                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm resize-none"
                                   placeholder="Notes (optional)"
+                                  rows={2}
                                   value={response?.note || ''}
                                   onChange={(e) => handleDocumentResponseChange(req.code, 'note', e.target.value)}
                                 />
