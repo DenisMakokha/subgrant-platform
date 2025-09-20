@@ -229,57 +229,57 @@ export default function OnboardingLanding() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-900">
       <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Header */}
+        {/* Clean Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
             Complete Your Partner Onboarding
           </h1>
           <p className="text-lg text-slate-600 dark:text-slate-400 mb-4">
             Welcome, {getUserDisplayName(user)}
           </p>
           
-          {/* Current Status Display */}
-          <div className="flex justify-center mb-4">
-            <StatusBadge status={current} showDescription={true} />
+          {/* Status and Description */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-center gap-3">
+              <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Current Status:</span>
+              <StatusBadge status={current} showDescription={false} />
+            </div>
+            <p className="text-sm text-slate-500 dark:text-slate-500 max-w-2xl mx-auto">
+              To unlock the full Partner Dashboard, please complete all onboarding steps below.
+            </p>
           </div>
-          
-          <p className="text-sm text-slate-500 dark:text-slate-500">
-            To unlock the full Partner Dashboard, please complete all onboarding steps below.
-          </p>
         </div>
 
         {/* Progress Overview Card */}
-        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 dark:border-slate-700/50 p-8 mb-8">
+        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 dark:border-slate-700/50 p-8 mb-6">
+          {/* Prominent Progress Header */}
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-3">
-              <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full"></div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-                Your Progress
-              </h2>
-            </div>
-            <div className="flex items-center space-x-2 bg-slate-100 dark:bg-slate-700 rounded-full px-4 py-2">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+              Your Progress
+            </h2>
+            <div className="flex items-center space-x-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-full px-4 py-2 border border-blue-200/50 dark:border-blue-700/50">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                {sections.filter(s => s.done).length} of {sections.length} completed
+              <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                {sections.filter(s => s.done).length} of {sections.length} sections completed
               </span>
             </div>
           </div>
           
-          {/* Enhanced Progress Bar */}
-          <div className="relative mb-8">
-            <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3 overflow-hidden">
+          {/* Compact Progress Bar */}
+          <div className="relative mb-6">
+            <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
               <div 
-                className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 h-3 rounded-full transition-all duration-1000 ease-out shadow-sm"
+                className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 h-2 rounded-full transition-all duration-1000 ease-out shadow-sm"
                 style={{ width: `${(sections.filter(s => s.done).length / sections.length) * 100}%` }}
               />
             </div>
-            <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full shadow-lg animate-pulse" 
+            <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full shadow-md animate-pulse" 
                  style={{ left: `${(sections.filter(s => s.done).length / sections.length) * 100}%`, transform: 'translateX(-50%)' }}>
             </div>
           </div>
 
-          {/* Modern Steps Grid */}
-          <div className="grid gap-4 md:gap-6">
+          {/* Compact Steps Grid */}
+          <div className="grid gap-3">
             {sections.map((section, index) => {
               const status = getStepStatus(section, index);
               const sectionIcons = ['🏢', '💰', '📋', '✅'];
@@ -287,133 +287,93 @@ export default function OnboardingLanding() {
               return (
                 <div 
                   key={section.id} 
-                  className={`group relative overflow-hidden rounded-2xl border-2 transition-all duration-300 hover:scale-[1.02] ${
+                  className={`group relative overflow-hidden rounded-xl border transition-all duration-300 hover:scale-[1.01] ${
                     status === 'completed' 
-                      ? 'border-emerald-200 bg-gradient-to-r from-emerald-50 to-green-50 dark:border-emerald-800 dark:from-emerald-900/20 dark:to-green-900/20 shadow-emerald-100 dark:shadow-emerald-900/20' 
+                      ? 'border-emerald-200 bg-gradient-to-r from-emerald-50 to-green-50 dark:border-emerald-800 dark:from-emerald-900/20 dark:to-green-900/20' 
                       : status === 'available'
-                      ? 'border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 dark:border-blue-800 dark:from-blue-900/20 dark:to-indigo-900/20 shadow-blue-100 dark:shadow-blue-900/20'
+                      ? 'border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 dark:border-blue-800 dark:from-blue-900/20 dark:to-indigo-900/20'
                       : 'border-slate-200 bg-gradient-to-r from-slate-50 to-gray-50 dark:border-slate-700 dark:from-slate-800/50 dark:to-gray-800/50'
-                  } shadow-lg`}
+                  } shadow-sm hover:shadow-md`}
                 >
-                  <div className="p-6">
+                  <div className="p-4">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        {/* Enhanced Step Circle */}
-                        <div className={`relative w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-bold transition-all duration-300 ${
+                      <div className="flex items-center space-x-3">
+                        {/* Compact Step Circle */}
+                        <div className={`relative w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold transition-all duration-300 ${
                           status === 'completed'
-                            ? 'bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-lg shadow-emerald-500/25'
+                            ? 'bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-md'
                             : status === 'available'
-                            ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
+                            ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md'
                             : 'bg-gradient-to-br from-slate-300 to-slate-400 text-slate-600 dark:from-slate-600 dark:to-slate-700 dark:text-slate-400'
                         }`}>
                           {status === 'completed' ? (
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                             </svg>
                           ) : (
-                            <span className="text-2xl">{sectionIcons[index]}</span>
-                          )}
-                          {status === 'completed' && (
-                            <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-400 rounded-full flex items-center justify-center">
-                              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                            </div>
+                            <span className="text-lg">{sectionIcons[index]}</span>
                           )}
                         </div>
                         
                         <div className="flex-1">
-                          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                          <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                             {section.title}
                           </h3>
-                          <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+                          <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
                             {section.description}
                           </p>
-                          {status === 'completed' && (
-                            <div className="flex items-center mt-2 text-xs text-emerald-600 dark:text-emerald-400">
-                              <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                              </svg>
-                              Completed
-                            </div>
-                          )}
                         </div>
                       </div>
                       
-                      {/* Enhanced Action Button */}
+                      {/* Compact Action Button */}
                       <button
                         onClick={() => navigate(`/partner/onboarding/${section.id}`)}
                         disabled={status === 'locked'}
-                        className={`px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 transform hover:scale-105 ${
+                        className={`px-4 py-2 rounded-lg font-medium text-xs transition-all duration-300 ${
                           status === 'locked'
                             ? 'bg-slate-200 text-slate-400 cursor-not-allowed dark:bg-slate-700 dark:text-slate-500'
                             : status === 'completed'
-                            ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 shadow-lg hover:shadow-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:hover:bg-emerald-900/50'
-                            : 'bg-blue-100 text-blue-700 hover:bg-blue-200 shadow-lg hover:shadow-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50'
+                            ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400'
+                            : 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400'
                         }`}
                       >
-                        {status === 'completed' ? (
-                          <span className="flex items-center space-x-2">
-                            <span>Review</span>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
-                          </span>
-                        ) : status === 'available' ? (
-                          <span className="flex items-center space-x-2">
-                            <span>Start</span>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                            </svg>
-                          </span>
-                        ) : (
-                          <span className="flex items-center space-x-2">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                            </svg>
-                            <span>Locked</span>
-                          </span>
-                        )}
+                        {status === 'completed' ? 'Review' : status === 'available' ? 'Start' : 'Locked'}
                       </button>
                     </div>
                   </div>
-                  
-                  {/* Subtle gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-white/10 dark:to-slate-800/10 pointer-events-none"></div>
                 </div>
               );
             })}
           </div>
         </div>
 
-        {/* Enhanced Main CTA */}
-        <div className="text-center mb-12">
+        {/* Compact Main CTA */}
+        <div className="text-center mb-8">
           <button
             onClick={() => navigate(ctaHref)}
-            className="group relative inline-flex items-center justify-center px-12 py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white rounded-2xl font-bold text-lg shadow-2xl shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1"
+            className="group relative inline-flex items-center justify-center px-8 py-3 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white rounded-xl font-semibold text-base shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
           >
-            <span className="relative z-10 flex items-center space-x-3">
+            <span className="relative z-10 flex items-center space-x-2">
               <span>{nextStep === 'review' ? 'Complete Review & Submit' : 'Continue Your Journey'}</span>
-              <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
             </span>
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-700 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           </button>
           
           {current && (
-            <div className="mt-6 flex items-center justify-center space-x-4 text-sm">
-              <div className="flex items-center space-x-2 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-full px-4 py-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+            <div className="mt-4 flex items-center justify-center space-x-3 text-xs">
+              <div className="flex items-center space-x-1 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-full px-3 py-1">
+                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
                 <span className="text-slate-700 dark:text-slate-300">
-                  Status: <span className="font-semibold">{formatOrgStatus(current)}</span>
+                  Status: <span className="font-medium">{formatOrgStatus(current)}</span>
                 </span>
               </div>
               {nextStep && (
-                <div className="flex items-center space-x-2 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-full px-4 py-2">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                <div className="flex items-center space-x-1 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-full px-3 py-1">
+                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
                   <span className="text-slate-700 dark:text-slate-300">
-                    Next: <span className="font-semibold">{nextStep === 'section-a' ? 'Organization Profile' : 
+                    Next: <span className="font-medium">{nextStep === 'section-a' ? 'Organization Profile' : 
                                                             nextStep === 'section-b' ? 'Financial Assessment' : 
                                                             nextStep === 'section-c' ? 'Document Upload' : 
                                                             nextStep === 'review' ? 'Review & Submit' : 

@@ -119,7 +119,7 @@ export default function PartnerSidebar({ isOpen = false, setIsOpen, disabled = f
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="flex h-full flex-col pt-20 lg:pt-6">
-          <nav className="bg-white/70 dark:bg-gray-950/70 backdrop-blur border border-gray-200 dark:border-gray-800 rounded-2xl p-3 sticky top-24 mx-3">
+          <nav className="bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-3xl p-4 sticky top-24 mx-4 shadow-xl shadow-gray-200/20 dark:shadow-gray-900/20">
             {/* Navigation Items */}
             <div className="space-y-2">
               {items.map((item) => {
@@ -132,12 +132,12 @@ export default function PartnerSidebar({ isOpen = false, setIsOpen, disabled = f
                     onClick={() => setIsOpen?.(false)}
                     aria-disabled={isLocked}
                     className={({ isActive }) => `
-                      w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200
+                      group w-full flex items-center px-4 py-3 text-sm font-medium rounded-2xl transition-all duration-300
                       ${isLocked 
                         ? 'opacity-50 cursor-pointer' 
                         : isActive 
-                        ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' 
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25 transform scale-[1.02]' 
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:shadow-md hover:scale-[1.01]'
                       }
                     `}
                   >
@@ -146,7 +146,7 @@ export default function PartnerSidebar({ isOpen = false, setIsOpen, disabled = f
                       <span>{item.label}</span>
                     </div>
                     {item.badge && (
-                      <span className="ml-auto px-2 py-1 text-xs bg-red-100 text-red-600 rounded-full">
+                      <span className="ml-auto px-2.5 py-1 text-xs font-semibold bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-full shadow-lg animate-pulse">
                         {item.badge}
                       </span>
                     )}
@@ -155,13 +155,13 @@ export default function PartnerSidebar({ isOpen = false, setIsOpen, disabled = f
               })}
             </div>
             
-            {/* Logout Section */}
-            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            {/* Enhanced Logout Section */}
+            <div className="mt-6 pt-4 border-t border-gray-200/50 dark:border-gray-700/50">
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+                className="group w-full flex items-center px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 dark:hover:from-red-900/20 dark:hover:to-pink-900/20 hover:text-red-600 dark:hover:text-red-400 rounded-2xl transition-all duration-300 hover:shadow-md hover:scale-[1.01]"
               >
-                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
                 <span>Sign Out</span>
