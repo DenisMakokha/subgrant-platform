@@ -1786,7 +1786,7 @@ const OnboardingMain: React.FC = () => {
             <div className="mb-8">
               <h1 className="text-2xl font-bold text-gray-900">Partner Onboarding</h1>
               <p className="mt-2 text-gray-600">
-                Complete your organization profile to access the platform
+                Join our network of trusted partners in just a few simple steps
               </p>
             </div>
 

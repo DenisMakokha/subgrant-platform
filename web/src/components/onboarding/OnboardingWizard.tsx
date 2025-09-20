@@ -98,7 +98,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Partner Onboarding</h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">Complete your profile to start partnering with us</p>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">Join our network of trusted partners in just a few simple steps</p>
             </div>
             <div className="text-right space-y-3">
               <div>
