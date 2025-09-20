@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { fetchWithAuth } from '../../services/api';
 import { toast } from 'react-toastify';
 import StatusBadge from '../../components/StatusBadge';
+import { formatOrgStatus } from '../../utils/format';
 
 export default function OnboardingLanding() {
   const { organization, nextStep, user, refreshSession } = useAuth();
@@ -405,14 +406,18 @@ export default function OnboardingLanding() {
               <div className="flex items-center space-x-2 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-full px-4 py-2">
                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                 <span className="text-slate-700 dark:text-slate-300">
-                  Status: <span className="font-semibold capitalize">{current.replace('_', ' ')}</span>
+                  Status: <span className="font-semibold">{formatOrgStatus(current)}</span>
                 </span>
               </div>
               {nextStep && (
                 <div className="flex items-center space-x-2 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-full px-4 py-2">
                   <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
                   <span className="text-slate-700 dark:text-slate-300">
-                    Next: <span className="font-semibold capitalize">{nextStep.replace('-', ' ')}</span>
+                    Next: <span className="font-semibold">{nextStep === 'section-a' ? 'Organization Profile' : 
+                                                            nextStep === 'section-b' ? 'Financial Assessment' : 
+                                                            nextStep === 'section-c' ? 'Document Upload' : 
+                                                            nextStep === 'review' ? 'Review & Submit' : 
+                                                            nextStep.replace('-', ' ')}</span>
                   </span>
                 </div>
               )}
