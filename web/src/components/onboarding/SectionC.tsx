@@ -290,7 +290,7 @@ const SectionC: React.FC = () => {
                         <div className="grid grid-cols-12 gap-4 items-start">
                           {/* Document Title */}
                           <div className="col-span-5">
-                            <h4 className="font-medium text-gray-900">{req.title}</h4>
+                            <p className="text-xs font-light text-gray-600 leading-tight">{req.title}</p>
                             {!req.isOptional && (
                               <span className="inline-block mt-1 px-2 py-1 text-xs bg-red-100 text-red-800 rounded">
                                 Required
@@ -374,10 +374,10 @@ const SectionC: React.FC = () => {
 
                           {/* Notes */}
                           <div className="col-span-2">
-                            <input
-                              type="text"
-                              className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            <textarea
+                              className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm resize-none"
                               placeholder="Notes (optional)"
+                              rows={2}
                               value={response?.note || ''}
                               onChange={(e) => handleResponseChange(req.code, 'note', e.target.value)}
                             />
