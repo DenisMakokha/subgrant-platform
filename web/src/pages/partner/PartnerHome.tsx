@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { getUserDisplayName } from '../../utils/format';
 
 // SVG Icons
 const DocumentIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
@@ -41,81 +42,107 @@ export default function PartnerHome() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="space-y-6">
-        {/* Welcome Header with Gradient */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-2xl shadow-xl">
-          <div className="absolute inset-0 bg-black/20"></div>
+        {/* Welcome Header with Enhanced Gradient */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-3xl shadow-2xl border border-white/10">
+          <div className="absolute inset-0 bg-black/10"></div>
+          {/* Enhanced Decorative Pattern */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute inset-0" style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+            }}></div>
+          </div>
           <div className="relative p-8">
             <div className="flex items-center justify-between">
               <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                    <span className="text-2xl font-bold text-white">
-                      {(user?.first_name || user?.firstName || user?.email || 'P').charAt(0).toUpperCase()}
+                <div className="flex items-center gap-4 mb-3">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm flex items-center justify-center border border-white/20 shadow-lg">
+                    <span className="text-3xl font-bold text-white">
+                      {getUserDisplayName(user).charAt(0).toUpperCase()}
                     </span>
                   </div>
                   <div>
-                    <h1 className="text-3xl font-bold text-white">
-                      Welcome back, {user?.first_name || user?.firstName || 'Partner'}!
+                    <h1 className="text-4xl font-bold text-white mb-1">
+                      Welcome back, {getUserDisplayName(user)}!
                     </h1>
-                    <p className="text-blue-100 mt-1 flex items-center gap-2">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-white/20 text-white">
-                        PARTNER
+                    <p className="text-blue-100 flex items-center gap-3">
+                      <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-white/20 to-white/10 text-white border border-white/20 backdrop-blur-sm">
+                        ✨ PARTNER
                       </span>
-                      • {(organization as any)?.name || 'Your Organization'}
+                      <span className="text-white/80">•</span>
+                      <span className="font-medium">{(organization as any)?.name || 'Your Organization'}</span>
                     </p>
                   </div>
                 </div>
               </div>
               <div className="hidden sm:block">
                 <div className="text-right">
-                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
-                    <p className="text-sm text-blue-100 font-medium">
-                      {new Date().toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}
-                    </p>
-                    <p className="text-xs text-blue-200 mt-1">
-                      {new Date().toLocaleTimeString('en-US', { 
-                        hour: '2-digit', 
-                        minute: '2-digit'
-                      })}
-                    </p>
+                  <div className="bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <svg className="w-4 h-4 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <p className="text-sm text-blue-100 font-semibold">
+                        {new Date().toLocaleDateString('en-US', { 
+                          weekday: 'long', 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-sm text-blue-200 font-medium">
+                        {new Date().toLocaleTimeString('en-US', { 
+                          hour: '2-digit', 
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          {/* Decorative elements */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-16 translate-x-16"></div>
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12"></div>
+          {/* Enhanced Decorative elements */}
+          <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-white/10 to-white/5 rounded-full -translate-y-20 translate-x-20 blur-sm"></div>
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-white/8 to-white/3 rounded-full translate-y-16 -translate-x-16 blur-sm"></div>
+          <div className="absolute top-1/2 right-1/4 w-6 h-6 bg-white/20 rounded-full animate-pulse"></div>
+          <div className="absolute top-1/4 right-1/3 w-4 h-4 bg-white/15 rounded-full animate-pulse delay-1000"></div>
         </div>
 
-        {/* Key Metrics */}
+        {/* Enhanced Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Applications Card */}
-          <div className="group relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700">
+          {/* Enhanced Applications Card */}
+          <div className="group relative overflow-hidden bg-white dark:bg-gray-800 rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-700 hover:-translate-y-1">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-100/50 to-indigo-100/50 dark:from-blue-800/20 dark:to-indigo-800/20 rounded-full -translate-y-10 translate-x-10 group-hover:scale-110 transition-transform duration-300"></div>
             <div className="relative p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
-                  <DocumentIcon className="w-6 h-6 text-white" />
+              <div className="flex items-center justify-between mb-6">
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-xl group-hover:shadow-2xl group-hover:scale-110 transition-all duration-300">
+                  <DocumentIcon className="w-7 h-7 text-white" />
                 </div>
                 <div className="text-right">
                   {modules.applications?.drafts > 0 && (
-                    <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded-full bg-gradient-to-r from-yellow-400 to-orange-400 animate-pulse shadow-lg"></div>
+                      <span className="text-xs font-medium text-yellow-600 dark:text-yellow-400">{modules.applications?.drafts}</span>
+                    </div>
                   )}
                 </div>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Applications</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase tracking-wide">Applications</p>
+                <p className="text-4xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
                   {modules.applications?.submitted || 0}
                 </p>
-                <div className="flex items-center text-xs text-gray-600 dark:text-gray-400">
-                  <span>{modules.applications?.drafts || 0} drafts</span>
+                <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div>
+                    <span>{modules.applications?.drafts || 0} drafts</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -195,16 +222,23 @@ export default function PartnerHome() {
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
+        {/* Enhanced Quick Actions */}
+        <div className="bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-900/50 rounded-3xl shadow-xl p-8 border border-gray-100 dark:border-gray-700 backdrop-blur-sm">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Quick Actions</h2>
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Link
               to={onboardingLocked ? "/partner/onboarding/landing" : "/partner/onboarding"}
-              className="p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-center"
+              className="group p-6 rounded-2xl border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 transition-all duration-300 text-center hover:shadow-lg hover:-translate-y-0.5"
             >
-              <div className="text-2xl mb-2">📋</div>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
+              <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">📋</div>
+              <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
                 {onboardingLocked ? 'Complete Onboarding' : 'View Onboarding'}
               </p>
             </Link>
