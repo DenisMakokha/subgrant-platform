@@ -97,17 +97,17 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Partner Onboarding</h1>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Partnership Registration</h1>
               <p className="text-gray-600 dark:text-gray-400 mt-1">Join our network of trusted partners in just a few simple steps</p>
             </div>
-            <div className="text-right space-y-3">
-              <div>
+            <div className="flex items-center space-x-6">
+              <div className="text-right">
                 <div className="text-sm text-gray-600 dark:text-gray-400">Overall Progress</div>
-                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{progress}%</div>
+                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{progress}%</div>
               </div>
               {organization?.status && (
-                <div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Current Status</div>
+                <div className="text-right">
+                  <div className="text-xs text-gray-500 dark:text-gray-500 mb-1">Status</div>
                   <StatusBadge status={organization.status} size="sm" />
                 </div>
               )}
