@@ -65,20 +65,25 @@ const ProtectedOnboardingRoute: React.FC<ProtectedOnboardingRouteProps> = ({
         return;
       }
 
-      // Check organization status
+      // Check organization status from session (canonical SSoT)
       try {
-        const response = await fetchWithAuth('/api/onboarding/section-c');
-        const orgStatus = response.organization?.status;
+        const session = await fetchWithAuth('/session');
+        const orgStatusRaw = session.organization?.status as string | undefined;
 
-        if (!orgStatus) {
+        if (!orgStatusRaw) {
           // No organization yet, redirect to start onboarding
-          setRedirectTo('/onboarding/section-c');
+          setRedirectTo('/onboarding/section-a');
           setLoading(false);
           return;
         }
 
+        // Normalize under_review variants
+        const orgStatus = (orgStatusRaw === 'under_review_gm' || orgStatusRaw === 'under_review_coo')
+          ? 'under_review'
+          : orgStatusRaw;
+
         // Check if current status allows access to this route
-        if (requiredStatus.includes(orgStatus)) {
+        if (requiredStatus.includes(orgStatusRaw) || requiredStatus.includes(orgStatus)) {
           setAuthorized(true);
         } else {
           // Redirect to appropriate step based on status
@@ -101,19 +106,21 @@ const ProtectedOnboardingRoute: React.FC<ProtectedOnboardingRouteProps> = ({
     switch (status) {
       case 'email_pending':
         return '/auth/verify-email';
-      case 'attachments_pending':
-        return '/onboarding/section-c';
-      case 'financials_pending':
+      case 'a_pending':
+        return '/onboarding/section-a';
+      case 'b_pending':
         return '/onboarding/section-b';
+      case 'c_pending':
+        return '/onboarding/section-c';
       case 'under_review':
+      case 'under_review_gm':
+      case 'under_review_coo':
       case 'changes_requested':
         return '/onboarding/review-status';
-      case 'approved':
-        return '/onboarding/section-a';
       case 'finalized':
         return '/partner/';
       default:
-        return '/onboarding/section-c';
+        return '/onboarding/section-a';
     }
   };
 

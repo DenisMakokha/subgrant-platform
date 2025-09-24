@@ -110,7 +110,7 @@ export default function OnboardingLanding() {
     nextStep === 'section-a' ? '/partner/onboarding/section-a' :
     nextStep === 'section-b' ? '/partner/onboarding/section-b' :
     nextStep === 'section-c' ? '/partner/onboarding/section-c' :
-    nextStep === 'review' ? '/partner/onboarding/review-status' :
+    nextStep === 'review' ? '/partner/onboarding/review' :
     '/partner/onboarding/section-a';
 
   const getStepStatus = (step: any, index: number) => {

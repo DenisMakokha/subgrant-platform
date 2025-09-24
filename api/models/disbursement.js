@@ -170,6 +170,98 @@ class Disbursement {
     
     return result.rows[0];
   }
+
+  // KPI helpers
+  static async countAll() {
+    const result = await db.pool.query(`SELECT COUNT(*) AS cnt FROM disbursements`);
+    return parseInt(result.rows[0]?.cnt || '0', 10);
+  }
+
+  static async countCompleted() {
+    const result = await db.pool.query(
+      `SELECT COUNT(*) AS cnt FROM disbursements WHERE status IN ('paid','completed') OR paid_at IS NOT NULL`
+    );
+    return parseInt(result.rows[0]?.cnt || '0', 10);
+  }
+
+  static async countByOrganization(organizationId) {
+    const result = await db.pool.query(
+      `SELECT COUNT(*) AS cnt
+       FROM disbursements d
+       JOIN budgets b ON d.budget_id = b.id
+       WHERE b.organization_id = $1`,
+      [organizationId]
+    );
+    return parseInt(result.rows[0]?.cnt || '0', 10);
+  }
+
+  static async countCompletedByOrganization(organizationId) {
+    const result = await db.pool.query(
+      `SELECT COUNT(*) AS cnt
+       FROM disbursements d
+       JOIN budgets b ON d.budget_id = b.id
+       WHERE b.organization_id = $1
+         AND (d.status IN ('paid','completed') OR d.paid_at IS NOT NULL)`,
+      [organizationId]
+    );
+    return parseInt(result.rows[0]?.cnt || '0', 10);
+  }
+
+  static async getTotalAmount() {
+    const result = await db.pool.query(
+      `SELECT COALESCE(SUM(amount),0) AS total
+       FROM disbursements
+       WHERE status IN ('paid','completed') OR paid_at IS NOT NULL`
+    );
+    return parseFloat(result.rows[0]?.total || '0');
+  }
+
+  static async getTotalAmountByOrganization(organizationId) {
+    const result = await db.pool.query(
+      `SELECT COALESCE(SUM(d.amount),0) AS total
+       FROM disbursements d
+       JOIN budgets b ON d.budget_id = b.id
+       WHERE b.organization_id = $1
+         AND (d.status IN ('paid','completed') OR d.paid_at IS NOT NULL)`,
+      [organizationId]
+    );
+    return parseFloat(result.rows[0]?.total || '0');
+  }
+
+  static async countByProject(projectId) {
+    const result = await db.pool.query(
+      `SELECT COUNT(*) AS cnt
+       FROM disbursements d
+       JOIN budgets b ON d.budget_id = b.id
+       WHERE b.project_id = $1`,
+      [projectId]
+    );
+    return parseInt(result.rows[0]?.cnt || '0', 10);
+  }
+
+  static async countCompletedByProject(projectId) {
+    const result = await db.pool.query(
+      `SELECT COUNT(*) AS cnt
+       FROM disbursements d
+       JOIN budgets b ON d.budget_id = b.id
+       WHERE b.project_id = $1
+         AND (d.status IN ('paid','completed') OR d.paid_at IS NOT NULL)`,
+      [projectId]
+    );
+    return parseInt(result.rows[0]?.cnt || '0', 10);
+  }
+
+  static async getTotalAmountByProject(projectId) {
+    const result = await db.pool.query(
+      `SELECT COALESCE(SUM(d.amount),0) AS total
+       FROM disbursements d
+       JOIN budgets b ON d.budget_id = b.id
+       WHERE b.project_id = $1
+         AND (d.status IN ('paid','completed') OR d.paid_at IS NOT NULL)`,
+      [projectId]
+    );
+    return parseFloat(result.rows[0]?.total || '0');
+  }
 }
 
 module.exports = Disbursement;

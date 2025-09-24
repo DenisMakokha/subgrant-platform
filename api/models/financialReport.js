@@ -154,6 +154,44 @@ class FinancialReport {
     
     return new FinancialReport(result.rows[0]);
   }
+
+  // KPI helpers for recent financial reports
+  static async getRecent(limit = 5) {
+    const result = await db.pool.query(
+      `SELECT *
+       FROM financial_reports
+       ORDER BY created_at DESC
+       LIMIT $1`,
+      [limit]
+    );
+    return result.rows.map(row => new FinancialReport(row));
+  }
+
+  static async getRecentByOrganization(organizationId, limit = 5) {
+    const result = await db.pool.query(
+      `SELECT fr.*
+       FROM financial_reports fr
+       JOIN budgets b ON fr.budget_id = b.id
+       WHERE b.organization_id = $1
+       ORDER BY fr.created_at DESC
+       LIMIT $2`,
+      [organizationId, limit]
+    );
+    return result.rows.map(row => new FinancialReport(row));
+  }
+
+  static async getRecentByProject(projectId, limit = 5) {
+    const result = await db.pool.query(
+      `SELECT fr.*
+       FROM financial_reports fr
+       JOIN budgets b ON fr.budget_id = b.id
+       WHERE b.project_id = $1
+       ORDER BY fr.created_at DESC
+       LIMIT $2`,
+      [projectId, limit]
+    );
+    return result.rows.map(row => new FinancialReport(row));
+  }
 }
 
 module.exports = FinancialReport;

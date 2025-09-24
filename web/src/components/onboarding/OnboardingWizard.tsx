@@ -91,7 +91,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
   const progress = ((completedSteps.length / steps.length) * 100).toFixed(0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -127,7 +127,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
 
         {/* Steps Navigation */}
         <div className="mb-8">
-          <div className="flex items-center justify-between overflow-x-auto pb-4">
+          <div className="flex flex-nowrap items-center gap-2 md:gap-4 overflow-x-hidden pb-2 w-full">
             {steps.map((step, index) => {
               const isActive = step.id === currentStepId;
               const isCompleted = completedSteps.includes(step.id);
@@ -136,19 +136,19 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
               const isAccessible = index === 0 || (predecessorStep ? completedSteps.includes(predecessorStep) : false);
 
               return (
-                <div key={step.id} className="flex items-center">
+                <div key={step.id} className="flex items-center flex-1 min-w-0">
                   <button
                     onClick={() => goToStep(step.id)}
                     disabled={!isAccessible}
                     className={`
-                      relative flex flex-col items-center group
+                      relative flex flex-col items-center group shrink-0
                       ${!isAccessible ? 'cursor-not-allowed' : 'cursor-pointer'}
                     `}
                   >
                     {/* Enhanced Step Circle */}
                     <div
                       className={`
-                        relative w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 ease-in-out
+                        relative w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center transition-all duration-300 ease-in-out
                         ${isActive 
                           ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white ring-4 ring-blue-200 dark:ring-blue-800 scale-110 shadow-lg' 
                           : isCompleted
@@ -182,8 +182,8 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                       )}
                     </div>
                     
-                    {/* Step Title */}
-                    <div className="mt-2 text-center">
+                    {/* Step Title - wider and wrap-friendly */}
+                    <div className="mt-2 text-center max-w-[8rem] md:max-w-[10rem] lg:max-w-[14rem] whitespace-normal break-words">
                       <p className={`
                         text-xs font-medium
                         ${isActive 
@@ -192,7 +192,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                           ? 'text-green-600 dark:text-green-400'
                           : 'text-gray-600 dark:text-gray-400'
                         }
-                      `}>
+                     `}>
                         {step.title}
                       </p>
                     </div>
@@ -208,9 +208,9 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                     )}
                   </button>
 
-                  {/* Enhanced Connector Line */}
+                  {/* Enhanced Connector Line (hidden on small screens; flex-1 to fill remaining space) */}
                   {index < steps.length - 1 && (
-                    <div className="flex-1 flex items-center px-4">
+                    <div className="hidden md:flex flex-1 min-w-0 items-center px-2 md:px-4">
                       <div 
                         className={`
                           h-1 w-full rounded-full transition-all duration-500 relative overflow-hidden

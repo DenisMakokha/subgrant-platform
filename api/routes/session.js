@@ -17,7 +17,7 @@ router.get('/', requireAuth, async (req, res) => {
       `SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.email_verified_at,
               u.organization_id, o.id as org_id, o.status as organization_status
        FROM users u
-       LEFT JOIN organizations o ON o.owner_user_id = u.id
+       LEFT JOIN organizations o ON o.id = u.organization_id
        WHERE u.id = $1`,
       [req.auth.sub || req.auth.user_id]
     );
@@ -34,12 +34,18 @@ router.get('/', requireAuth, async (req, res) => {
     let org = null;
     let status = null;
     if (user.organization_id) {
-      // First ensure all missing columns exist
+      // First ensure all missing columns exist (CRITICAL POLICY)
       try {
         await db.pool.query(`
           ALTER TABLE organizations 
           ADD COLUMN IF NOT EXISTS year_established INTEGER,
-          ADD COLUMN IF NOT EXISTS owner_user_id UUID REFERENCES users(id)
+          ADD COLUMN IF NOT EXISTS owner_user_id UUID REFERENCES users(id),
+          ADD COLUMN IF NOT EXISTS bank_name TEXT,
+          ADD COLUMN IF NOT EXISTS bank_branch TEXT,
+          ADD COLUMN IF NOT EXISTS account_name TEXT,
+          ADD COLUMN IF NOT EXISTS account_number TEXT,
+          ADD COLUMN IF NOT EXISTS swift_code TEXT,
+          ADD COLUMN IF NOT EXISTS version INTEGER DEFAULT 0
         `);
         console.log('Missing organization columns created/verified');
       } catch (error) {
@@ -47,7 +53,7 @@ router.get('/', requireAuth, async (req, res) => {
       }
 
       const orgResult = await db.pool.query(
-        `SELECT id, name, legal_name, registration_number, tax_id, legal_structure, year_established,
+        `SELECT id, version, name, legal_name, registration_number, tax_id, legal_structure, year_established,
                 email, phone, website, primary_contact_name, primary_contact_title, 
                 primary_contact_email, primary_contact_phone, address, city, state_province, 
                 postal_code, country, bank_name, bank_branch, account_name, account_number, 

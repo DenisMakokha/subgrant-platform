@@ -1,7 +1,6 @@
 const express = require('express');
 const db = require('../config/database');
-const { validateSchema } = require('../validators/onboarding');
-const { FinancialAssessmentSchema } = require('../validators/onboarding');
+const { validateSchema, FinancialAssessmentSchema } = require('../validators/onboarding');
 const { 
   requireAuth, 
   requireEmailVerified, 
@@ -10,9 +9,99 @@ const {
   getUserOrganization,
   auditLog 
 } = require('../middleware/onboarding');
-const { sendSubmissionReceivedEmail } = require('../services/emailService');
+
+// SSoT imports (JS versions)
+const { OrganizationRepository } = require('../repositories/OrganizationRepository.js');
+const { createEnvelope, createApiError } = require('../core/FormRepository.js');
 
 const router = express.Router();
+const orgRepo = new OrganizationRepository();
+
+// SSoT Section B endpoint using repository pattern
+router.post('/section-b',
+  async (req, res) => {
+    try {
+      console.log('📥 SSoT Section B - Received data:', req.body);
+      
+      // Extract user ID from JWT token
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (!token) {
+        return res.status(401).json(createApiError(401, { form: ['Authentication required'] }));
+      }
+      
+      const decoded = require('jsonwebtoken').verify(token, process.env.JWT_SECRET);
+      const userId = decoded.sub;
+      
+      console.log('👤 User ID from token:', userId);
+      
+      // Get user's organization
+      const existingOrg = await orgRepo.readByUserId(userId);
+      if (!existingOrg) {
+        return res.status(404).json(createApiError(404, { form: ['Organization not found'] }));
+      }
+      
+      console.log('🏢 Found organization:', existingOrg.id);
+      
+      // Extract data from SSoT envelope format
+      const requestData = req.body.data || req.body;
+      console.log('📦 Extracted request data (Section B):', requestData);
+
+      // Minimal validation
+      if (!requestData || typeof requestData !== 'object' || typeof requestData.financial_assessment !== 'object') {
+        return res.status(400).json(createApiError(400, { financial_assessment: ['financial_assessment is required'] }));
+      }
+
+      const validatedData = requestData;
+      console.log('✅ Financial data validated successfully');
+      
+      // Extract etag from request headers or body
+      const etag = Number(req.header('If-Match') || req.body?.meta?.etag || existingOrg.version);
+      
+      // Update using repository with optimistic concurrency
+      const updatedOrg = await orgRepo.update(existingOrg.id, {
+        financial_assessment: validatedData.financial_assessment,
+        status: 'c_pending' // Progress to next section
+      }, {
+        etag,
+        userId,
+        idempotencyKey: req.header('Idempotency-Key')
+      });
+      
+      console.log('✅ Organization financial assessment updated via SSoT repository:', {
+        id: updatedOrg.id,
+        version: updatedOrg.version,
+        financial_assessment: updatedOrg.financial_assessment
+      });
+      
+      // Return standard envelope
+      res.json(createEnvelope(updatedOrg, {
+        etag: updatedOrg.version,
+        message: 'Section B data saved successfully'
+      }));
+      
+    } catch (error) {
+      console.error('❌ SSoT Section B save error:', error);
+      
+      if (error.message === 'CONFLICT') {
+        return res.status(409).json(createApiError(409, { 
+          form: ['Data was modified by another process. Please reload and try again.'] 
+        }));
+      }
+      
+      // Repository-level non-null validation
+      if (error.message && error.message.startsWith('VALIDATION_NON_NULL:')) {
+        const fields = error.message.replace('VALIDATION_NON_NULL:', '').split(',').filter(Boolean);
+        const errors = {};
+        for (const f of fields) errors[f] = [`${f} must not be null or empty`];
+        return res.status(400).json(createApiError(400, errors));
+      }
+      
+      res.status(500).json(createApiError(500, { 
+        form: ['Failed to save Section B data'] 
+      }));
+    }
+  }
+);
 
 // Get Section B data (financial assessment)
 router.get('/section-b',

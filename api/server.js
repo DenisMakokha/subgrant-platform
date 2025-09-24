@@ -157,26 +157,52 @@ app.post('/api/onboarding/section-a', async (req, res) => {
     }
     
     const orgId = userResult.rows[0].organization_id;
+
+    // Ensure required columns exist (CRITICAL POLICY)
+    try {
+      await db.pool.query(`
+        ALTER TABLE organizations 
+        ADD COLUMN IF NOT EXISTS year_established INTEGER,
+        ADD COLUMN IF NOT EXISTS bank_name TEXT,
+        ADD COLUMN IF NOT EXISTS bank_branch TEXT,
+        ADD COLUMN IF NOT EXISTS account_name TEXT,
+        ADD COLUMN IF NOT EXISTS account_number TEXT,
+        ADD COLUMN IF NOT EXISTS swift_code TEXT,
+        ADD COLUMN IF NOT EXISTS version INTEGER DEFAULT 0
+      `);
+    } catch (e) {
+      console.warn('Section A direct: column ensure warning:', e.message || e);
+    }
     
-    // Update organization with Section A data (only existing columns)
+    // Support SSoT envelope { data, meta }
+    const payload = (req.body && req.body.data) ? req.body.data : req.body;
+    
+    // Normalize numeric fields
+    const yearEstablished = payload.year_established !== undefined && payload.year_established !== null
+      ? Number(payload.year_established)
+      : null;
+    
+    // Update organization with Section A data including bank details
     const updateQuery = `
       UPDATE organizations 
       SET name = $1, legal_name = $2, registration_number = $3, tax_id = $4, 
-          legal_structure = $5, email = $6, phone = $7, website = $8, 
-          primary_contact_name = $9, primary_contact_title = $10, 
-          primary_contact_email = $11, primary_contact_phone = $12, address = $13, 
-          city = $14, state_province = $15, postal_code = $16, country = $17,
-          status = 'b_pending', updated_at = NOW()
-      WHERE id = $18
+          legal_structure = $5, year_established = $6, email = $7, phone = $8, website = $9, 
+          primary_contact_name = $10, primary_contact_title = $11, 
+          primary_contact_email = $12, primary_contact_phone = $13, address = $14, 
+          city = $15, state_province = $16, postal_code = $17, country = $18,
+          bank_name = $19, bank_branch = $20, account_name = $21, account_number = $22, swift_code = $23,
+          status = 'b_pending', updated_at = NOW(), version = COALESCE(version, 0) + 1
+      WHERE id = $24
       RETURNING *
     `;
     
     const values = [
-      req.body.name, req.body.legal_name, req.body.registration_number, req.body.tax_id,
-      req.body.legal_structure, req.body.email, req.body.phone, req.body.website, 
-      req.body.primary_contact_name, req.body.primary_contact_title,
-      req.body.primary_contact_email, req.body.primary_contact_phone, req.body.address,
-      req.body.city, req.body.state_province, req.body.postal_code, req.body.country,
+      payload.name, payload.legal_name, payload.registration_number, payload.tax_id,
+      payload.legal_structure, yearEstablished, payload.email, payload.phone, payload.website, 
+      payload.primary_contact_name, payload.primary_contact_title,
+      payload.primary_contact_email, payload.primary_contact_phone, payload.address,
+      payload.city, payload.state_province, payload.postal_code, payload.country,
+      payload.bank_name ?? null, payload.bank_branch ?? null, payload.account_name ?? null, payload.account_number ?? null, payload.swift_code ?? null,
       orgId
     ];
     
@@ -369,8 +395,10 @@ app.use('/api/partner/messages', partnerMessages);
 // Mount reviewer routes
 const gmReview = require('./routes/gmReview');
 const cooReview = require('./routes/cooReview');
+const reviewerSummariesRoutes = require('./routes/reviewerSummaries');
 app.use('/api/review/gm', gmReview);
 app.use('/api/review/coo', cooReview);
+app.use('/api/review/summaries', reviewerSummariesRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

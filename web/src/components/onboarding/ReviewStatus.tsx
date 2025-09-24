@@ -36,9 +36,7 @@ const ReviewStatus: React.FC = () => {
 
   const loadReviewStatus = async () => {
     try {
-      // This would be a new endpoint to get review status
-      const response = await fetchWithAuth('/api/onboarding/review-status');
-      const reviewData = await response.json();
+      const reviewData = await fetchWithAuth('/onboarding/review-status');
       setData(reviewData);
     } catch (error) {
       console.error('Failed to load review status:', error);

@@ -26,13 +26,18 @@ router.get('/queue', guard, async (req, res) => {
     const items = await db.pool.query(
       `SELECT 
         o.id, o.name, o.status, o.created_at, o.updated_at,
-        o.sector, o.country, o.owner_email, o.owner_first_name, o.owner_last_name,
-        COUNT(d.id) as document_count,
-        EXTRACT(DAYS FROM NOW() - o.updated_at) as days_in_coo_queue
+        o.country,
+        u.email AS owner_email, u.first_name AS owner_first_name, u.last_name AS owner_last_name,
+        COALESCE(od.doc_count, 0) AS document_count,
+        EXTRACT(DAY FROM (NOW() - o.updated_at))::int AS days_in_coo_queue
       FROM organizations o
-      LEFT JOIN compliance_documents d ON d.organization_id = o.id
+      LEFT JOIN users u ON u.id = o.owner_user_id
+      LEFT JOIN (
+        SELECT organization_id, COUNT(*) AS doc_count
+        FROM org_documents
+        GROUP BY organization_id
+      ) od ON od.organization_id = o.id
       WHERE o.status = $1
-      GROUP BY o.id
       ORDER BY o.updated_at ASC`,
       [ORG_STATUS.UNDER_REVIEW_COO]
     );
@@ -48,13 +53,15 @@ router.get('/queue', guard, async (req, res) => {
 router.get('/organization/:orgId', guard, async (req, res) => {
   try {
     const orgResult = await db.pool.query(
-      `SELECT o.*, 
-        COUNT(d.id) as document_count,
-        COUNT(d.id) FILTER (WHERE d.status = 'approved') as approved_docs
+      `SELECT o.*,
+        COALESCE(od.doc_count, 0) AS document_count
       FROM organizations o
-      LEFT JOIN compliance_documents d ON d.organization_id = o.id
-      WHERE o.id = $1 AND o.status = $2
-      GROUP BY o.id`,
+      LEFT JOIN (
+        SELECT organization_id, COUNT(*) AS doc_count
+        FROM org_documents
+        GROUP BY organization_id
+      ) od ON od.organization_id = o.id
+      WHERE o.id = $1 AND o.status = $2`,
       [req.params.orgId, ORG_STATUS.UNDER_REVIEW_COO]
     );
 
@@ -64,12 +71,12 @@ router.get('/organization/:orgId', guard, async (req, res) => {
 
     const org = orgResult.rows[0];
 
-    // Get compliance documents
+    // Get uploaded documents
     const docsResult = await db.pool.query(
-      `SELECT id, document_type, file_name, status, uploaded_at, file_url
-      FROM compliance_documents 
+      `SELECT requirement_code, available, na_explanation, note, files_json, updated_at
+      FROM org_documents 
       WHERE organization_id = $1
-      ORDER BY document_type`,
+      ORDER BY requirement_code`,
       [req.params.orgId]
     );
 
@@ -126,11 +133,19 @@ router.post('/:orgId/decision', guard, async (req, res) => {
       );
 
       // Send onboarding completed email
-      await EmailService.sendOnboardingCompletedEmail({
-        to: organization.owner_email,
-        firstName: organization.owner_first_name,
-        orgName: organization.name
-      });
+      try {
+        const ownerRes = await db.pool.query('SELECT email, first_name FROM users WHERE id = $1', [organization.owner_user_id]);
+        const owner = ownerRes.rows[0];
+        if (owner) {
+          await EmailService.sendOnboardingCompletedEmail({
+            to: owner.email,
+            firstName: owner.first_name,
+            orgName: organization.name
+          });
+        }
+      } catch (e) {
+        console.warn('COO approve: failed to send completion email:', e.message || e);
+      }
 
       return res.json({ 
         ok: true, 
@@ -148,13 +163,21 @@ router.post('/:orgId/decision', guard, async (req, res) => {
       );
 
       // Send email to partner
-      await EmailService.sendChangesRequestedEmail({
-        to: organization.owner_email,
-        firstName: organization.owner_first_name,
-        orgName: organization.name,
-        sections: sections || [],
-        reason: reason || 'Please review and update the requested sections'
-      });
+      try {
+        const ownerRes = await db.pool.query('SELECT email, first_name FROM users WHERE id = $1', [organization.owner_user_id]);
+        const owner = ownerRes.rows[0];
+        if (owner) {
+          await EmailService.sendChangesRequestedEmail({
+            to: owner.email,
+            firstName: owner.first_name,
+            orgName: organization.name,
+            sections: sections || [],
+            reason: reason || 'Please review and update the requested sections'
+          });
+        }
+      } catch (e) {
+        console.warn('COO changes_requested: failed to send email:', e.message || e);
+      }
 
       return res.json({ 
         ok: true, 
@@ -172,12 +195,20 @@ router.post('/:orgId/decision', guard, async (req, res) => {
       );
 
       // Send rejection email
-      await EmailService.sendRejectedEmail({
-        to: organization.owner_email,
-        firstName: organization.owner_first_name,
-        orgName: organization.name,
-        reason: reason || 'Application does not meet final requirements'
-      });
+      try {
+        const ownerRes = await db.pool.query('SELECT email, first_name FROM users WHERE id = $1', [organization.owner_user_id]);
+        const owner = ownerRes.rows[0];
+        if (owner) {
+          await EmailService.sendRejectedEmail({
+            to: owner.email,
+            firstName: owner.first_name,
+            orgName: organization.name,
+            reason: reason || 'Application does not meet final requirements'
+          });
+        }
+      } catch (e) {
+        console.warn('COO reject: failed to send email:', e.message || e);
+      }
 
       return res.json({ 
         ok: true, 

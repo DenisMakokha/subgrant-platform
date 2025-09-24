@@ -52,8 +52,7 @@ const SectionC: React.FC = () => {
 
   const loadSectionC = async () => {
     try {
-      const response = await fetchWithAuth('/api/onboarding/section-c');
-      const sectionData = await response.json();
+      const sectionData = await fetchWithAuth('/onboarding/section-c');
       
       setData(sectionData);
       
@@ -98,7 +97,7 @@ const SectionC: React.FC = () => {
       setUploadProgress(prev => ({ ...prev, [code]: 0 }));
 
       // Get presigned URL
-      const presignResponse = await fetchWithAuth('/api/onboarding/section-c/presign', {
+      const presignData = await fetchWithAuth('/onboarding/section-c/presign', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -108,7 +107,7 @@ const SectionC: React.FC = () => {
         })
       });
 
-      const { url, fields, fileKey } = await presignResponse.json();
+      const { url, fields, fileKey } = presignData;
 
       // Simulate file upload progress (in real implementation, use actual S3 upload)
       const uploadInterval = setInterval(() => {
@@ -174,7 +173,7 @@ const SectionC: React.FC = () => {
         ...response
       }));
 
-      await fetchWithAuth('/api/onboarding/section-c/save', {
+      await fetchWithAuth('/onboarding/section-c/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ documents })
@@ -197,26 +196,21 @@ const SectionC: React.FC = () => {
       }));
 
       // First save the documents
-      await fetchWithAuth('/api/onboarding/section-c/save', {
+      await fetchWithAuth('/onboarding/section-c/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ documents })
       });
 
       // Then submit the complete application
-      const response = await fetchWithAuth('/api/onboarding/section-c/submit', {
+      await fetchWithAuth('/onboarding/section-c/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({})
       });
 
-      if (response.ok) {
-        await refreshSession(); // Refresh to get updated organization status
-        navigate('/onboarding/review-status');
-      } else {
-        const errorData = await response.json();
-        console.error('Submission failed:', errorData.error);
-      }
+      await refreshSession(); // Refresh to get updated organization status
+      navigate('/onboarding/review-status');
     } catch (error) {
       console.error('Failed to submit application:', error);
     } finally {

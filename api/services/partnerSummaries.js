@@ -6,6 +6,89 @@ const db = require('../config/database');
  */
 async function getPartnerSummaries(organizationId) {
   try {
+    // Ensure minimal schema for summary queries
+    try {
+      await db.pool.query(`
+        CREATE TABLE IF NOT EXISTS applications (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          organization_id UUID NOT NULL,
+          status VARCHAR(50) DEFAULT 'draft'
+        )
+      `);
+      await db.pool.query(`
+        CREATE TABLE IF NOT EXISTS compliance_documents (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          organization_id UUID NOT NULL,
+          status VARCHAR(50) DEFAULT 'required',
+          expires_at TIMESTAMP NULL
+        )
+      `);
+      await db.pool.query(`
+        CREATE TABLE IF NOT EXISTS me_reports (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          organization_id UUID NOT NULL,
+          due_date TIMESTAMP NULL,
+          submitted_at TIMESTAMP NULL,
+          status VARCHAR(50) DEFAULT 'draft'
+        )
+      `);
+      await db.pool.query(`
+        CREATE TABLE IF NOT EXISTS disbursements (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          organization_id UUID NOT NULL,
+          scheduled_date TIMESTAMP NULL,
+          status VARCHAR(50) DEFAULT 'scheduled'
+        )
+      `);
+      await db.pool.query(`
+        CREATE TABLE IF NOT EXISTS contracts (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          organization_id UUID NOT NULL,
+          end_date TIMESTAMP NULL,
+          status VARCHAR(50) DEFAULT 'pending_signature'
+        )
+      `);
+      await db.pool.query(`
+        CREATE TABLE IF NOT EXISTS notifications (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          organization_id UUID NOT NULL,
+          read_at TIMESTAMP NULL
+        )
+      `);
+
+      // Ensure referenced columns exist even if tables pre-existed
+      const alters = [
+        // me_reports columns
+        `ALTER TABLE me_reports ADD COLUMN IF NOT EXISTS organization_id UUID`,
+        `ALTER TABLE me_reports ADD COLUMN IF NOT EXISTS due_date TIMESTAMP`,
+        `ALTER TABLE me_reports ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMP`,
+        `ALTER TABLE me_reports ADD COLUMN IF NOT EXISTS status VARCHAR(50)`,
+        // disbursements columns
+        `ALTER TABLE disbursements ADD COLUMN IF NOT EXISTS organization_id UUID`,
+        `ALTER TABLE disbursements ADD COLUMN IF NOT EXISTS scheduled_date TIMESTAMP`,
+        `ALTER TABLE disbursements ADD COLUMN IF NOT EXISTS status VARCHAR(50)`,
+        // contracts columns
+        `ALTER TABLE contracts ADD COLUMN IF NOT EXISTS organization_id UUID`,
+        `ALTER TABLE contracts ADD COLUMN IF NOT EXISTS end_date TIMESTAMP`,
+        `ALTER TABLE contracts ADD COLUMN IF NOT EXISTS status VARCHAR(50)`,
+        // compliance_documents columns
+        `ALTER TABLE compliance_documents ADD COLUMN IF NOT EXISTS organization_id UUID`,
+        `ALTER TABLE compliance_documents ADD COLUMN IF NOT EXISTS status VARCHAR(50)`,
+        `ALTER TABLE compliance_documents ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP`,
+        // applications columns
+        `ALTER TABLE applications ADD COLUMN IF NOT EXISTS organization_id UUID`,
+        `ALTER TABLE applications ADD COLUMN IF NOT EXISTS status VARCHAR(50)`,
+        // notifications columns
+        `ALTER TABLE notifications ADD COLUMN IF NOT EXISTS organization_id UUID`,
+        `ALTER TABLE notifications ADD COLUMN IF NOT EXISTS read_at TIMESTAMP`
+      ];
+      for (const q of alters) {
+        try { await db.pool.query(q); } catch (_) { /* ignore */ }
+      }
+    } catch (schemaErr) {
+      console.warn('partnerSummaries: schema ensure failed (non-fatal):', schemaErr.message || schemaErr);
+    }
+
     // Applications summary
     const applicationsResult = await db.pool.query(`
       SELECT 
@@ -28,30 +111,36 @@ async function getPartnerSummaries(organizationId) {
       FROM compliance_documents WHERE organization_id = $1
     `, [organizationId]);
 
-    // M&E Reports summary
+    // M&E Reports summary (join budgets to resolve org linkage)
     const meResult = await db.pool.query(`
       SELECT 
-        COUNT(*) FILTER (WHERE due_date < NOW() AND status != 'submitted') as due,
-        COUNT(*) FILTER (WHERE due_date > NOW() AND due_date < NOW() + INTERVAL '30 days') as upcoming,
-        COUNT(*) FILTER (WHERE submitted_at >= DATE_TRUNC('quarter', NOW()) AND status = 'submitted') as submitted_this_quarter
-      FROM me_reports WHERE organization_id = $1
+        COUNT(*) FILTER (WHERE COALESCE(mr.due_date, mr.report_date) < NOW() AND mr.status != 'submitted') as due,
+        COUNT(*) FILTER (WHERE COALESCE(mr.due_date, mr.report_date) > NOW() AND COALESCE(mr.due_date, mr.report_date) < NOW() + INTERVAL '30 days') as upcoming,
+        COUNT(*) FILTER (WHERE mr.submitted_at >= DATE_TRUNC('quarter', NOW()) AND mr.status = 'submitted') as submitted_this_quarter
+      FROM me_reports mr
+      JOIN budgets b ON mr.budget_id = b.id
+      WHERE b.organization_id = $1
     `, [organizationId]);
 
-    // Disbursements summary
+    // Disbursements summary (join budgets)
     const disbursementsResult = await db.pool.query(`
       SELECT 
-        COUNT(*) FILTER (WHERE scheduled_date > NOW() AND status = 'scheduled') as upcoming,
-        COUNT(*) FILTER (WHERE status = 'paid') as paid
-      FROM disbursements WHERE organization_id = $1
+        COUNT(*) FILTER (WHERE COALESCE(d.scheduled_date, d.planned_date) > NOW() AND d.status IN ('scheduled','planned')) as upcoming,
+        COUNT(*) FILTER (WHERE d.status = 'paid') as paid
+      FROM disbursements d
+      JOIN budgets b ON d.budget_id = b.id
+      WHERE b.organization_id = $1
     `, [organizationId]);
 
-    // Contracts summary
+    // Contracts summary (join budgets)
     const contractsResult = await db.pool.query(`
       SELECT 
-        COUNT(*) FILTER (WHERE status = 'pending_signature') as pending_signature,
-        COUNT(*) FILTER (WHERE status = 'active') as active,
-        COUNT(*) FILTER (WHERE status = 'active' AND end_date < NOW() + INTERVAL '60 days') as ending_soon
-      FROM contracts WHERE organization_id = $1
+        COUNT(*) FILTER (WHERE c.status = 'pending_signature') as pending_signature,
+        COUNT(*) FILTER (WHERE c.status = 'active') as active,
+        COUNT(*) FILTER (WHERE c.status = 'active' AND c.end_date < NOW() + INTERVAL '60 days') as ending_soon
+      FROM contracts c
+      JOIN budgets b ON c.budget_id = b.id
+      WHERE b.organization_id = $1
     `, [organizationId]);
 
     // Messages/Notifications summary

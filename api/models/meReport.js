@@ -166,6 +166,65 @@ class MeReport {
     const result = await db.pool.query(query);
     return result.rows.map(row => new MeReport(row));
   }
+
+  // New static methods to support KPI dashboards
+  static async countPending() {
+    const result = await db.pool.query(
+      `SELECT COUNT(*) AS cnt
+       FROM me_reports
+       WHERE status IN ('pending', 'draft')`
+    );
+    return parseInt(result.rows[0]?.cnt || '0', 10);
+  }
+
+  static async countPendingByOrganization(organizationId) {
+    const result = await db.pool.query(
+      `SELECT COUNT(*) AS cnt
+       FROM me_reports mr
+       JOIN budgets b ON mr.budget_id = b.id
+       WHERE mr.status IN ('pending', 'draft')
+         AND b.organization_id = $1`,
+      [organizationId]
+    );
+    return parseInt(result.rows[0]?.cnt || '0', 10);
+  }
+
+  static async getRecent(limit = 5) {
+    const result = await db.pool.query(
+      `SELECT *
+       FROM me_reports
+       ORDER BY created_at DESC
+       LIMIT $1`,
+      [limit]
+    );
+    return result.rows.map(row => new MeReport(row));
+  }
+
+  static async getRecentByOrganization(organizationId, limit = 5) {
+    const result = await db.pool.query(
+      `SELECT mr.*
+       FROM me_reports mr
+       JOIN budgets b ON mr.budget_id = b.id
+       WHERE b.organization_id = $1
+       ORDER BY mr.created_at DESC
+       LIMIT $2`,
+      [organizationId, limit]
+    );
+    return result.rows.map(row => new MeReport(row));
+  }
+
+  static async getRecentByProject(projectId, limit = 5) {
+    const result = await db.pool.query(
+      `SELECT mr.*
+       FROM me_reports mr
+       JOIN budgets b ON mr.budget_id = b.id
+       WHERE b.project_id = $1
+       ORDER BY mr.created_at DESC
+       LIMIT $2`,
+      [projectId, limit]
+    );
+    return result.rows.map(row => new MeReport(row));
+  }
 }
 
 module.exports = MeReport;

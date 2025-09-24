@@ -9,6 +9,17 @@ const { ORG_STATUS } = require('../shared/constants/orgStatus');
  */
 async function getReviewerSummaries(role) {
   try {
+    // Ensure required columns exist (sector used for GM breakdown)
+    try {
+      await db.pool.query(`
+        ALTER TABLE organizations
+        ADD COLUMN IF NOT EXISTS sector TEXT
+      `);
+    } catch (e) {
+      // Ignore if cannot alter; subsequent queries may still work without sector breakdown
+      console.warn('Schema ensure (organizations.sector) warning:', e.message || e);
+    }
+
     if (role === 'grants_manager') {
       // GM queue: organizations waiting for GM review
       const gmQueueResult = await db.pool.query(

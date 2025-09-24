@@ -202,6 +202,7 @@ const App: React.FC = () => {
             <Route path="onboarding/section-a" element={<OnboardingMain />} />
             <Route path="onboarding/section-b" element={<OnboardingMain />} />
             <Route path="onboarding/section-c" element={<OnboardingMain />} />
+            <Route path="onboarding/review" element={<OnboardingMain />} />
             <Route path="onboarding/review-status" element={<OnboardingMain />} />
             {/* Dashboard route disabled - redirects to /partner/ instead */}
             <Route path="dashboard" element={<Navigate to="/partner/" replace />} />
@@ -211,6 +212,29 @@ const App: React.FC = () => {
             <Route path="finance/*" element={<div>Finance Module - Coming Soon</div>} />
             <Route path="messages/*" element={<div>Messages Module - Coming Soon</div>} />
             <Route path="settings/*" element={<div>Settings Module - Coming Soon</div>} />
+          </Route>
+
+          {/* GM routes - outside Layout to avoid double header/sidebar */}
+          <Route path="/gm/*" element={
+            <ProtectedRoute requireRole="grants_manager">
+              <GMShell />
+            </ProtectedRoute>
+          }>
+            <Route index element={<GMDashboard />} />
+            <Route path="analytics" element={<div>GM Analytics - Coming Soon</div>} />
+            <Route path="settings" element={<div>GM Settings - Coming Soon</div>} />
+          </Route>
+
+          {/* COO routes - outside Layout to avoid double header/sidebar */}
+          <Route path="/coo/*" element={
+            <ProtectedRoute requireRole="chief_operations_officer">
+              <COOShell />
+            </ProtectedRoute>
+          }>
+            <Route index element={<COODashboard />} />
+            <Route path="reports" element={<div>COO Reports - Coming Soon</div>} />
+            <Route path="analytics" element={<div>COO Analytics - Coming Soon</div>} />
+            <Route path="settings" element={<div>COO Settings - Coming Soon</div>} />
           </Route>
 
           {/* Protected routes with layout */}
@@ -225,28 +249,7 @@ const App: React.FC = () => {
                     </ProtectedRoute>
                   } />
                   
-                  {/* GM Dashboard */}
-                  <Route path="/gm/*" element={
-                    <ProtectedRoute requireRole="grants_manager">
-                      <GMShell />
-                    </ProtectedRoute>
-                  }>
-                    <Route index element={<GMDashboard />} />
-                    <Route path="analytics" element={<div>GM Analytics - Coming Soon</div>} />
-                    <Route path="settings" element={<div>GM Settings - Coming Soon</div>} />
-                  </Route>
                   
-                  {/* COO Dashboard */}
-                  <Route path="/coo/*" element={
-                    <ProtectedRoute requireRole="chief_operations_officer">
-                      <COOShell />
-                    </ProtectedRoute>
-                  }>
-                    <Route index element={<COODashboard />} />
-                    <Route path="reports" element={<div>COO Reports - Coming Soon</div>} />
-                    <Route path="analytics" element={<div>COO Analytics - Coming Soon</div>} />
-                    <Route path="settings" element={<div>COO Settings - Coming Soon</div>} />
-                  </Route>
                   
                   {/* Donor Dashboard */}
                   <Route path="/donor/*" element={

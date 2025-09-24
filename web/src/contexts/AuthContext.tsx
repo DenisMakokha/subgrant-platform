@@ -37,6 +37,7 @@ const expectJson = async (res: Response) => {
 
 interface Organization {
   id: string;
+  version?: number;
   name?: string;
   legal_name?: string;
   registration_number?: string;
@@ -80,6 +81,7 @@ interface AuthContextType {
   login: ({ email, password }: { email: string; password: string }) => Promise<{ role: string; sessionData: any }>;
   logout: () => void;
   refreshSession: () => Promise<void>;
+  updateOrganization: (patch: Partial<Organization>) => void;
   isAuthenticated: boolean;
 }
 
@@ -271,8 +273,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('user');
   };
 
+  // Optimistic local organization updates (e.g., version/status) between server refreshes
+  const updateOrganization = (patch: Partial<Organization>) => {
+    setOrganization(prev => {
+      if (!prev) return (patch as Organization);
+      return { ...prev, ...patch } as Organization;
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ ready, user, organization, nextStep, modules, onboardingLocked, login, logout, refreshSession, isAuthenticated: isAuth }}>
+    <AuthContext.Provider value={{ ready, user, organization, nextStep, modules, onboardingLocked, login, logout, refreshSession, updateOrganization, isAuthenticated: isAuth }}>
       {children}
     </AuthContext.Provider>
   );
