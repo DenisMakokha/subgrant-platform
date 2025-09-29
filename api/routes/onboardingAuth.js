@@ -66,6 +66,12 @@ router.post('/register',
 
         const organizationId = orgResult.rows[0].id;
 
+        // Link user to organization to enable SSoT repository lookups
+        await client.query(
+          `UPDATE users SET organization_id = $1 WHERE id = $2`,
+          [organizationId, userId]
+        );
+
         // Create owner role
         await client.query(
           `INSERT INTO org_roles (organization_id, user_id, role)

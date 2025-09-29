@@ -71,6 +71,11 @@ router.post('/section-c',
       
       console.log(' Found organization:', existingOrg.id);
       
+      // Immutability: block any writes when organization is finalized
+      if (existingOrg.status === 'finalized') {
+        return res.status(409).json(createApiError(409, { form: ['Organization is finalized and cannot be modified'] }));
+      }
+      
       // Extract data from SSoT envelope format
       const requestData = req.body.data || req.body;
       console.log('📦 Extracted request data (Section C):', requestData);

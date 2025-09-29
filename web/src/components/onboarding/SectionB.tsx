@@ -26,6 +26,7 @@ interface SectionBData {
 const SectionB: React.FC = () => {
   const navigate = useNavigate();
   const { organization, refreshSession } = useAuth();
+  const isFinalized = organization?.status === 'finalized';
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -182,6 +183,11 @@ const SectionB: React.FC = () => {
         </div>
 
         {/* Financial Assessment Cards */}
+        {isFinalized && (
+          <div className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
+            Onboarding is complete. This section is read-only.
+          </div>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {assessmentCards.map(card => {
             const value = assessment[card.key] as MoneyYear;
@@ -207,10 +213,11 @@ const SectionB: React.FC = () => {
                             type="number"
                             min="0"
                             step="1000"
-                            className="block w-full pl-7 pr-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-lg"
+                            className={`block w-full pl-7 pr-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-lg ${isFinalized ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
                             placeholder="0"
                             value={value.amountUsd || ''}
                             onChange={(e) => handleAssessmentChange(card.key, 'amountUsd', parseInt(e.target.value) || 0)}
+                            disabled={isFinalized}
                           />
                         </div>
                         {value.amountUsd > 0 && (
@@ -228,10 +235,11 @@ const SectionB: React.FC = () => {
                           type="number"
                           min="2000"
                           max="2035"
-                          className="block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-lg"
+                          className={`block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-lg ${isFinalized ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
                           placeholder="YYYY"
                           value={value.year || ''}
                           onChange={(e) => handleAssessmentChange(card.key, 'year', parseInt(e.target.value) || new Date().getFullYear())}
+                          disabled={isFinalized}
                         />
                       </div>
                     </div>
@@ -298,23 +306,25 @@ const SectionB: React.FC = () => {
             ← Back to Section A
           </button>
           
-          <div className="flex space-x-4">
-            <button
-              onClick={saveDraft}
-              disabled={saving}
-              className="px-6 py-3 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-            >
-              {saving ? 'Saving...' : 'Save Draft'}
-            </button>
-            
-            <button
-              onClick={submitSection}
-              disabled={submitting}
-              className="px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-            >
-              {submitting ? 'Submitting...' : 'Continue to Section C'}
-            </button>
-          </div>
+          {!isFinalized && (
+            <div className="flex space-x-4">
+              <button
+                onClick={saveDraft}
+                disabled={saving}
+                className="px-6 py-3 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+              >
+                {saving ? 'Saving...' : 'Save Draft'}
+              </button>
+              
+              <button
+                onClick={submitSection}
+                disabled={submitting}
+                className="px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+              >
+                {submitting ? 'Submitting...' : 'Continue to Section C'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </OnboardingLayout>

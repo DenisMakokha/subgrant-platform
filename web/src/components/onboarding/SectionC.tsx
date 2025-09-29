@@ -39,6 +39,7 @@ interface SectionCData {
 const SectionC: React.FC = () => {
   const navigate = useNavigate();
   const { organization, refreshSession } = useAuth();
+  const isFinalized = organization?.status === 'finalized';
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -122,9 +123,22 @@ const SectionC: React.FC = () => {
       }, 100);
 
       // Simulate upload completion
-      setTimeout(() => {
+      setTimeout(async () => {
         clearInterval(uploadInterval);
         setUploadProgress(prev => ({ ...prev, [code]: 100 }));
+
+        // Generate a realistic file hash (in production, this would come from the server)
+        const generateFileHash = async (file: File): Promise<string> => {
+          try {
+            const buffer = await file.arrayBuffer();
+            const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+          } catch (error) {
+            // Fallback to timestamp-based hash if crypto is not available
+            return `file-${Date.now()}-${Math.random().toString(36).substring(2)}`;
+          }
+        };
 
         // Add file to response
         const newFile: FileUpload = {
@@ -132,7 +146,7 @@ const SectionC: React.FC = () => {
           originalName: file.name,
           mime: file.type,
           size: file.size,
-          sha256: 'mock-hash-' + Date.now(),
+          sha256: await generateFileHash(file),
           uploadedAt: new Date().toISOString(),
           version: 1
         };
@@ -262,6 +276,11 @@ const SectionC: React.FC = () => {
           </p>
         </div>
 
+        {isFinalized && (
+          <div className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
+            Onboarding is complete. This section is read-only.
+          </div>
+        )}
         {/* Document Categories */}
         <div className="space-y-8">
           {data.categories.map(category => {
@@ -295,9 +314,10 @@ const SectionC: React.FC = () => {
                           {/* Available Dropdown */}
                           <div className="col-span-2">
                             <select
-                              className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                              className={`w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 ${isFinalized ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
                               value={response?.available || 'yes'}
                               onChange={(e) => handleResponseChange(req.code, 'available', e.target.value)}
+                              disabled={isFinalized}
                             >
                               <option value="yes">Yes</option>
                               <option value="na">N/A</option>
@@ -314,10 +334,12 @@ const SectionC: React.FC = () => {
                                   className="hidden"
                                   accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
                                   onChange={(e) => e.target.files && handleFileUpload(req.code, e.target.files)}
+                                  disabled={isFinalized}
                                 />
                                 <label
                                   htmlFor={`file-${req.code}`}
-                                  className="cursor-pointer inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                  className={`inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${isFinalized ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-50'}`}
+                                  aria-disabled={isFinalized}
                                 >
                                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -342,14 +364,16 @@ const SectionC: React.FC = () => {
                                     {response.files.map((file, index) => (
                                       <div key={index} className="flex items-center justify-between bg-gray-50 rounded p-2">
                                         <span className="text-sm text-gray-700 truncate">{file.originalName}</span>
-                                        <button
-                                          onClick={() => removeFile(req.code, index)}
-                                          className="text-red-600 hover:text-red-800"
-                                        >
-                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                          </svg>
-                                        </button>
+                                        {!isFinalized && (
+                                          <button
+                                            onClick={() => removeFile(req.code, index)}
+                                            className="text-red-600 hover:text-red-800"
+                                          >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                          </button>
+                                        )}
                                       </div>
                                     ))}
                                   </div>
@@ -357,11 +381,12 @@ const SectionC: React.FC = () => {
                               </div>
                             ) : (
                               <textarea
-                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                className={`w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 ${isFinalized ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
                                 rows={3}
                                 placeholder="Explain why this document is not available..."
                                 value={response?.naExplanation || ''}
                                 onChange={(e) => handleResponseChange(req.code, 'naExplanation', e.target.value)}
+                                disabled={isFinalized}
                               />
                             )}
                           </div>
@@ -369,11 +394,12 @@ const SectionC: React.FC = () => {
                           {/* Notes */}
                           <div className="col-span-2">
                             <textarea
-                              className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm resize-none"
+                              className={`w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm resize-none ${isFinalized ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
                               placeholder="Notes (optional)"
                               rows={2}
                               value={response?.note || ''}
                               onChange={(e) => handleResponseChange(req.code, 'note', e.target.value)}
+                              disabled={isFinalized}
                             />
                           </div>
                         </div>
@@ -395,23 +421,25 @@ const SectionC: React.FC = () => {
             ← Back to Section B
           </button>
           
-          <div className="flex space-x-4">
-            <button
-              onClick={saveDraft}
-              disabled={saving}
-              className="px-6 py-3 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-            >
-              {saving ? 'Saving...' : 'Save Draft'}
-            </button>
-            
-            <button
-              onClick={submitApplication}
-              disabled={submitting}
-              className="px-8 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 font-semibold"
-            >
-              {submitting ? 'Submitting Application...' : 'Submit Application'}
-            </button>
-          </div>
+          {!isFinalized && (
+            <div className="flex space-x-4">
+              <button
+                onClick={saveDraft}
+                disabled={saving}
+                className="px-6 py-3 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+              >
+                {saving ? 'Saving...' : 'Save Draft'}
+              </button>
+              
+              <button
+                onClick={submitApplication}
+                disabled={submitting}
+                className="px-8 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 font-semibold"
+              >
+                {submitting ? 'Submitting Application...' : 'Submit Application'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </OnboardingLayout>

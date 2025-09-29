@@ -1,4 +1,5 @@
 const User = require('../models/user');
+const { applyRLS } = require('./security');
 
 // Define role permissions
 const rolePermissions = {
@@ -11,7 +12,7 @@ const rolePermissions = {
     budget_lines: ['create', 'read', 'update', 'delete'],
     review_comments: ['create', 'read', 'update', 'delete'],
     contracts: ['create', 'read', 'update', 'delete'],
-    audit_logs: ['read']
+    audit_logs: ['read', 'export']
   },
   accountant: {
     organizations: ['read'],
@@ -81,17 +82,6 @@ const rolePermissions = {
     financial_reports: ['read'],
     audit_logs: ['read']
   },
-  admin: {
-    organizations: ['create', 'read', 'update', 'delete'],
-    users: ['create', 'read', 'update', 'delete'],
-    projects: ['create', 'read', 'update', 'delete'],
-    budget_categories: ['create', 'read', 'update', 'delete'],
-    budgets: ['create', 'read', 'update', 'delete'],
-    budget_lines: ['create', 'read', 'update', 'delete'],
-    review_comments: ['create', 'read', 'update', 'delete'],
-    contracts: ['create', 'read', 'update', 'delete'],
-    audit_logs: ['read', 'export']
-  },
   compliance_officer: {
     organizations: ['read'],
     users: ['read'],
@@ -139,7 +129,10 @@ function checkPermission(resource, action) {
         req.user.organization_id = user.organization_id;
       }
 
-      next();
+      // Apply Row Level Security
+      applyRLS(req, res, () => {
+        next();
+      });
     } catch (error) {
       console.error('Error checking permissions:', error);
       res.status(500).json({ error: 'Internal server error' });

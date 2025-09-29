@@ -6,6 +6,7 @@ export interface User {
   last_name?: string;
   firstName?: string;
   lastName?: string;
+  phone?: string;
   role: 'admin' | 'partner_user' | 'grants_manager' | 'chief_operations_officer' | 'donor';
   email_verified?: boolean;
   email_verified_at?: Date;

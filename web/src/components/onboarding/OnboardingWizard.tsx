@@ -50,6 +50,7 @@ interface OnboardingWizardProps {
   completedSteps: string[];
   isSubmitting?: boolean;
   isSaving?: boolean;
+  readOnly?: boolean;
 }
 
 const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
@@ -61,7 +62,8 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
   onStepClick,
   completedSteps,
   isSubmitting = false,
-  isSaving = false
+  isSaving = false,
+  readOnly = false
 }) => {
   const navigate = useNavigate();
   const { organization } = useAuth();
@@ -286,7 +288,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
               </button>
 
               <div className="flex items-center space-x-4">
-                {onSaveDraft && (
+                {!readOnly && onSaveDraft && (
                   <button
                     onClick={onSaveDraft}
                     disabled={isSaving}
@@ -296,13 +298,15 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                   </button>
                 )}
                 
-                <button
-                  onClick={handleNext}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 transition-all flex items-center space-x-2"
-                >
-                  <span>{currentStepIndex === steps.length - 1 ? 'Complete' : 'Next'}</span>
-                  <span>→</span>
-                </button>
+                {!readOnly && (
+                  <button
+                    onClick={handleNext}
+                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 transition-all flex items-center space-x-2"
+                  >
+                    <span>{currentStepIndex === steps.length - 1 ? 'Complete' : 'Next'}</span>
+                    <span>→</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>

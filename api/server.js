@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const dotenv = require('dotenv');
+const { logStartup, logShutdown } = require('./services/observabilityService');
 
 // Load environment variables
 dotenv.config();
@@ -29,6 +30,7 @@ const projectRoutes = require('./routes/projects');
 const budgetCategoryRoutes = require('./routes/budgetCategories');
 const budgetRoutes = require('./routes/budgets');
 const budgetLineRoutes = require('./routes/budgetLines');
+const partnerBudgetRoutes = require('./routes/partnerBudgets');
 const reviewCommentRoutes = require('./routes/reviewComments');
 const budgetApprovalRoutes = require('./routes/budgetApprovals');
 const contractRoutes = require('./routes/contracts');
@@ -44,8 +46,8 @@ const meReportRoutes = require('./routes/meReports');
 const financialReportRoutes = require('./routes/financialReports');
 const receiptRoutes = require('./routes/receipts');
 const kpiRoutes = require('./routes/kpi');
-const notificationRoutes = require('./routes/notifications');
 const healthRoutes = require('./routes/health');
+const profileRoutes = require('./routes/profile');
 const forumRoutes = require('./routes/forum');
 const forumAdminRoutes = require('./routes/forumAdmin');
 const integrationRoutes = require('./routes/integrations');
@@ -56,6 +58,15 @@ const onboardingSectionARoutes = require('./routes/onboardingSectionA');
 const onboardingAdminRoutes = require('./routes/onboardingAdmin');
 const sessionRoutes = require('./routes/session');
 const debugRoutes = require('./routes/debug-org-status');
+const ssotRoutes = require('./routes/ssot');
+const adminRoutes = require('./routes/admin');
+const partnerDashboardRoutes = require('./routes/partnerDashboard');
+const runtimeRoutes = require('./routes/runtime');
+const approvalRoutes = require('./routes/approvals');
+const fundRequestsRoutes = require('./routes/fundRequests');
+const emailRoutes = require('./routes/email');
+const budgetSSOTRoutes = require('./routes/budgetSSOT');
+const contractSSOTRoutes = require('./routes/contractSSOT');
 
 // Base route
 app.get('/', (req, res) => {
@@ -75,6 +86,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/budget-categories', budgetCategoryRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/budget-lines', budgetLineRoutes);
+app.use('/api/partner-budgets', partnerBudgetRoutes);
 app.use('/api/review-comments', reviewCommentRoutes);
 app.use('/api/budget-approvals', budgetApprovalRoutes);
 app.use('/api/contracts', contractRoutes);
@@ -90,18 +102,27 @@ app.use('/api/me-reports', meReportRoutes);
 app.use('/api/financial-reports', financialReportRoutes);
 app.use('/api/receipts', receiptRoutes);
 app.use('/api/kpi', kpiRoutes);
-app.use('/api/notifications', notificationRoutes);
 app.use('/api/health', healthRoutes);
+app.use('/api', profileRoutes);
 app.use('/api/forum', forumRoutes);
 app.use('/api/forum-admin', forumAdminRoutes);
 app.use('/api/integrations', integrationRoutes);
+app.use('/api', sessionRoutes);
+app.use('/api/partner/dashboard', partnerDashboardRoutes);
 app.use('/api/onboarding/auth', onboardingAuthRoutes);
 app.use('/api/onboarding', onboardingSectionCRoutes);
 app.use('/api/onboarding', onboardingSectionBRoutes);
 app.use('/api/onboarding', onboardingSectionARoutes);
 app.use('/api/onboarding/admin', onboardingAdminRoutes);
-app.use('/api/session', sessionRoutes);
 app.use('/api', debugRoutes);
+app.use('/ssot', ssotRoutes);
+app.use('/admin', adminRoutes);
+app.use('/app', runtimeRoutes);
+app.use('/approvals', approvalRoutes);
+app.use('/api/fund-requests', fundRequestsRoutes);
+app.use('/api/email', emailRoutes);
+app.use('/api/budget-ssot', budgetSSOTRoutes);
+app.use('/api/contract-ssot', contractSSOTRoutes);
 
 // Partner module routes
 const partnerApplications = require('./routes/partnerApplications');
@@ -401,10 +422,8 @@ app.use('/api/review/coo', cooReview);
 app.use('/api/review/summaries', reviewerSummariesRoutes);
 
 // Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
-});
+const { errorHandler } = require('./middleware/errorHandler');
+app.use(errorHandler);
 
 // 404 handler
 app.use((req, res) => {
@@ -418,6 +437,22 @@ app.use('/api', (err, req, res, next) => {
     .status(err.status || 500)
     .type('application/json')
     .json({ error: err.message || 'Internal error' });
+});
+
+// Log startup
+logStartup();
+
+// Graceful shutdown
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully');
+  logShutdown();
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  logShutdown();
+  process.exit(0);
 });
 
 // Start server

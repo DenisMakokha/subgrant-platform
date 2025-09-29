@@ -29,8 +29,8 @@ async function getReviewerSummaries(role) {
           COUNT(*) FILTER (WHERE created_at < NOW() - INTERVAL '7 days') as aging_7_days,
           COUNT(*) FILTER (WHERE created_at < NOW() - INTERVAL '14 days') as aging_14_days
         FROM organizations 
-        WHERE status = $1`,
-        [ORG_STATUS.UNDER_REVIEW_GM]
+        WHERE status = ANY($1::text[])`,
+        [[ORG_STATUS.UNDER_REVIEW_GM, 'under_review']]
       );
 
       // Additional metrics for GM
@@ -39,10 +39,10 @@ async function getReviewerSummaries(role) {
           sector,
           COUNT(*) as count
         FROM organizations 
-        WHERE status = $1 AND sector IS NOT NULL
+        WHERE status = ANY($1::text[]) AND sector IS NOT NULL
         GROUP BY sector
         ORDER BY count DESC`,
-        [ORG_STATUS.UNDER_REVIEW_GM]
+        [[ORG_STATUS.UNDER_REVIEW_GM, 'under_review']]
       );
 
       return {

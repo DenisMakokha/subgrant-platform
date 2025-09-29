@@ -377,6 +377,7 @@ const OnboardingMain: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
+  const isFinalized = organization?.status === 'finalized';
   const [formData, setFormData] = useState<FormData>({
     // Basic Information
     name: '',
@@ -1183,9 +1184,22 @@ const OnboardingMain: React.FC = () => {
       }, 150);
 
       // Complete upload with final animation
-      setTimeout(() => {
+      setTimeout(async () => {
         clearInterval(uploadInterval);
         setUploadProgress(prev => ({ ...prev, [code]: 100 }));
+
+        // Generate a realistic file hash (in production, this would come from the server)
+        const generateFileHash = async (file: File): Promise<string> => {
+          try {
+            const buffer = await file.arrayBuffer();
+            const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+          } catch (error) {
+            // Fallback to timestamp-based hash if crypto is not available
+            return `file-${Date.now()}-${Math.random().toString(36).substring(2)}`;
+          }
+        };
 
         // Add file to response with proper state update
         const newFile: FileUpload = {
@@ -1193,7 +1207,7 @@ const OnboardingMain: React.FC = () => {
           originalName: file.name,
           mime: file.type,
           size: file.size,
-          sha256: 'mock-hash-' + Date.now(),
+          sha256: await generateFileHash(file),
           uploadedAt: new Date().toISOString(),
           version: 1
         };
@@ -1257,6 +1271,10 @@ const OnboardingMain: React.FC = () => {
 
   const handleSaveDraft = async () => {
     console.log('🎯 handleSaveDraft called, currentStep:', currentStep);
+    if (isFinalized) {
+      toast.info('Onboarding is complete. This application is read-only.');
+      return;
+    }
     setIsSaving(true);
     try {
       const success = await saveFormData(currentStep);
@@ -1273,6 +1291,10 @@ const OnboardingMain: React.FC = () => {
   };
 
   const handleSubmit = async () => {
+    if (isFinalized) {
+      toast.info('Onboarding is complete. This application is read-only.');
+      return;
+    }
     try {
       setIsSubmitting(true);
       
@@ -1334,6 +1356,7 @@ const OnboardingMain: React.FC = () => {
                 error={errors.name}
                 required
                 placeholder="Enter your organization name"
+                disabled={isFinalized}
               />
               <FormField
                 label="Legal Name"
@@ -1343,6 +1366,7 @@ const OnboardingMain: React.FC = () => {
                 error={errors.legal_name}
                 required
                 placeholder="Enter legal name"
+                disabled={isFinalized}
               />
               <FormField
                 label="Registration Number"
@@ -1352,6 +1376,7 @@ const OnboardingMain: React.FC = () => {
                 error={errors.registration_number}
                 required
                 placeholder="Enter registration number"
+                disabled={isFinalized}
               />
               <FormField
                 label="Tax ID"
@@ -1360,6 +1385,7 @@ const OnboardingMain: React.FC = () => {
                 onChange={(value) => handleFieldChange('tax_id', value)}
                 error={errors.tax_id}
                 placeholder="Enter tax ID"
+                disabled={isFinalized}
               />
               <FormField
                 label="Legal Structure"
@@ -1378,6 +1404,7 @@ const OnboardingMain: React.FC = () => {
                   { value: 'other', label: 'Other' },
                 ]}
                 placeholder="Select legal structure"
+                disabled={isFinalized}
               />
               <FormField
                 label="Year Established"
@@ -1388,6 +1415,7 @@ const OnboardingMain: React.FC = () => {
                 required
                 type="number"
                 placeholder="Enter year established"
+                disabled={isFinalized}
               />
             </div>
           </div>
@@ -1415,6 +1443,7 @@ const OnboardingMain: React.FC = () => {
                 error={errors.email}
                 required
                 placeholder="Enter organization email"
+                disabled={isFinalized}
               />
               <FormField
                 label="Phone Number"
@@ -1424,6 +1453,7 @@ const OnboardingMain: React.FC = () => {
                 error={errors.phone}
                 required
                 placeholder="Enter phone number"
+                disabled={isFinalized}
               />
               <FormField
                 label="Website"
@@ -1432,6 +1462,7 @@ const OnboardingMain: React.FC = () => {
                 onChange={(value) => handleFieldChange('website', value)}
                 error={errors.website}
                 placeholder="Enter website URL"
+                disabled={isFinalized}
               />
               <FormField
                 label="Primary Contact Name"
@@ -1441,6 +1472,7 @@ const OnboardingMain: React.FC = () => {
                 error={errors.primary_contact_name}
                 required
                 placeholder="Enter primary contact name"
+                disabled={isFinalized}
               />
               <FormField
                 label="Primary Contact Title"
@@ -1450,6 +1482,7 @@ const OnboardingMain: React.FC = () => {
                 error={errors.primary_contact_title}
                 required
                 placeholder="Enter primary contact title"
+                disabled={isFinalized}
               />
               <FormField
                 label="Primary Contact Email"
@@ -1460,6 +1493,7 @@ const OnboardingMain: React.FC = () => {
                 error={errors.primary_contact_email}
                 required
                 placeholder="Enter primary contact email"
+                disabled={isFinalized}
               />
               <FormField
                 label="Primary Contact Phone"
@@ -1469,6 +1503,7 @@ const OnboardingMain: React.FC = () => {
                 error={errors.primary_contact_phone}
                 required
                 placeholder="Enter primary contact phone"
+                disabled={isFinalized}
               />
             </div>
           </div>
@@ -1487,73 +1522,78 @@ const OnboardingMain: React.FC = () => {
                 <p className="text-sm text-slate-600 dark:text-slate-400">Physical location and mailing address</p>
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="md:col-span-2">
-                <FormField
-                  label="Street Address"
-                  name="address"
-                  value={formData.address}
-                  onChange={(value) => handleFieldChange('address', value)}
-                  error={errors.address}
-                  required
-                  placeholder="Enter street address"
-                />
-              </div>
-              
-              {/* Country Dropdown - First */}
-              <FormField
-                label="Country"
-                name="country"
-                type="select"
-                value={formData.country}
-                onChange={handleCountryChange}
-                error={errors.country}
-                required
-                options={AFRICAN_COUNTRIES.map(country => ({ value: country, label: country }))}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="md:col-span-2">
+                  <FormField
+                    label="Street Address"
+                    name="address"
+                    value={formData.address}
+                    onChange={(value) => handleFieldChange('address', value)}
+                    error={errors.address}
+                    required
+                    placeholder="Enter street address"
+                    disabled={isFinalized}
+                  />
+                </div>
 
-              {/* City Dropdown - Second */}
-              <div className="space-y-2">
+                {/* Country Dropdown - First */}
                 <FormField
-                  label="City"
-                  name="city"
+                  label="Country"
+                  name="country"
                   type="select"
-                  value={formData.city}
-                  onChange={(value) => handleFieldChange('city', value)}
-                  error={errors.city}
+                  value={formData.country}
+                  onChange={handleCountryChange}
+                  error={errors.country}
                   required
-                  options={getAvailableCities().map(city => ({ value: city, label: city }))}
+                  options={AFRICAN_COUNTRIES.map((country) => ({ value: country, label: country }))}
+                  disabled={isFinalized}
                 />
-                {!formData.country && <p className="mt-1 text-sm text-gray-500">Please select a country first</p>}
-              </div>
 
-              {/* State/Province Dropdown - Third */}
-              <div className="space-y-2">
+                {/* City Dropdown - Second */}
+                <div className="space-y-2">
+                  <FormField
+                    label="City"
+                    name="city"
+                    type="select"
+                    value={formData.city}
+                    onChange={(value) => handleFieldChange('city', value)}
+                    error={errors.city}
+                    required
+                    options={getAvailableCities().map((city) => ({ value: city, label: city }))}
+                    disabled={isFinalized}
+                  />
+                  {!formData.country && <p className="mt-1 text-sm text-gray-500">Please select a country first</p>}
+                </div>
+
+                {/* State/Province Dropdown - Third */}
+                <div className="space-y-2">
+                  <FormField
+                    label="State/Province"
+                    name="state_province"
+                    type="select"
+                    value={formData.state_province}
+                    onChange={(value) => handleFieldChange('state_province', value)}
+                    error={errors.state_province}
+                    required
+                    options={getAvailableStates().map((state) => ({ value: state, label: state }))}
+                    disabled={isFinalized}
+                  />
+                  {!formData.country && <p className="mt-1 text-sm text-gray-500">Please select a country first</p>}
+                </div>
+
+                {/* Postal Code - Fourth */}
                 <FormField
-                  label="State/Province"
-                  name="state_province"
-                  type="select"
-                  value={formData.state_province}
-                  onChange={(value) => handleFieldChange('state_province', value)}
-                  error={errors.state_province}
+                  label="Postal Code"
+                  name="postal_code"
+                  value={formData.postal_code}
+                  onChange={(value) => handleFieldChange('postal_code', value)}
+                  error={errors.postal_code}
                   required
-                  options={getAvailableStates().map(state => ({ value: state, label: state }))}
+                  placeholder="Enter postal code"
+                  disabled={isFinalized}
                 />
-                {!formData.country && <p className="mt-1 text-sm text-gray-500">Please select a country first</p>}
               </div>
-
-              {/* Postal Code - Fourth */}
-              <FormField
-                label="Postal Code"
-                name="postal_code"
-                value={formData.postal_code}
-                onChange={(value) => handleFieldChange('postal_code', value)}
-                error={errors.postal_code}
-                required
-                placeholder="Enter postal code"
-              />
             </div>
-          </div>
 
           {/* Banking Information Section */}
           <div className="space-y-6">
@@ -1577,6 +1617,7 @@ const OnboardingMain: React.FC = () => {
                 error={errors.bank_name}
                 required
                 placeholder="Enter bank name"
+                disabled={isFinalized}
               />
               <FormField
                 label="Bank Branch"
@@ -1585,6 +1626,7 @@ const OnboardingMain: React.FC = () => {
                 onChange={(value) => handleFieldChange('bank_branch', value)}
                 error={errors.bank_branch}
                 placeholder="Enter bank branch"
+                disabled={isFinalized}
               />
               <FormField
                 label="Account Name"
@@ -1594,6 +1636,7 @@ const OnboardingMain: React.FC = () => {
                 error={errors.account_name}
                 required
                 placeholder="Enter account name"
+                disabled={isFinalized}
               />
               <FormField
                 label="Account Number"
@@ -1603,6 +1646,7 @@ const OnboardingMain: React.FC = () => {
                 error={errors.account_number}
                 required
                 placeholder="Enter account number"
+                disabled={isFinalized}
               />
               <FormField
                 label="SWIFT Code"
@@ -1611,6 +1655,7 @@ const OnboardingMain: React.FC = () => {
                 onChange={(value) => handleFieldChange('swift_code', value)}
                 error={errors.swift_code}
                 placeholder="Enter SWIFT code (if applicable)"
+                disabled={isFinalized}
               />
             </div>
           </div>
@@ -1620,7 +1665,7 @@ const OnboardingMain: React.FC = () => {
     {
       id: 'section-b',
       title: 'Section B - Financial Assessment',
-      icon: '💰',
+      icon: '',
       description: 'Financial capacity and funding information',
       component: (
         <div className="space-y-10">
@@ -1637,7 +1682,7 @@ const OnboardingMain: React.FC = () => {
                 <p className="text-sm text-slate-600 dark:text-slate-400">Demonstrate your organization's financial capacity and experience</p>
               </div>
             </div>
-            
+
             {/* Current Annual Budget Card */}
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800">
               <div className="flex items-center space-x-3 mb-6">
@@ -1658,6 +1703,7 @@ const OnboardingMain: React.FC = () => {
                   error={errors.current_annual_budget_amount}
                   required
                   placeholder="Enter amount"
+                  disabled={isFinalized}
                 />
                 <FormField
                   label="Year"
@@ -1668,10 +1714,11 @@ const OnboardingMain: React.FC = () => {
                   error={errors.current_annual_budget_year}
                   required
                   placeholder="Enter year"
+                  disabled={isFinalized}
                 />
               </div>
             </div>
-            
+
             {/* Next Year Budget Estimate Card */}
             <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-800">
               <div className="flex items-center space-x-3 mb-6">
@@ -1692,6 +1739,7 @@ const OnboardingMain: React.FC = () => {
                   error={errors.next_year_budget_amount}
                   required
                   placeholder="Enter estimated amount"
+                  disabled={isFinalized}
                 />
                 <FormField
                   label="Year"
@@ -1702,6 +1750,7 @@ const OnboardingMain: React.FC = () => {
                   error={errors.next_year_budget_year}
                   required
                   placeholder="Enter year"
+                  disabled={isFinalized}
                 />
               </div>
             </div>
@@ -1726,6 +1775,7 @@ const OnboardingMain: React.FC = () => {
                   error={errors.largest_grant_amount}
                   required
                   placeholder="Enter amount"
+                  disabled={isFinalized}
                 />
                 <FormField
                   label="Year"
@@ -1736,6 +1786,7 @@ const OnboardingMain: React.FC = () => {
                   error={errors.largest_grant_year}
                   required
                   placeholder="Enter year"
+                  disabled={isFinalized}
                 />
               </div>
             </div>
@@ -1760,6 +1811,7 @@ const OnboardingMain: React.FC = () => {
                   error={errors.current_donor_funding_amount}
                   required
                   placeholder="Enter amount"
+                  disabled={isFinalized}
                 />
                 <FormField
                   label="Year"
@@ -1770,6 +1822,7 @@ const OnboardingMain: React.FC = () => {
                   error={errors.current_donor_funding_year}
                   required
                   placeholder="Enter year"
+                  disabled={isFinalized}
                 />
               </div>
             </div>
@@ -1794,6 +1847,7 @@ const OnboardingMain: React.FC = () => {
                   error={errors.other_funds_amount}
                   required
                   placeholder="Enter amount"
+                  disabled={isFinalized}
                 />
                 <FormField
                   label="Year"
@@ -1804,6 +1858,7 @@ const OnboardingMain: React.FC = () => {
                   error={errors.other_funds_year}
                   required
                   placeholder="Enter year"
+                  disabled={isFinalized}
                 />
               </div>
             </div>
@@ -1929,9 +1984,10 @@ const OnboardingMain: React.FC = () => {
                               {/* Available Dropdown */}
                               <div className="col-span-1">
                                 <select
-                                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm py-2.5"
+                                  className={`w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm py-2.5 ${isFinalized ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
                                   value={response?.available || 'yes'}
                                   onChange={(e) => handleDocumentResponseChange(req.code, 'available', e.target.value)}
+                                  disabled={isFinalized}
                                 >
                                   <option value="yes">Yes</option>
                                   <option value="na">N/A</option>
@@ -1948,10 +2004,12 @@ const OnboardingMain: React.FC = () => {
                                       className="hidden"
                                       accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
                                       onChange={(e) => e.target.files && handleFileUpload(req.code, e.target.files)}
+                                      disabled={isFinalized}
                                     />
                                     <label
                                       htmlFor={`file-${req.code}`}
-                                      className="cursor-pointer inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                      className={`inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${isFinalized ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-50'}`}
+                                      aria-disabled={isFinalized}
                                     >
                                       <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -1983,14 +2041,16 @@ const OnboardingMain: React.FC = () => {
                                           {response.files.map((file, index) => (
                                             <div key={index} className="flex items-center justify-between bg-gray-50 rounded p-2">
                                               <span className="text-sm text-gray-700 truncate">{file.originalName}</span>
-                                              <button
-                                                onClick={() => removeFile(req.code, index)}
-                                                className="text-red-600 hover:text-red-800"
-                                              >
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                </svg>
-                                              </button>
+                                              {!isFinalized && (
+                                                <button
+                                                  onClick={() => removeFile(req.code, index)}
+                                                  className="text-red-600 hover:text-red-800"
+                                                >
+                                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                  </svg>
+                                                </button>
+                                              )}
                                             </div>
                                           ))}
                                         </div>
@@ -2003,11 +2063,12 @@ const OnboardingMain: React.FC = () => {
                                   </div>
                                 ) : (
                                   <textarea
-                                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                  className={`w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 ${isFinalized ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
                                   rows={3}
                                   placeholder="Explain why this document is not available..."
                                   value={response?.naExplanation || ''}
                                   onChange={(e) => handleDocumentResponseChange(req.code, 'naExplanation', e.target.value)}
+                                  disabled={isFinalized}
                                 />  
                                 )}
                               </div>
@@ -2015,11 +2076,12 @@ const OnboardingMain: React.FC = () => {
                               {/* Notes */}
                               <div className="col-span-3">
                                 <textarea
-                                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm resize-none"
+                                  className={`w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm resize-none ${isFinalized ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
                                   placeholder="Notes (optional)"
                                   rows={2}
                                   value={response?.note || ''}
                                   onChange={(e) => handleDocumentResponseChange(req.code, 'note', e.target.value)}
+                                  disabled={isFinalized}
                                 />
                               </div>
                             </div>
@@ -2352,34 +2414,36 @@ const OnboardingMain: React.FC = () => {
                 >
                   Back to Start
                 </button>
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  className="px-8 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-lg flex items-center space-x-2"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                      <span>Submitting...</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                      </svg>
-                      <span>Submit Application</span>
-                    </>
-                  )}
-                </button>
+                {!isFinalized && (
+                  <button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={isSubmitting}
+                    className="px-8 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-lg flex items-center space-x-2"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        <span>Submitting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        </svg>
+                        <span>Submit Application</span>
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           </div>
         </div>
       ),
-    }
+    },
   ];
 
   const currentStepId = currentStep;
@@ -2394,6 +2458,11 @@ const OnboardingMain: React.FC = () => {
               <p className="mt-2 text-gray-600">
                 Complete your registration to unlock partnership opportunities
               </p>
+              {isFinalized && (
+                <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
+                  Onboarding is complete. This application is read-only.
+                </div>
+              )}
             </div>
 
             <OnboardingWizard
@@ -2406,6 +2475,7 @@ const OnboardingMain: React.FC = () => {
               completedSteps={completedSteps}
               isSubmitting={isSubmitting}
               isSaving={isSaving}
+              readOnly={isFinalized}
             />
           </div>
         </div>

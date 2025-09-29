@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, Link } from 'react-router-dom';
 import PartnerSidebar from './PartnerSidebar';
 import PartnerHeader from './PartnerHeader';
 import { useAuth } from '../contexts/AuthContext';
+import { NotificationProvider } from '../contexts/NotificationContext';
 
 export default function PartnerShell() {
   const { user, onboardingLocked } = useAuth();
@@ -39,43 +40,54 @@ export default function PartnerShell() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <PartnerHeader 
-        darkMode={darkMode} 
-        toggleTheme={toggleTheme}
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-      />
-      
-      <div className="mx-auto max-w-full px-2 sm:px-4 lg:px-6">
-        {/* Onboarding Lock Banner */}
-        {onboardingLocked && (
-          <div className="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 p-3 text-sm">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="text-amber-600 dark:text-amber-400">⚠️</span>
-                <span className="text-amber-800 dark:text-amber-200">
-                  Onboarding is required before you can use other features.
-                </span>
-              </div>
-              <a 
-                href="/partner/onboarding/landing" 
-                className="text-amber-700 dark:text-amber-300 underline hover:text-amber-900 dark:hover:text-amber-100"
-              >
-                Complete Onboarding
-              </a>
-            </div>
-          </div>
-        )}
+    <NotificationProvider>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <PartnerHeader 
+          darkMode={darkMode} 
+          toggleTheme={toggleTheme}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+        />
         
-        <div className="flex gap-6 py-6">
-          <PartnerSidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} disabled={onboardingLocked} />
+        <div className="mx-auto max-w-full px-2 sm:px-4 lg:px-6">
+          {/* Onboarding Lock Banner */}
+          {onboardingLocked && (
+            <div className="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 p-3 text-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <span className="text-amber-600 dark:text-amber-400">⚠️</span>
+                  <span className="text-amber-800 dark:text-amber-200">
+                    Onboarding is required before you can use other features.
+                  </span>
+                </div>
+                <a 
+                  href="/partner/onboarding/landing" 
+                  className="text-amber-700 dark:text-amber-300 underline hover:text-amber-900 dark:hover:text-amber-100"
+                >
+                  Complete Onboarding
+                </a>
+              </div>
+            </div>
+          )}
           
-          <main className="flex-1 min-w-0">
-            <Outlet />
-          </main>
+          <div className="flex gap-6 py-6">
+            <PartnerSidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} disabled={onboardingLocked} />
+            
+            <main className="flex-1 min-w-0">
+              <Outlet />
+            </main>
+          </div>
         </div>
+
+        {/* Floating Help Button */}
+        <Link
+          to="/partner/help"
+          className="fixed bottom-6 right-6 z-40 px-4 py-2 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium shadow-lg hover:shadow-xl hover:from-blue-700 hover:to-indigo-700"
+          aria-label="Need help?"
+        >
+          Need help?
+        </Link>
       </div>
-    </div>
+    </NotificationProvider>
   );
 }

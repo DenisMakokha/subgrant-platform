@@ -145,10 +145,39 @@ const sendSubmissionReceivedEmail = async (to, firstName, section) => {
   return await sendEmail(to, subject, html, text);
 };
 
-const sendChangesRequestedEmail = async (to, firstName, flags) => {
+const sendChangesRequestedEmail = async (toOrOpts, firstName, flags) => {
+  // Support both call styles:
+  // 1) sendChangesRequestedEmail(to, firstName, flags)
+  // 2) sendChangesRequestedEmail({ to, firstName, orgName, sections, reason })
   const loginUrl = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/onboarding/review`;
-  
+
+  let to, fn, orgName, sections, reason;
+  if (typeof toOrOpts === 'object' && toOrOpts !== null) {
+    to = toOrOpts.to;
+    fn = toOrOpts.firstName || 'Partner';
+    orgName = toOrOpts.orgName;
+    sections = Array.isArray(toOrOpts.sections) ? toOrOpts.sections : [];
+    reason = toOrOpts.reason;
+  } else {
+    to = toOrOpts;
+    fn = firstName || 'Partner';
+    sections = Array.isArray(flags) ? flags : [];
+  }
+
   const subject = 'Changes requested for your application';
+
+  // Normalize sections into bullet points
+  const itemsHtml = sections.map((s) => {
+    if (typeof s === 'string') return `<li>${s}</li>`;
+    if (s && typeof s === 'object') return `<li>${s.comment || s.title || JSON.stringify(s)}</li>`;
+    return `<li>${String(s)}</li>`;
+  }).join('');
+  const itemsText = sections.map((s) => {
+    if (typeof s === 'string') return `- ${s}`;
+    if (s && typeof s === 'object') return `- ${s.comment || s.title || JSON.stringify(s)}`;
+    return `- ${String(s)}`;
+  }).join('\n');
+
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
       <div style="text-align: center; margin-bottom: 30px;">
@@ -158,14 +187,14 @@ const sendChangesRequestedEmail = async (to, firstName, flags) => {
       
       <h2 style="color: #333;">Changes Requested</h2>
       
-      <p>Dear ${firstName},</p>
+      <p>Dear ${fn},</p>
       
-      <p>Thank you for your submission. Our review team has identified some items that need attention before we can proceed with your application.</p>
-      
+      <p>Thank you for your submission${orgName ? ` for <strong>${orgName}</strong>` : ''}. Our review team has identified some items that need attention before we can proceed with your application.</p>
+      ${reason ? `<p><strong>Summary:</strong> ${reason}</p>` : ''}
       <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ffc107;">
         <h3 style="color: #856404; margin: 0 0 10px 0;">Items requiring attention:</h3>
         <ul style="margin: 0; padding-left: 20px; color: #856404;">
-          ${flags.map(flag => `<li>${flag.comment}</li>`).join('')}
+          ${itemsHtml}
         </ul>
       </div>
       
@@ -184,9 +213,9 @@ const sendChangesRequestedEmail = async (to, firstName, flags) => {
       </p>
     </div>
   `;
-  
-  const text = `Dear ${firstName},\n\nChanges have been requested for your application. Please log in to review and update: ${loginUrl}\n\nItems requiring attention:\n${flags.map(flag => `- ${flag.comment}`).join('\n')}`;
-  
+
+  const text = `Dear ${fn},\n\nChanges have been requested for your application.${orgName ? ` (Organization: ${orgName})` : ''}${reason ? `\nSummary: ${reason}` : ''}\n\nItems requiring attention:\n${itemsText}\n\nPlease log in to review and update: ${loginUrl}`;
+
   return await sendEmail(to, subject, html, text);
 };
 
@@ -285,6 +314,36 @@ const sendOnboardingCompletedEmail = async (to, firstName, organizationName) => 
   return await sendEmail(to, subject, html, text);
 };
 
+// Rejection email (supports both object and param call styles)
+const _sendRejectedEmail = async (to, firstName, organizationName, reason) => {
+  const subject = 'Application rejected - Next steps';
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <h1 style="color: #3f51b5; margin: 0;">Sub-Grant Platform</h1>
+        <p style="color: #666; margin: 5px 0;">Partner Onboarding</p>
+      </div>
+      <h2 style="color: #dc2626;">Application Rejected</h2>
+      <p>Dear ${firstName || 'Partner'},</p>
+      <p>We regret to inform you that your application${organizationName ? ` for <strong>${organizationName}</strong>` : ''} has been rejected.</p>
+      ${reason ? `<div style="background-color: #fef2f2; padding: 12px; border-left: 4px solid #dc2626; border-radius: 4px; color: #7f1d1d; margin: 16px 0;">Reason: ${reason}</div>` : ''}
+      <p>If you believe this decision was made in error or if you would like additional feedback, please contact our support team.</p>
+      <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+      <p style="font-size: 0.8em; color: #999; text-align: center;">Sub-Grant Management Platform</p>
+    </div>
+  `;
+  const text = `Dear ${firstName || 'Partner'},\n\nYour application${organizationName ? ` for ${organizationName}` : ''} has been rejected.${reason ? `\nReason: ${reason}` : ''}\n\nIf you believe this decision was made in error or if you would like additional feedback, please contact our support team.`;
+  return await sendEmail(to, subject, html, text);
+};
+
+const sendRejectedEmail = async (toOrOpts, firstName, organizationName, reason) => {
+  if (typeof toOrOpts === 'object' && toOrOpts !== null) {
+    const { to, firstName: fn, orgName, reason: r } = toOrOpts;
+    return _sendRejectedEmail(to, fn, orgName, r);
+  }
+  return _sendRejectedEmail(toOrOpts, firstName, organizationName, reason);
+};
+
 module.exports = {
   sendEmail,
   sendNotificationEmail,
@@ -292,5 +351,6 @@ module.exports = {
   sendSubmissionReceivedEmail,
   sendChangesRequestedEmail,
   sendApprovedEmail,
-  sendOnboardingCompletedEmail
+  sendOnboardingCompletedEmail,
+  sendRejectedEmail
 };

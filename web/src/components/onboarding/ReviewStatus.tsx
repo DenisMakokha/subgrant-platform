@@ -40,7 +40,7 @@ const ReviewStatus: React.FC = () => {
       setData(reviewData);
     } catch (error) {
       console.error('Failed to load review status:', error);
-      // Mock data for development
+      // Fallback data when API is unavailable (development mode)
       setData({
         organizationStatus: 'under_review',
         flags: [],

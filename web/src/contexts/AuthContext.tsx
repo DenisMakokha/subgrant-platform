@@ -144,10 +144,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         organization_id: data.user.organization_id,
         status: data.user.status || 'active',
         mfaEnabled: data.user.mfaEnabled || false,
-        createdAt: data.user.createdAt || new Date().toISOString(),
+        createdAt: data.user.created_at || new Date().toISOString(),
         updatedAt: data.user.updatedAt || new Date().toISOString(),
         first_name: data.user.first_name || '',
-        last_name: data.user.last_name || ''
+        last_name: data.user.last_name || '',
+        phone: data.user.phone || ''
       });
       setOrganization(data.organization);
       setNextStep(data.next_step);

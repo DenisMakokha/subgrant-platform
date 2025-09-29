@@ -62,6 +62,17 @@ router.put('/progress/:organizationId', async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
     
+    // Immutability: prevent updating progress when finalized
+    try {
+      const statusRes = await db.pool.query('SELECT status FROM organizations WHERE id = $1', [organizationId]);
+      const currentStatus = statusRes.rows[0]?.status;
+      if (currentStatus === ORG_STATUS.FINALIZED) {
+        return res.status(409).json({ error: 'Organization is finalized and cannot be modified' });
+      }
+    } catch (sErr) {
+      console.warn('Could not verify organization status for immutability check:', sErr.message || sErr);
+    }
+    
     await db.pool.query(
       'UPDATE organizations SET completed_steps = $1 WHERE id = $2',
       [JSON.stringify(completedSteps), organizationId]
@@ -127,6 +138,17 @@ router.post('/section-a', async (req, res) => {
         userId: userId,
         userFound: userResult.rows.length > 0
       });
+    }
+    
+    // Immutability: block write if organization is finalized
+    try {
+      const statusRes = await db.pool.query('SELECT status FROM organizations WHERE id = $1', [orgId]);
+      const currentStatus = statusRes.rows[0]?.status;
+      if (currentStatus === ORG_STATUS.FINALIZED) {
+        return res.status(409).json({ error: 'Organization is finalized and cannot be modified' });
+      }
+    } catch (sErr) {
+      console.warn('Section A immutability check failed:', sErr.message || sErr);
     }
     const {
       name,
@@ -219,6 +241,17 @@ router.post('/section-a', async (req, res) => {
 router.post('/section-b', async (req, res) => {
   try {
     const orgId = req.org.id;
+    
+    // Immutability: block write if organization is finalized
+    try {
+      const statusRes = await db.pool.query('SELECT status FROM organizations WHERE id = $1', [orgId]);
+      const currentStatus = statusRes.rows[0]?.status;
+      if (currentStatus === ORG_STATUS.FINALIZED) {
+        return res.status(409).json({ error: 'Organization is finalized and cannot be modified' });
+      }
+    } catch (sErr) {
+      console.warn('Section B immutability check failed:', sErr.message || sErr);
+    }
     const {
       bank_name,
       bank_account_number,
@@ -291,6 +324,17 @@ router.post('/section-b-financial', async (req, res) => {
     const orgId = userResult.rows[0].organization_id;
     if (!orgId) {
       return res.status(400).json({ error: 'No organization found for user' });
+    }
+    
+    // Immutability: block write if organization is finalized
+    try {
+      const statusRes = await db.pool.query('SELECT status FROM organizations WHERE id = $1', [orgId]);
+      const currentStatus = statusRes.rows[0]?.status;
+      if (currentStatus === ORG_STATUS.FINALIZED) {
+        return res.status(409).json({ error: 'Organization is finalized and cannot be modified' });
+      }
+    } catch (sErr) {
+      console.warn('Section B financial immutability check failed:', sErr.message || sErr);
     }
 
     const {
@@ -366,6 +410,17 @@ router.post('/section-b-financial', async (req, res) => {
 router.post('/section-c', async (req, res) => {
   try {
     const orgId = req.org.id;
+    
+    // Immutability: block write if organization is finalized
+    try {
+      const statusRes = await db.pool.query('SELECT status FROM organizations WHERE id = $1', [orgId]);
+      const currentStatus = statusRes.rows[0]?.status;
+      if (currentStatus === ORG_STATUS.FINALIZED) {
+        return res.status(409).json({ error: 'Organization is finalized and cannot be modified' });
+      }
+    } catch (sErr) {
+      console.warn('Section C immutability check failed:', sErr.message || sErr);
+    }
     const { documents } = req.body; // Array of uploaded document info
     
     // Update organization with Section C data
@@ -405,6 +460,11 @@ router.post('/submit', async (req, res) => {
     );
     
     const org = orgResult.rows[0];
+    
+    // Already finalized? Block re-submission
+    if (org && org.status === ORG_STATUS.FINALIZED) {
+      return res.status(409).json({ error: 'Organization is already finalized' });
+    }
     if (!org || org.status !== ORG_STATUS.UNDER_REVIEW) {
       return res.status(400).json({ 
         error: 'Organization not ready for submission',

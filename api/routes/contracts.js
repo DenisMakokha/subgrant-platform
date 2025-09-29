@@ -4,10 +4,14 @@ const ContractController = require('../controllers/contractController');
 const { authenticateToken, authorizeRole } = require('../middleware/auth');
 const { checkPermission } = require('../middleware/rbac');
 
-// All contract routes require authentication
 router.use(authenticateToken);
 
-// Create a new contract (Admin only)
+router.get(
+  '/templates',
+  checkPermission('contracts', 'read'),
+  ContractController.getContractTemplates
+);
+
 router.post(
   '/',
   authorizeRole(['admin', 'admin']),
@@ -15,93 +19,83 @@ router.post(
   ContractController.createContract
 );
 
-// Get a contract by ID
+router.get(
+  '/',
+  checkPermission('contracts', 'read'),
+  ContractController.listContracts
+);
+
 router.get(
   '/:id',
   checkPermission('contracts', 'read'),
   ContractController.getContractById
 );
 
-// Get contracts by budget ID
-router.get(
-  '/budget/:budgetId',
-  checkPermission('contracts', 'read'),
-  ContractController.getContractsByBudgetId
-);
-
-// Get all contracts with optional filters
-router.get(
-  '/',
-  checkPermission('contracts', 'read'),
-  ContractController.getAllContracts
-);
-
-// Update a contract (Admin only)
-router.put(
-  '/:id',
-  authorizeRole(['admin', 'admin']),
-  checkPermission('contracts', 'update'),
-  ContractController.updateContract
-);
-
-// Delete a contract (Admin only)
-router.delete(
-  '/:id',
-  authorizeRole(['admin', 'admin']),
-  checkPermission('contracts', 'delete'),
-  ContractController.deleteContract
-);
-
-// Upload a signed contract document (Admin only)
 router.post(
-  '/:contractId/artifacts',
+  '/:id/generate',
   authorizeRole(['admin', 'admin']),
   checkPermission('contracts', 'update'),
-  ContractController.uploadContractDocument
+  ContractController.generateContract
 );
 
-// Get contract artifacts by contract ID
+router.post(
+  '/:id/submit-for-approval',
+  authorizeRole(['admin', 'admin']),
+  checkPermission('contracts', 'update'),
+  ContractController.submitForApproval
+);
+
+router.post(
+  '/:id/mark-approved',
+  authorizeRole(['admin', 'admin']),
+  checkPermission('contracts', 'update'),
+  ContractController.markApproved
+);
+
+router.post(
+  '/:id/send-for-sign',
+  authorizeRole(['admin', 'admin']),
+  checkPermission('contracts', 'update'),
+  ContractController.sendForSign
+);
+
+router.post(
+  '/:id/mark-signed',
+  authorizeRole(['admin', 'admin']),
+  checkPermission('contracts', 'update'),
+  ContractController.markSigned
+);
+
+router.post(
+  '/:id/activate',
+  authorizeRole(['admin', 'admin']),
+  checkPermission('contracts', 'update'),
+  ContractController.activateContract
+);
+
+router.post(
+  '/:id/cancel',
+  authorizeRole(['admin', 'admin']),
+  checkPermission('contracts', 'update'),
+  ContractController.cancelContract
+);
+
 router.get(
   '/:contractId/artifacts',
   checkPermission('contracts', 'read'),
-  ContractController.getContractArtifacts
+  ContractController.listArtifacts
 );
 
-// Get the latest contract artifact
 router.get(
   '/:contractId/artifacts/latest',
   checkPermission('contracts', 'read'),
-  ContractController.getLatestContractArtifact
+  ContractController.getLatestArtifact
 );
 
-// Send contract for signing (Admin only)
-router.post(
-  '/:contractId/send-for-signing',
-  authorizeRole(['admin', 'admin']),
-  checkPermission('contracts', 'update'),
-  ContractController.sendContractForSigning
-);
-
-// Download a contract document
 router.get(
   '/artifacts/:artifactId/download',
   checkPermission('contracts', 'read'),
-  ContractController.downloadContractDocument
-);
-
-// Generate contract PDF
-router.post(
-  '/:contractId/generate-pdf',
-  authorizeRole(['admin', 'admin']),
-  checkPermission('contracts', 'update'),
-  ContractController.generateContractPDF
-);
-
-// Get contract templates
-router.get(
-  '/templates',
-  checkPermission('contracts', 'read'),
-  ContractController.getContractTemplates
+  ContractController.downloadArtifact
 );
 
 module.exports = router;

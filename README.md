@@ -99,6 +99,54 @@ The platform can be fully developed and tested on a local machine before deploym
    node scripts/init-db.js
    ```
 
+3. Run SSOT migrations (including fund_requests table):
+   ```bash
+   cd api
+   npm run migrate-ssot
+   ```
+
+#### API Setup
+```bash
+cd api
+npm install
+npm start
+```
+
+#### Web Setup
+```bash
+cd web
+npm install
+npm start
+```
+
+The API will be available at http://localhost:3000
+The web frontend will be available at http://localhost:3001
+
+### Prerequisites
+- PostgreSQL (installed locally)
+- Node.js (version 14 or higher)
+- Git
+- Code editor (VS Code recommended)
+
+### Setup Instructions
+
+#### Database Setup
+1. Create the database and user:
+   ```sql
+   -- Connect to PostgreSQL as superuser and run:
+   CREATE DATABASE subgrant_platform;
+   CREATE USER subgrant_user WITH PASSWORD 'subgrant_password';
+   GRANT ALL PRIVILEGES ON DATABASE subgrant_platform TO subgrant_user;
+   \c subgrant_platform;
+   CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+   ```
+
+2. Initialize database tables:
+   ```bash
+   cd api
+   node scripts/init-db.js
+   ```
+
 #### API Setup
 ```bash
 cd api

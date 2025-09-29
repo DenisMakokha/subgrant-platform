@@ -45,7 +45,6 @@ import SectionC from './components/onboarding/SectionC';
 import SectionB from './components/onboarding/SectionB';
 import SectionA from './components/onboarding/SectionA';
 import ReviewStatus from './components/onboarding/ReviewStatus';
-import PartnerDashboard from './pages/PartnerDashboard';
 import ProtectedOnboardingRoute from './components/ProtectedOnboardingRoute';
 import PartnerShell from './components/PartnerShell';
 import PartnerHome from './pages/partner/PartnerHome';
@@ -56,6 +55,17 @@ import GMDashboard from './pages/gm/GMDashboard';
 import COODashboard from './pages/coo/COODashboard';
 import OnboardingMain from './pages/partner/OnboardingMain';
 import OnboardingLanding from './pages/partner/OnboardingLanding';
+import ProjectsIndex from './pages/partner/projects/ProjectsIndex';
+import Budget from './pages/partner/projects/Budget';
+import Reconciliation from './pages/partner/projects/Reconciliation';
+import Reports from './pages/partner/projects/Reports';
+import Contracts from './pages/partner/projects/Contracts';
+import Documents from './pages/partner/projects/Documents';
+import PartnerForum from './pages/partner/PartnerForum';
+import HelpCenter from './pages/partner/HelpCenter';
+import FundRequest from './pages/partner/projects/FundRequest';
+import PartnerProfile from './pages/partner/PartnerProfile';
+import Notifications from './pages/partner/Notifications';
 
 // Dashboard Router Component
 const DashboardRouter: React.FC = () => {
@@ -204,14 +214,26 @@ const App: React.FC = () => {
             <Route path="onboarding/section-c" element={<OnboardingMain />} />
             <Route path="onboarding/review" element={<OnboardingMain />} />
             <Route path="onboarding/review-status" element={<OnboardingMain />} />
+            {/* Partner Projects */}
+            <Route path="projects" element={<ProjectsIndex />} />
+            <Route path="projects/:projectId/budget" element={<Budget />} />
+            <Route path="projects/:projectId/fund-request" element={<FundRequest />} />
+            <Route path="projects/:projectId/reconciliation" element={<Reconciliation />} />
+            <Route path="projects/:projectId/reports" element={<Reports />} />
+            <Route path="projects/:projectId/contracts" element={<Contracts />} />
+            <Route path="projects/:projectId/documents" element={<Documents />} />
+            {/* Partner Forum */}
+            <Route path="forum" element={<PartnerForum />} />
+            {/* Partner Help */}
+            <Route path="help" element={<HelpCenter />} />
+            {/* Partner Profile */}
+            <Route path="profile" element={<PartnerProfile />} />
+            {/* Partner Notifications */}
+            <Route path="notifications" element={<Notifications />} />
             {/* Dashboard route disabled - redirects to /partner/ instead */}
             <Route path="dashboard" element={<Navigate to="/partner/" replace />} />
-            <Route path="applications/*" element={<div>Applications Module - Coming Soon</div>} />
-            <Route path="compliance/*" element={<div>Compliance Module - Coming Soon</div>} />
-            <Route path="me/*" element={<div>M&E Reports Module - Coming Soon</div>} />
-            <Route path="finance/*" element={<div>Finance Module - Coming Soon</div>} />
-            <Route path="messages/*" element={<div>Messages Module - Coming Soon</div>} />
-            <Route path="settings/*" element={<div>Settings Module - Coming Soon</div>} />
+            {/* Catch-all route for partners - redirect to partner home */}
+            <Route path="*" element={<Navigate to="/partner/" replace />} />
           </Route>
 
           {/* GM routes - outside Layout to avoid double header/sidebar */}

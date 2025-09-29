@@ -10,12 +10,22 @@ const { ORG_STATUS } = require('../shared/constants/orgStatus');
 
 const router = express.Router();
 
-router.get('/', requireAuth, async (req, res) => {
+router.get('/session', requireAuth, async (req, res) => {
   try {
+    // Ensure phone column exists in users table
+    try {
+      await db.pool.query(`
+        ALTER TABLE users 
+        ADD COLUMN IF NOT EXISTS phone VARCHAR(20)
+      `);
+    } catch (error) {
+      console.log('Phone column might already exist:', error.message);
+    }
+
     // Get user with organization info
     const userResult = await db.pool.query(
-      `SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.email_verified_at,
-              u.organization_id, o.id as org_id, o.status as organization_status
+      `SELECT u.id, u.email, u.first_name, u.last_name, u.phone, u.role, u.email_verified_at,
+              u.organization_id, u.created_at, o.id as org_id, o.status as organization_status
        FROM users u
        LEFT JOIN organizations o ON o.id = u.organization_id
        WHERE u.id = $1`,
@@ -249,11 +259,14 @@ router.get('/', requireAuth, async (req, res) => {
         email: user.email,
         first_name: user.first_name,
         last_name: user.last_name,
+        phone: user.phone,
         firstName: user.first_name, // Also provide camelCase for compatibility
         lastName: user.last_name,
         role,
         email_verified: !!user.email_verified_at,
-        organization_id: user.organization_id
+        email_verified_at: user.email_verified_at,
+        organization_id: user.organization_id,
+        created_at: user.created_at
       },
       organization: org,
       next_step,

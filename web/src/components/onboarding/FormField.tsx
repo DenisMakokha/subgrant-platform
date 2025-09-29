@@ -12,6 +12,7 @@ interface FormFieldProps {
   helpText?: string;
   icon?: React.ReactNode;
   options?: { value: string; label: string }[];
+  disabled?: boolean;
 }
 
 const FormField: React.FC<FormFieldProps> = ({
@@ -25,13 +26,14 @@ const FormField: React.FC<FormFieldProps> = ({
   placeholder,
   helpText,
   icon,
-  options
+  options,
+  disabled = false
 }) => {
   const inputClasses = `
     w-full px-4 py-3.5 rounded-xl border-2 transition-all duration-300 font-medium
     ${error 
       ? 'border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-100 bg-red-50/50 dark:bg-red-900/10 dark:border-red-600 dark:focus:ring-red-900/20' 
-      : 'border-slate-200 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/20 bg-white dark:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500'
+      : `border-slate-200 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/20 bg-white dark:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500 ${disabled ? 'opacity-60 cursor-not-allowed bg-slate-100 dark:bg-slate-800' : ''}`
     }
     text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500
     shadow-sm hover:shadow-md focus:shadow-lg
@@ -57,7 +59,8 @@ const FormField: React.FC<FormFieldProps> = ({
             id={name}
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className={`${inputClasses} cursor-pointer`}
+            className={`${inputClasses} ${disabled ? '' : 'cursor-pointer'}`}
+            disabled={disabled}
           >
             <option value="" className="text-slate-400">Select {label.toLowerCase()}</option>
             {options.map(option => (
@@ -74,6 +77,7 @@ const FormField: React.FC<FormFieldProps> = ({
             placeholder={placeholder}
             rows={4}
             className={`${inputClasses} resize-none`}
+            disabled={disabled}
           />
         ) : (
           <input
@@ -83,6 +87,7 @@ const FormField: React.FC<FormFieldProps> = ({
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
             className={inputClasses}
+            disabled={disabled}
           />
         )}
         

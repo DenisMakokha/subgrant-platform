@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotifications } from '../contexts/NotificationContext';
 import { getUserDisplayName } from '../utils/format';
+import { formatDistanceToNow } from 'date-fns';
 
 interface PartnerHeaderProps {
   darkMode: boolean;
@@ -17,20 +19,17 @@ const PartnerHeader: React.FC<PartnerHeaderProps> = ({
   setSidebarOpen 
 }) => {
   const { user, logout } = useAuth();
+  const { notifications, unreadCount, markAsRead } = useNotifications();
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
 
-  // Mock notifications - replace with real data
-  const notifications = [
-    { id: 1, text: 'Your application has been approved', time: '2 hours ago', unread: true },
-    { id: 2, text: 'New compliance document required', time: '1 day ago', unread: true },
-    { id: 3, text: 'Payment processed successfully', time: '3 days ago', unread: false }
-  ];
-
-  const unreadCount = notifications.filter(n => n.unread).length;
+  // Get recent unread notifications for dropdown (max 5)
+  const recentNotifications = notifications
+    .filter(n => !n.read)
+    .slice(0, 5);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -81,6 +80,23 @@ const PartnerHeader: React.FC<PartnerHeaderProps> = ({
           </div>
 
           <div className="flex items-center space-x-4">
+            {/* Report an issue quick action */}
+            <button
+              onClick={() => {
+                const params = new URLSearchParams();
+                const fullName = getUserDisplayName(user);
+                if (fullName) params.set('name', fullName);
+                if (user?.email) params.set('email', user.email);
+                navigate(`/partner/help?${params.toString()}#contact`);
+              }}
+              className="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-xl text-white bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 shadow-md hover:shadow-lg text-sm"
+              title="Report an issue"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M5.07 19h13.86A2 2 0 0021 17.07V6.93A2 2 0 0018.93 5H5.07A2 2 0 003 6.93v10.14A2 2 0 005.07 19z" />
+              </svg>
+              Report an issue
+            </button>
             {/* Enhanced Theme Toggle */}
             <button
               onClick={toggleTheme}
@@ -125,38 +141,45 @@ const PartnerHeader: React.FC<PartnerHeaderProps> = ({
                   </div>
                 </div>
                 <div className="max-h-80 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700">
-                  {notifications.length > 0 ? (
-                    notifications.map((notification) => (
+                  {recentNotifications.length > 0 ? (
+                    recentNotifications.map((notification) => (
                       <div
                         key={notification.id}
-                        className={`px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-all ${
-                          notification.unread ? 'border-l-2 border-blue-500 bg-blue-50/30 dark:bg-blue-900/10' : 'border-l-2 border-transparent'
-                        }`}
+                        className={`px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-all border-l-2 border-blue-500 bg-blue-50/30 dark:bg-blue-900/10`}
+                        onClick={() => {
+                          markAsRead(notification.id);
+                          setShowNotifications(false);
+                          if (notification.action_url) {
+                            navigate(notification.action_url);
+                          }
+                        }}
                       >
                         <div className="flex items-start space-x-2">
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">
-                              {notification.text}
+                            <p className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2">
+                              {notification.title}
                             </p>
-                            <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
-                              {notification.time}
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 line-clamp-1">
+                              {notification.message}
+                            </p>
+                            <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
+                              {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                             </p>
                           </div>
-                          {notification.unread && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1 flex-shrink-0"></div>
-                          )}
+                          <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1 flex-shrink-0"></div>
                         </div>
                       </div>
                     ))
                   ) : (
                     <div className="px-4 py-8 text-center">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">No notifications</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">No unread notifications</p>
                     </div>
                   )}
                 </div>
                 <Link 
                   to="/partner/notifications" 
                   className="block px-4 py-2.5 text-center text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 transition-colors"
+                  onClick={() => setShowNotifications(false)}
                 >
                   View all notifications →
                 </Link>

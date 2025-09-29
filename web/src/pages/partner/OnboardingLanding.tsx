@@ -415,7 +415,7 @@ export default function OnboardingLanding() {
                 Get immediate help from our expert support team via email or phone during business hours.
               </p>
               <div className="mt-3 text-xs text-blue-600 dark:text-blue-400 font-medium">
-                support@subgrant.com
+                info@ziziafrique.org
               </div>
             </div>
             

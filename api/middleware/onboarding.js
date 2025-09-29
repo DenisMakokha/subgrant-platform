@@ -32,7 +32,7 @@ const requireAuth = async (req, res, next) => {
     
     // Get user from database
     const userResult = await db.pool.query(
-      'SELECT id, email, first_name, last_name, email_verified_at FROM users WHERE id = $1',
+      'SELECT id, email, first_name, last_name, email_verified_at, role FROM users WHERE id = $1',
       [decoded.sub || decoded.id]
     );
 

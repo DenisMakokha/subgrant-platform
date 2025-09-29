@@ -54,6 +54,7 @@ interface OnboardingData {
 const SectionA: React.FC = () => {
   const navigate = useNavigate();
   const { organization, refreshSession } = useAuth();
+  const isFinalized = organization?.status === 'finalized';
   const [data, setData] = useState<OnboardingData>({ organizationStatus: 'a_pending' });
   const [profile, setProfile] = useState<OrganizationProfile>({
     name: '',
@@ -172,6 +173,12 @@ const SectionA: React.FC = () => {
         </div>
 
         <form className="space-y-8">
+          {isFinalized && (
+            <div className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
+              Onboarding is complete. This section is read-only.
+            </div>
+          )}
+          <fieldset disabled={isFinalized} aria-disabled={isFinalized} className={isFinalized ? 'opacity-60 cursor-not-allowed' : ''}>
           {/* Basic Information */}
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
             <div className="flex items-center mb-6">
@@ -581,25 +588,28 @@ const SectionA: React.FC = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-between pt-6">
-            <button
-              type="button"
-              onClick={saveDraft}
-              disabled={saving}
-              className="px-8 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors font-medium"
-            >
-              {saving ? 'Saving...' : 'Save Draft'}
-            </button>
+          </fieldset>
+          {!isFinalized && (
+            <div className="flex justify-between pt-6">
+              <button
+                type="button"
+                onClick={saveDraft}
+                disabled={saving}
+                className="px-8 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors font-medium"
+              >
+                {saving ? 'Saving...' : 'Save Draft'}
+              </button>
 
-            <button
-              type="button"
-              onClick={submitSection}
-              disabled={submitting}
-              className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 transition-all font-medium shadow-lg"
-            >
-              {submitting ? 'Submitting...' : 'Continue to Section B'}
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={submitSection}
+                disabled={submitting}
+                className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 transition-all font-medium shadow-lg"
+              >
+                {submitting ? 'Submitting...' : 'Continue to Section B'}
+              </button>
+            </div>
+          )}
         </form>
       </div>
     </OnboardingLayout>

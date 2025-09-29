@@ -1,20 +1,23 @@
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
+const { applyRLS } = require('./security');
 
 // Load environment variables
 dotenv.config();
 
-// Mock user data for testing
+// Mock user data for testing with scopes
 const mockUsers = [
   {
     id: '1',
     email: 'admin@example.com',
-    role: 'admin'
+    role: 'admin',
+    scopes: { project: 'all', tenant: 'all' }
   },
   {
     id: '2',
     email: 'partner@example.com',
-    role: 'partner_user'
+    role: 'partner_user',
+    scopes: { project: 'self', tenant: 'current' }
   }
 ];
 

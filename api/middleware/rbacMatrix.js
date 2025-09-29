@@ -8,8 +8,8 @@ const PERMISSIONS = {
   coo_dashboard:        { [ROLES.COO]: 'view' },
   donor_dashboard:      { [ROLES.DONOR]: 'view' },
 
-  review_queue_gm:      { [ROLES.GRANTS_MANAGER]: 'manage' },
-  review_queue_coo:     { [ROLES.COO]: 'manage' },
+  review_queue_gm:      { [ROLES.GRANTS_MANAGER]: 'manage', [ROLES.SYSTEM_ADMIN]: 'manage' },
+  review_queue_coo:     { [ROLES.COO]: 'manage', [ROLES.SYSTEM_ADMIN]: 'manage' },
 
   onboarding_partner:   { [ROLES.PARTNER]: 'edit' },
   applications_partner: { [ROLES.PARTNER]: 'edit' },
