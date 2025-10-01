@@ -1,7 +1,7 @@
 const User = require('../models/user');
 const { applyRLS } = require('./security');
 
-// Define role permissions
+// Define role permissions (resource-based)
 const rolePermissions = {
   admin: {
     organizations: ['create', 'read', 'update', 'delete'],
@@ -12,7 +12,12 @@ const rolePermissions = {
     budget_lines: ['create', 'read', 'update', 'delete'],
     review_comments: ['create', 'read', 'update', 'delete'],
     contracts: ['create', 'read', 'update', 'delete'],
-    audit_logs: ['read', 'export']
+    audit_logs: ['read', 'export'],
+    system: ['read', 'update', 'delete'], // System administration
+    configuration: ['read', 'update'], // System configuration
+    security: ['read', 'update'], // Security settings
+    reports: ['create', 'read', 'export'], // Advanced reporting
+    approvals: ['configure', 'request', 'act', 'view', 'delegate'], // Approval system
   },
   accountant: {
     organizations: ['read'],
@@ -162,7 +167,39 @@ function requireRole(allowedRoles) {
   };
 }
 
+// Require admin role - strict check for sensitive operations
+function requireAdmin(req, res, next) {
+  try {
+    const userRole = req.user?.role;
+    
+    if (!userRole) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    if (userRole !== 'admin') {
+      console.warn(`⚠️ Unauthorized admin access attempt by user ${req.user?.id} with role ${userRole}`);
+      return res.status(403).json({ error: 'Access denied: Admin privileges required' });
+    }
+
+    next();
+  } catch (error) {
+    console.error('Error checking admin role:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+// Combined middleware: Require admin AND specific permission
+function requireAdminPermission(resource, action) {
+  return [requireAdmin, checkPermission(resource, action)];
+}
+
 // Alias for backward compatibility
 const requirePermission = checkPermission;
 
-module.exports = { checkPermission, requireRole, requirePermission };
+module.exports = { 
+  checkPermission, 
+  requireRole, 
+  requirePermission,
+  requireAdmin,
+  requireAdminPermission
+};

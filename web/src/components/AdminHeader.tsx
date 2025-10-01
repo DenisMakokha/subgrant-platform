@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotifications } from '../contexts/NotificationContext';
 import { getUserDisplayName } from '../utils/format';
+import { formatDistanceToNow } from 'date-fns';
 
 interface AdminHeaderProps {
   darkMode: boolean;
@@ -17,14 +19,55 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
   setSidebarOpen 
 }) => {
   const { user, logout } = useAuth();
+  const { notifications, unreadCount, markAsRead } = useNotifications();
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [reportedIssuesCount, setReportedIssuesCount] = useState(0);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const notificationRef = useRef<HTMLDivElement>(null);
+
+  // Get recent unread notifications for dropdown (max 5)
+  const recentNotifications = notifications
+    .filter(n => !n.read)
+    .slice(0, 5);
+
+  // Fetch reported issues count
+  useEffect(() => {
+    const fetchIssuesCount = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/reported-issues/stats', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          // Count open and in_progress issues
+          const openCount = parseInt(data.data.open || 0) + parseInt(data.data.in_progress || 0);
+          setReportedIssuesCount(openCount);
+        }
+      } catch (error) {
+        console.error('Error fetching issues count:', error);
+        setReportedIssuesCount(0);
+      }
+    };
+    fetchIssuesCount();
+    
+    // Refresh count every 5 minutes
+    const interval = setInterval(fetchIssuesCount, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setShowUserMenu(false);
+      }
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
       }
     };
 
@@ -67,6 +110,20 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
           </div>
 
           <div className="flex items-center space-x-4">
+            {/* Reported Issues quick action */}
+            <button
+              onClick={() => {
+                navigate('/admin/reported-issues');
+              }}
+              className="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-xl text-white bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 shadow-md hover:shadow-lg text-sm relative"
+              title="View reported issues"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M5.07 19h13.86A2 2 0 0021 17.07V6.93A2 2 0 0018.93 5H5.07A2 2 0 003 6.93v10.14A2 2 0 005.07 19z" />
+              </svg>
+              <span>Reported Issues ({reportedIssuesCount})</span>
+            </button>
+
             {/* Enhanced Theme Toggle */}
             <button
               onClick={toggleTheme}
@@ -82,6 +139,80 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                 </svg>
               )}
             </button>
+
+            {/* Enhanced Notifications */}
+            <div className="relative" ref={notificationRef}>
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="p-2.5 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gradient-to-br hover:from-gray-50 hover:to-gray-100 dark:hover:from-gray-700 dark:hover:to-gray-600 transition-all duration-300 hover:shadow-md hover:scale-110 relative"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-red-500 to-pink-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-lg animate-pulse">{unreadCount}</span>
+                )}
+              </button>
+
+              {/* Notifications Dropdown */}
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
+                  <div className="px-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 border-b border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Notifications</h3>
+                      {unreadCount > 0 && (
+                        <span className="text-xs bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-300 px-2 py-0.5 rounded-full font-medium shadow-sm">
+                          {unreadCount} new
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="max-h-80 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700">
+                    {recentNotifications.length > 0 ? (
+                      recentNotifications.map((notification) => (
+                        <div
+                          key={notification.id}
+                          className={`px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-all border-l-2 border-blue-500 bg-blue-50/30 dark:bg-blue-900/10`}
+                          onClick={() => {
+                            markAsRead(notification.id);
+                            setShowNotifications(false);
+                            if (notification.action_url) {
+                              navigate(notification.action_url);
+                            }
+                          }}
+                        >
+                          <div className="flex items-start space-x-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2">
+                                {notification.title}
+                              </p>
+                              <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 line-clamp-1">
+                                {notification.message}
+                              </p>
+                              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
+                                {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                              </p>
+                            </div>
+                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1 flex-shrink-0"></div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-4 py-8 text-center">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">No unread notifications</p>
+                      </div>
+                    )}
+                  </div>
+                  <Link 
+                    to="/admin/notifications" 
+                    className="block px-4 py-2.5 text-center text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 transition-colors"
+                    onClick={() => setShowNotifications(false)}
+                  >
+                    View all notifications →
+                  </Link>
+                </div>
+              )}
+            </div>
 
             {/* Enhanced User Menu */}
             <div className="relative" ref={userMenuRef}>

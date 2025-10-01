@@ -74,6 +74,17 @@ class ApprovalPolicyRepository {
     return result.rows.map(ApprovalPolicyRepository.mapRow);
   }
 
+  static async findByRole(role, client = db.pool) {
+    const query = `
+      SELECT ${APPROVAL_POLICY_COLUMNS.join(', ')}
+      FROM approval_policies
+      WHERE config_json->>'role' = $1 AND active = TRUE
+      ORDER BY created_at DESC
+    `;
+    const result = await client.query(query, [role]);
+    return result.rows.map(ApprovalPolicyRepository.mapRow);
+  }
+
   static async findById(id, client = db.pool) {
     const query = `
       SELECT ${APPROVAL_POLICY_COLUMNS.join(', ')}

@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const ContractSSOTRepository = require('./contractSSOTRepository');
 
 const CONTRACT_COLUMNS = [
   'id',
@@ -24,50 +25,85 @@ const CONTRACT_COLUMNS = [
 
 class ContractRepository {
   static async create(contract, client = db.pool) {
-    const result = await client.query(
-      `
-        INSERT INTO contracts (
-          id,
-          project_id,
-          partner_id,
-          partner_budget_id,
-          template_id,
-          number,
-          title,
-          state,
-          substatus_json,
-          metadata_json,
-          created_by,
-          created_at,
-          updated_at
-        )
-        VALUES (
-          $1, $2, $3, $4, $5, $6, $7,
-          COALESCE($8, 'DRAFT'),
-          COALESCE($9, '{}'::jsonb),
-          COALESCE($10, '{}'::jsonb),
-          $11,
-          now(),
-          now()
-        )
-        RETURNING ${CONTRACT_COLUMNS.join(', ')}
-      `,
-      [
-        contract.id,
-        contract.projectId,
-        contract.partnerId,
-        contract.partnerBudgetId,
-        contract.templateId,
-        contract.number,
-        contract.title,
-        contract.state,
-        contract.substatusJson,
-        contract.metadataJson,
-        contract.createdBy
-      ]
-    );
+    const useTransaction = !client.query.name; // Check if we're already in a transaction
+    const dbClient = useTransaction ? await db.pool.connect() : client;
+    
+    try {
+      if (useTransaction) await dbClient.query('BEGIN');
 
-    return ContractRepository.mapRow(result.rows[0]);
+      const result = await dbClient.query(
+        `
+          INSERT INTO contracts (
+            id,
+            project_id,
+            partner_id,
+            partner_budget_id,
+            template_id,
+            number,
+            title,
+            state,
+            substatus_json,
+            metadata_json,
+            created_by,
+            created_at,
+            updated_at
+          )
+          VALUES (
+            $1, $2, $3, $4, $5, $6, $7,
+            COALESCE($8, 'DRAFT'),
+            COALESCE($9, '{}'::jsonb),
+            COALESCE($10, '{}'::jsonb),
+            $11,
+            now(),
+            now()
+          )
+          RETURNING ${CONTRACT_COLUMNS.join(', ')}
+        `,
+        [
+          contract.id,
+          contract.projectId,
+          contract.partnerId,
+          contract.partnerBudgetId,
+          contract.templateId,
+          contract.number,
+          contract.title,
+          contract.state,
+          contract.substatusJson,
+          contract.metadataJson,
+          contract.createdBy
+        ]
+      );
+
+      const createdContract = ContractRepository.mapRow(result.rows[0]);
+
+      // Create SSOT record
+      const ssotPayload = {
+        id: createdContract.id,
+        projectId: createdContract.projectId,
+        partnerId: createdContract.partnerId,
+        title: createdContract.title,
+        description: null, // contracts table doesn't have description
+        startDate: null, // would need to be added if required
+        endDate: null, // would need to be added if required
+        currency: null, // would need to be added if required
+        totalAmount: null, // would need to be added if required
+        status: createdContract.state,
+        templateId: createdContract.templateId,
+        createdBy: createdContract.createdBy,
+        createdAt: createdContract.createdAt,
+        updatedAt: createdContract.updatedAt
+      };
+
+      await ContractSSOTRepository.create(ssotPayload, dbClient);
+
+      if (useTransaction) await dbClient.query('COMMIT');
+      return createdContract;
+    } catch (error) {
+      if (useTransaction) await dbClient.query('ROLLBACK');
+      throw error;
+    } finally {
+      if (useTransaction) dbClient.release();
+    }
   }
 
   static async findById(id, client = db.pool) {
@@ -103,6 +139,127 @@ class ContractRepository {
       ORDER BY updated_at DESC
     `;
     const result = await client.query(query, values);
+    return result.rows.map(ContractRepository.mapRow);
+  }
+
+  static async update(id, updates, client = db.pool) {
+    const useTransaction = !client.query.name;
+    const dbClient = useTransaction ? await db.pool.connect() : client;
+    
+    try {
+      if (useTransaction) await dbClient.query('BEGIN');
+
+      const fields = [];
+      const values = [];
+      let index = 1;
+
+      if (updates.projectId !== undefined) {
+        fields.push(`project_id = $${index++}`);
+        values.push(updates.projectId);
+      }
+      if (updates.partnerId !== undefined) {
+        fields.push(`partner_id = $${index++}`);
+        values.push(updates.partnerId);
+      }
+      if (updates.partnerBudgetId !== undefined) {
+        fields.push(`partner_budget_id = $${index++}`);
+        values.push(updates.partnerBudgetId);
+      }
+      if (updates.templateId !== undefined) {
+        fields.push(`template_id = $${index++}`);
+        values.push(updates.templateId);
+      }
+      if (updates.number !== undefined) {
+        fields.push(`number = $${index++}`);
+        values.push(updates.number);
+      }
+      if (updates.title !== undefined) {
+        fields.push(`title = $${index++}`);
+        values.push(updates.title);
+      }
+      if (updates.state !== undefined) {
+        fields.push(`state = $${index++}`);
+        values.push(updates.state);
+      }
+      if (updates.substatusJson !== undefined) {
+        fields.push(`substatus_json = $${index++}`);
+        values.push(updates.substatusJson);
+      }
+      if (updates.approvalProvider !== undefined) {
+        fields.push(`approval_provider = $${index++}`);
+        values.push(updates.approvalProvider);
+      }
+      if (updates.approvalRef !== undefined) {
+        fields.push(`approval_ref = $${index++}`);
+        values.push(updates.approvalRef);
+      }
+      if (updates.docusignEnvelopeId !== undefined) {
+        fields.push(`docusign_envelope_id = $${index++}`);
+        values.push(updates.docusignEnvelopeId);
+      }
+      if (updates.generatedDocxKey !== undefined) {
+        fields.push(`generated_docx_key = $${index++}`);
+        values.push(updates.generatedDocxKey);
+      }
+      if (updates.approvedDocxKey !== undefined) {
+        fields.push(`approved_docx_key = $${index++}`);
+        values.push(updates.approvedDocxKey);
+      }
+      if (updates.signedPdfKey !== undefined) {
+        fields.push(`signed_pdf_key = $${index++}`);
+        values.push(updates.signedPdfKey);
+      }
+      if (updates.metadataJson !== undefined) {
+        fields.push(`metadata_json = $${index++}`);
+        values.push(updates.metadataJson);
+      }
+
+      if (fields.length === 0) {
+        return ContractRepository.findById(id, dbClient);
+      }
+
+      const query = `
+        UPDATE contracts
+        SET ${fields.join(', ')}, updated_at = now()
+        WHERE id = $${index}
+        RETURNING ${CONTRACT_COLUMNS.join(', ')}
+      `;
+      values.push(id);
+
+      const result = await dbClient.query(query, values);
+      if (result.rows.length === 0) {
+        return null;
+      }
+      
+      const updatedContract = ContractRepository.mapRow(result.rows[0]);
+
+      // Update SSOT record
+      const ssotUpdates = {
+        projectId: updatedContract.projectId,
+        partnerId: updatedContract.partnerId,
+        title: updatedContract.title,
+        status: updatedContract.state,
+        templateId: updatedContract.templateId,
+        updatedAt: updatedContract.updatedAt
+      };
+
+      await ContractSSOTRepository.update(id, ssotUpdates, dbClient);
+
+      if (useTransaction) await dbClient.query('COMMIT');
+      return updatedContract;
+    } catch (error) {
+      if (useTransaction) await dbClient.query('ROLLBACK');
+      throw error;
+    } finally {
+      if (useTransaction) dbClient.release();
+    }
+  }
+
+  static async findByPartnerAndProject(partnerId, projectId, client = db.pool) {
+    const result = await client.query(
+      `SELECT ${CONTRACT_COLUMNS.join(', ')} FROM contracts WHERE partner_id = $1 AND project_id = $2 ORDER BY updated_at DESC`,
+      [partnerId, projectId]
+    );
     return result.rows.map(ContractRepository.mapRow);
   }
 

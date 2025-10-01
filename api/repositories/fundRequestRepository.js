@@ -14,6 +14,7 @@ const FUND_REQUEST_COLUMNS = [
   'approved_at',
   'rejected_at',
   'paid_at',
+  'approval_request_id',
   'created_by',
   'created_at',
   'updated_at'
@@ -121,6 +122,23 @@ class FundRequestRepository {
     return FundRequestRepository.mapRow(result.rows[0]);
   }
 
+  static async updateStatus(id, status, client = db.pool) {
+    const updates = { status };
+    
+    // Set appropriate timestamps based on status
+    if (status === 'SUBMITTED') {
+      updates.requestedAt = new Date();
+    } else if (status === 'APPROVED') {
+      updates.approvedAt = new Date();
+    } else if (status === 'REJECTED') {
+      updates.rejectedAt = new Date();
+    } else if (status === 'PAID') {
+      updates.paidAt = new Date();
+    }
+    
+    return FundRequestRepository.update(id, updates, client);
+  }
+
   static mapRow(row) {
     if (!row) {
       return null;
@@ -139,6 +157,7 @@ class FundRequestRepository {
       approvedAt: row.approved_at,
       rejectedAt: row.rejected_at,
       paidAt: row.paid_at,
+      approvalRequestId: row.approval_request_id,
       createdBy: row.created_by,
       createdAt: row.created_at,
       updatedAt: row.updated_at

@@ -1,6 +1,7 @@
 const MeReport = require('../models/meReport');
 const { validateMeReport } = require('../middleware/validation');
 const auditLogger = require('../middleware/auditLogger');
+const approvalIntegrationService = require('../services/approvalIntegrationService');
 
 class MeReportController {
   // Create a new ME report
@@ -189,11 +190,40 @@ class MeReportController {
       if (!meReport) {
         return res.status(404).json({ error: 'ME report not found' });
       }
-
       const updatedMeReport = await meReport.update({ 
         status: 'submitted',
         submitted_at: new Date()
       });
+      
+      // Create approval request for the report
+      let approvalRequest;
+      try {
+        approvalRequest = await approvalIntegrationService.createApprovalRequest({
+          entityType: 'report',
+          entityId: id,
+          userId: req.user.id,
+          metadata: {
+            report_type: meReport.report_type || 'M&E Report',
+            due_date: meReport.due_date,
+            budget_id: meReport.budget_id
+          }
+        });
+        
+        if (approvalRequest) {
+          // Link approval request to report
+          await approvalIntegrationService.linkApprovalToEntity(
+            'grant_reporting_dates',
+            id,
+            approvalRequest.id
+          );
+          
+          // Add approval_request_id to response
+          updatedMeReport.approval_request_id = approvalRequest.id;
+        }
+      } catch (approvalError) {
+        console.error('Error creating approval request for report:', approvalError);
+        // Continue without approval - don't fail the report submission
+      }
       
       // Log the ME report submission
       try {

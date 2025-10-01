@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import Header from './Header';
-import Sidebar from './Sidebar';
+import AdminHeader from './AdminHeader';
+import AdminSidebar from './AdminSidebar';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -30,7 +30,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Header 
+      <AdminHeader 
         darkMode={darkMode} 
         toggleTheme={toggleTheme}
         sidebarOpen={sidebarOpen}
@@ -39,7 +39,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       
       <div className="mx-auto max-w-full px-2 sm:px-4 lg:px-6">
         <div className="flex gap-6 py-6">
-          <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
+          <AdminSidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
           
           <main className="flex-1 min-w-0">
             {children}

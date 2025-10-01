@@ -1,46 +1,12 @@
 const crypto = require('crypto');
+const ContractRepository = require('../../repositories/contractRepository');
+const { v4: uuidv4 } = require('uuid');
 
 const CONTRACT_SELECT = `
   SELECT id FROM contracts
-  WHERE budget_id = $1
+  WHERE partner_budget_id = $1
   ORDER BY created_at DESC
   LIMIT 1
-`;
-
-const CONTRACT_INSERT = `
-  INSERT INTO contracts (
-    id,
-    budget_id,
-    template_id,
-    title,
-    description,
-    envelope_id,
-    status,
-    sent_at,
-    completed_at,
-    filed_at,
-    created_by,
-    updated_by,
-    created_at,
-    updated_at
-  )
-  VALUES (
-    gen_random_uuid(),
-    $1,
-    $2,
-    $3,
-    $4,
-    NULL,
-    'ready',
-    NULL,
-    NULL,
-    NULL,
-    $5,
-    $5,
-    now(),
-    now()
-  )
-  RETURNING *
 `;
 
 const ARTIFACT_INSERT = `
@@ -99,14 +65,22 @@ class BudgetContractService {
 
     const templateId = BudgetContractService.resolveTemplateId(budget);
 
-    const contractResult = await client.query(CONTRACT_INSERT, [
-      budget.id,
-      templateId,
-      title,
-      description,
-      actorId
-    ]);
-    const contract = contractResult.rows[0];
+    // Use SSOT-enabled ContractRepository
+    const contractPayload = {
+      id: uuidv4(),
+      projectId: budget.projectId,
+      partnerId: budget.partnerId,
+      partnerBudgetId: budget.id,
+      templateId: templateId,
+      number: null, // Will be generated later
+      title: title,
+      state: 'DRAFT',
+      substatusJson: {},
+      metadataJson: { description },
+      createdBy: actorId
+    };
+
+    const contract = await ContractRepository.create(contractPayload, client);
 
     const summary = BudgetContractService.buildContractSummary({
       contract,

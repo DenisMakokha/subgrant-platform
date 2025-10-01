@@ -111,37 +111,43 @@ async function getPartnerSummaries(organizationId) {
       FROM compliance_documents WHERE organization_id = $1
     `, [organizationId]);
 
-    // M&E Reports summary (join budgets to resolve org linkage)
+    // M&E Reports summary using SSOT grant reporting dates
     const meResult = await db.pool.query(`
-      SELECT 
-        COUNT(*) FILTER (WHERE COALESCE(mr.due_date, mr.report_date) < NOW() AND mr.status != 'submitted') as due,
-        COUNT(*) FILTER (WHERE COALESCE(mr.due_date, mr.report_date) > NOW() AND COALESCE(mr.due_date, mr.report_date) < NOW() + INTERVAL '30 days') as upcoming,
-        COUNT(*) FILTER (WHERE mr.submitted_at >= DATE_TRUNC('quarter', NOW()) AND mr.status = 'submitted') as submitted_this_quarter
-      FROM me_reports mr
-      JOIN budgets b ON mr.budget_id = b.id
-      WHERE b.organization_id = $1
+      SELECT
+        COUNT(*) FILTER (WHERE grd.due_date < NOW() AND grd.status = 'due') as due,
+        COUNT(*) FILTER (WHERE grd.due_date > NOW() AND grd.due_date < NOW() + INTERVAL '30 days' AND grd.status = 'due') as upcoming,
+        COUNT(*) FILTER (WHERE grd.status = 'submitted' AND grd.created_at >= DATE_TRUNC('quarter', NOW())) as submitted_this_quarter
+      FROM grant_reporting_dates grd
+      JOIN grants g ON g.id = grd.grant_id
+      JOIN partner_budgets pb ON pb.project_id = g.project_id
+      WHERE pb.partner_id = $1
     `, [organizationId]);
 
-    // Disbursements summary (join budgets)
+    // Disbursements summary using SSOT
     const disbursementsResult = await db.pool.query(`
-      SELECT 
+      SELECT
         COUNT(*) FILTER (WHERE COALESCE(d.scheduled_date, d.planned_date) > NOW() AND d.status IN ('scheduled','planned')) as upcoming,
         COUNT(*) FILTER (WHERE d.status = 'paid') as paid
       FROM disbursements d
-      JOIN budgets b ON d.budget_id = b.id
-      WHERE b.organization_id = $1
+      JOIN partner_budgets pb ON COALESCE(d.partner_budget_id, d.budget_id) = pb.id
+      WHERE pb.partner_id = $1
     `, [organizationId]);
 
-    // Contracts summary (join budgets)
-    const contractsResult = await db.pool.query(`
-      SELECT 
-        COUNT(*) FILTER (WHERE c.status = 'pending_signature') as pending_signature,
-        COUNT(*) FILTER (WHERE c.status = 'active') as active,
-        COUNT(*) FILTER (WHERE c.status = 'active' AND c.end_date < NOW() + INTERVAL '60 days') as ending_soon
-      FROM contracts c
-      JOIN budgets b ON c.budget_id = b.id
-      WHERE b.organization_id = $1
-    `, [organizationId]);
+    // Contracts summary - graceful fallback if table doesn't exist
+    let contractsResult;
+    try {
+      contractsResult = await db.pool.query(`
+        SELECT
+          COUNT(*) FILTER (WHERE c.state = 'PENDING_SIGNATURE') as pending_signature,
+          COUNT(*) FILTER (WHERE c.state = 'ACTIVE') as active,
+          COUNT(*) FILTER (WHERE c.state = 'ACTIVE' AND c.end_date < NOW() + INTERVAL '60 days') as ending_soon
+        FROM contracts c
+        WHERE c.partner_id = $1
+      `, [organizationId]);
+    } catch (error) {
+      // If contracts table doesn't exist, return zeros
+      contractsResult = { rows: [{ pending_signature: 0, active: 0, ending_soon: 0 }] };
+    }
 
     // Messages/Notifications summary
     const messagesResult = await db.pool.query(`

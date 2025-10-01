@@ -89,6 +89,23 @@ class User {
     const values = [];
     let index = 1;
 
+    // Map camelCase to snake_case for database columns
+    const fieldMapping = {
+      firstName: 'first_name',
+      lastName: 'last_name',
+      organizationId: 'organization_id',
+      isActive: 'is_active',
+      mfaEnabled: 'mfa_enabled',
+      mfaSecret: 'mfa_secret',
+      passwordHash: 'password_hash',
+      lastLogin: 'last_login',
+      emailVerifiedAt: 'email_verified_at',
+      onboardingStatus: 'onboarding_status',
+      lastVerificationSentAt: 'last_verification_sent_at',
+      createdAt: 'created_at',
+      updatedAt: 'updated_at',
+    };
+
     // Handle password hashing if password is being updated
     if (updateData.password) {
       const saltRounds = 10;
@@ -101,7 +118,9 @@ class User {
 
     for (const key in updateData) {
       if (updateData.hasOwnProperty(key) && key !== 'id' && key !== 'password_hash') {
-        fields.push(`${key} = $${index}`);
+        // Convert camelCase to snake_case using mapping, or use key as-is if already snake_case
+        const dbColumn = fieldMapping[key] || key;
+        fields.push(`${dbColumn} = $${index}`);
         values.push(updateData[key]);
         index++;
       }
@@ -113,6 +132,10 @@ class User {
 
     values.push(id);
     const query = `UPDATE users SET ${fields.join(', ')}, updated_at = NOW() WHERE id = $${index} RETURNING *`;
+    
+    console.log('🔍 User.update query:', query);
+    console.log('🔍 User.update values:', values);
+    
     const result = await db.pool.query(query, values);
     return result.rows.length ? new User(result.rows[0]) : null;
   }

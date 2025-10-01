@@ -9,8 +9,15 @@ export interface Notification {
   event_key: string;
   title: string;
   body: string;
+  message: string; // Alias for body
   link_url?: string;
+  action_url?: string; // Alias for link_url
+  action_text?: string;
   unread: boolean;
+  read: boolean; // Inverse of unread
+  type?: string; // Notification type (info, warning, error, success)
+  category?: string; // Category (budget, report, contract, etc.)
+  priority?: 'low' | 'normal' | 'high' | 'urgent';
   created_at: string;
 }
 
@@ -58,10 +65,21 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       
       const data = await fetchWithAuth(`/ssot/data/notification.list?userId=${user.id}`);
       
-      setNotifications(data?.items || []);
+      // Map notifications to include all required properties
+      const mappedNotifications = (data?.items || []).map((n: any) => ({
+        ...n,
+        message: n.message || n.body, // Use message if available, fallback to body
+        action_url: n.action_url || n.link_url, // Use action_url if available, fallback to link_url
+        read: !n.unread, // Compute read as inverse of unread
+        type: n.type || 'info', // Default type
+        category: n.category || 'general', // Default category
+        priority: n.priority || 'normal', // Default priority
+      }));
+      
+      setNotifications(mappedNotifications);
       
       // Calculate unread count from the fetched notifications
-      const unread = data?.items?.filter((n: Notification) => n.unread).length || 0;
+      const unread = mappedNotifications.filter((n: Notification) => n.unread).length || 0;
       setUnreadCount(unread);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
@@ -90,7 +108,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       setNotifications(prev => 
         prev.map(notification => 
           notification.id === notificationId 
-            ? { ...notification, unread: false }
+            ? { ...notification, unread: false, read: true }
             : notification
         )
       );
@@ -119,7 +137,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       setNotifications(prev => 
         prev.map(notification => ({ 
           ...notification, 
-          unread: false
+          unread: false,
+          read: true
         }))
       );
       
@@ -151,12 +170,17 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     }
   };
 
-  const addNotification = (notification: Omit<Notification, 'id' | 'created_at' | 'unread'>) => {
+  const addNotification = (notification: Omit<Notification, 'id' | 'created_at' | 'unread' | 'read'>) => {
     const newNotification: Notification = {
       ...notification,
       id: Date.now().toString(),
       created_at: new Date().toISOString(),
       unread: true,
+      read: false,
+      message: notification.body,
+      type: notification.type || 'info',
+      category: notification.category || 'general',
+      priority: notification.priority || 'normal',
     };
     setNotifications(prev => [newNotification, ...prev]);
     setUnreadCount(prev => prev + 1);

@@ -60,11 +60,12 @@ class DisbursementController {
     }
   }
 
-  // Get disbursements by budget ID
+  // Get disbursements by partner budget ID (SSOT)
   static async getDisbursementsByBudgetId(req, res, next) {
     try {
       const { budgetId } = req.params;
-      const disbursements = await Disbursement.findByBudgetId(budgetId);
+      // Now using partner_budget_id from SSOT
+      const disbursements = await Disbursement.findByPartnerBudgetId(budgetId);
       res.json(disbursements);
     } catch (err) {
       next(err);

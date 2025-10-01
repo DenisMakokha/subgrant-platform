@@ -28,12 +28,10 @@ const organizationRoutes = require('./routes/organizations');
 const userRoutes = require('./routes/users');
 const projectRoutes = require('./routes/projects');
 const budgetCategoryRoutes = require('./routes/budgetCategories');
-const budgetRoutes = require('./routes/budgets');
-const budgetLineRoutes = require('./routes/budgetLines');
+
 const partnerBudgetRoutes = require('./routes/partnerBudgets');
 const reviewCommentRoutes = require('./routes/reviewComments');
-const budgetApprovalRoutes = require('./routes/budgetApprovals');
-const contractRoutes = require('./routes/contracts');
+const contractSSOTRoutes = require('./routes/contractSSOT');
 const docusignWebhookRoutes = require('./routes/docusignWebhooks');
 const disbursementRoutes = require('./routes/disbursements');
 const xeroWebhookRoutes = require('./routes/xeroWebhooks');
@@ -61,12 +59,13 @@ const debugRoutes = require('./routes/debug-org-status');
 const ssotRoutes = require('./routes/ssot');
 const adminRoutes = require('./routes/admin');
 const partnerDashboardRoutes = require('./routes/partnerDashboard');
-const runtimeRoutes = require('./routes/runtime');
 const approvalRoutes = require('./routes/approvals');
+const approvalChainRoutes = require('./routes/approvalChain');
 const fundRequestsRoutes = require('./routes/fundRequests');
 const emailRoutes = require('./routes/email');
 const budgetSSOTRoutes = require('./routes/budgetSSOT');
 const contractSSOTRoutes = require('./routes/contractSSOT');
+const reportedIssuesRoutes = require('./routes/reportedIssues');
 
 // Base route
 app.get('/', (req, res) => {
@@ -75,6 +74,7 @@ app.get('/', (req, res) => {
     version: '1.0.0'
   });
 });
+{{ ... }}
 
 // Health check endpoint (removed - using healthRoutes instead)
 
@@ -84,12 +84,10 @@ app.use('/api/organizations', organizationRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/budget-categories', budgetCategoryRoutes);
-app.use('/api/budgets', budgetRoutes);
-app.use('/api/budget-lines', budgetLineRoutes);
+
 app.use('/api/partner-budgets', partnerBudgetRoutes);
 app.use('/api/review-comments', reviewCommentRoutes);
-app.use('/api/budget-approvals', budgetApprovalRoutes);
-app.use('/api/contracts', contractRoutes);
+app.use('/api/contracts', contractSSOTRoutes);
 app.use('/api/docusign', docusignWebhookRoutes);
 app.use('/api/disbursements', disbursementRoutes);
 app.use('/api/xero', xeroWebhookRoutes);
@@ -116,13 +114,15 @@ app.use('/api/onboarding', onboardingSectionARoutes);
 app.use('/api/onboarding/admin', onboardingAdminRoutes);
 app.use('/api', debugRoutes);
 app.use('/ssot', ssotRoutes);
-app.use('/admin', adminRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/app', runtimeRoutes);
 app.use('/approvals', approvalRoutes);
+app.use('/api/approval-chain', approvalChainRoutes);
 app.use('/api/fund-requests', fundRequestsRoutes);
 app.use('/api/email', emailRoutes);
 app.use('/api/budget-ssot', budgetSSOTRoutes);
 app.use('/api/contract-ssot', contractSSOTRoutes);
+app.use('/api/reported-issues', reportedIssuesRoutes);
 
 // Partner module routes
 const partnerApplications = require('./routes/partnerApplications');

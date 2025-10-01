@@ -7,14 +7,26 @@ const router = express.Router();
 // Guard stack for all partner M&E routes
 const guard = [requireAuth, requireEmailVerified, getUserOrganization, requireOrgOwnership];
 
-// Get due M&E reports
+// Get due M&E reports using SSOT
 router.get('/due', ...guard, async (req, res) => {
   try {
     const result = await db.pool.query(
-      `SELECT id, title, description, due_date, report_type, status
-       FROM me_reports 
-       WHERE organization_id = $1 AND due_date < NOW() AND status != 'submitted'
-       ORDER BY due_date ASC`,
+      `SELECT 
+        grd.id,
+        grd.report_type as title,
+        grd.due_date,
+        grd.report_type,
+        grd.status,
+        g.name as grant_name,
+        pb.project_id
+       FROM grant_reporting_dates grd
+       JOIN grants g ON g.id = grd.grant_id
+       JOIN partner_budgets pb ON pb.project_id = g.project_id
+       WHERE pb.partner_id = $1 
+         AND grd.due_date < NOW() 
+         AND grd.status = 'due'
+         AND grd.report_type = 'monthly'
+       ORDER BY grd.due_date ASC`,
       [req.userOrganization.id]
     );
     
@@ -25,7 +37,7 @@ router.get('/due', ...guard, async (req, res) => {
   }
 });
 
-// List all M&E reports (paginated)
+// List all M&E reports (paginated) using SSOT - monthly reports
 router.get('/', ...guard, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -33,16 +45,34 @@ router.get('/', ...guard, async (req, res) => {
     const offset = (page - 1) * limit;
     
     const result = await db.pool.query(
-      `SELECT id, title, description, due_date, report_type, status, created_at, submitted_at
-       FROM me_reports 
-       WHERE organization_id = $1
-       ORDER BY due_date DESC
+      `SELECT 
+        grd.id,
+        CONCAT('Monthly Report - ', TO_CHAR(grd.due_date, 'Mon YYYY')) as title,
+        grd.description,
+        grd.due_date,
+        grd.report_type,
+        grd.status,
+        grd.created_at,
+        grd.submitted_at,
+        g.name as grant_name,
+        g.id as grant_id,
+        pb.project_id,
+        pb.id as partner_budget_id
+       FROM grant_reporting_dates grd
+       JOIN grants g ON g.id = grd.grant_id
+       JOIN partner_budgets pb ON pb.project_id = g.project_id
+       WHERE pb.partner_id = $1 AND grd.report_type = 'monthly'
+       ORDER BY grd.due_date DESC
        LIMIT $2 OFFSET $3`,
       [req.userOrganization.id, limit, offset]
     );
     
     const countResult = await db.pool.query(
-      'SELECT COUNT(*) FROM me_reports WHERE organization_id = $1',
+      `SELECT COUNT(*) 
+       FROM grant_reporting_dates grd
+       JOIN grants g ON g.id = grd.grant_id
+       JOIN partner_budgets pb ON pb.project_id = g.project_id
+       WHERE pb.partner_id = $1 AND grd.report_type = 'monthly'`,
       [req.userOrganization.id]
     );
     
@@ -61,34 +91,58 @@ router.get('/', ...guard, async (req, res) => {
   }
 });
 
-// Create new draft M&E report
-router.post('/', ...guard, async (req, res) => {
+// Get single M&E report details using SSOT
+router.get('/:id', ...guard, async (req, res) => {
   try {
-    const { title, description, report_type, due_date } = req.body;
+    const { id } = req.params;
     
     const result = await db.pool.query(
-      `INSERT INTO me_reports (organization_id, title, description, report_type, due_date, status, created_by)
-       VALUES ($1, $2, $3, $4, $5, 'draft', $6)
-       RETURNING id, title, description, report_type, due_date, status, created_at`,
-      [req.userOrganization.id, title, description, report_type, due_date, req.user.id]
+      `SELECT 
+        grd.id,
+        CONCAT('Monthly Report - ', TO_CHAR(grd.due_date, 'Mon YYYY')) as title,
+        grd.description,
+        grd.due_date,
+        grd.report_type,
+        grd.status,
+        grd.content,
+        grd.metrics,
+        grd.created_at,
+        grd.submitted_at,
+        g.name as grant_name,
+        g.id as grant_id,
+        pb.project_id,
+        pb.id as partner_budget_id
+       FROM grant_reporting_dates grd
+       JOIN grants g ON g.id = grd.grant_id
+       JOIN partner_budgets pb ON pb.project_id = g.project_id
+       WHERE grd.id = $1 AND pb.partner_id = $2`,
+      [id, req.userOrganization.id]
     );
     
-    res.status(201).json({ report: result.rows[0] });
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Report not found' });
+    }
+    
+    res.json({ report: result.rows[0] });
   } catch (error) {
-    console.error('Error creating M&E report:', error);
-    res.status(500).json({ error: 'Failed to create report' });
+    console.error('Error fetching M&E report:', error);
+    res.status(500).json({ error: 'Failed to fetch report' });
   }
 });
 
-// Update draft M&E report
+// Update M&E report content (before submission) using SSOT
 router.put('/:id', ...guard, async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, content, metrics } = req.body;
+    const { content, metrics } = req.body;
     
-    // Verify report belongs to organization and is still draft
+    // Verify report belongs to partner and is still due (not submitted)
     const checkResult = await db.pool.query(
-      'SELECT status FROM me_reports WHERE id = $1 AND organization_id = $2',
+      `SELECT grd.status
+       FROM grant_reporting_dates grd
+       JOIN grants g ON g.id = grd.grant_id
+       JOIN partner_budgets pb ON pb.project_id = g.project_id
+       WHERE grd.id = $1 AND pb.partner_id = $2`,
       [id, req.userOrganization.id]
     );
     
@@ -96,16 +150,16 @@ router.put('/:id', ...guard, async (req, res) => {
       return res.status(404).json({ error: 'Report not found' });
     }
     
-    if (checkResult.rows[0].status !== 'draft') {
-      return res.status(400).json({ error: 'Can only update draft reports' });
+    if (checkResult.rows[0].status !== 'due') {
+      return res.status(400).json({ error: 'Can only update reports that are due' });
     }
     
     const result = await db.pool.query(
-      `UPDATE me_reports 
-       SET title = $1, description = $2, content = $3, metrics = $4, updated_at = NOW()
-       WHERE id = $5 AND organization_id = $6
-       RETURNING id, title, description, content, metrics, status, updated_at`,
-      [title, description, content, JSON.stringify(metrics), id, req.userOrganization.id]
+      `UPDATE grant_reporting_dates 
+       SET content = $1, metrics = $2, updated_at = NOW()
+       WHERE id = $3
+       RETURNING id, report_type as title, content, metrics, status, updated_at`,
+      [content, JSON.stringify(metrics), id]
     );
     
     res.json({ report: result.rows[0] });
@@ -115,14 +169,19 @@ router.put('/:id', ...guard, async (req, res) => {
   }
 });
 
-// Submit M&E report
+// Submit M&E report using SSOT
 router.post('/:id/submit', ...guard, async (req, res) => {
   try {
     const { id } = req.params;
+    const { content, metrics } = req.body;
     
-    // Verify report belongs to organization and is draft
+    // Verify report belongs to partner and is due
     const checkResult = await db.pool.query(
-      'SELECT status FROM me_reports WHERE id = $1 AND organization_id = $2',
+      `SELECT grd.status, grd.grant_id, pb.partner_id
+       FROM grant_reporting_dates grd
+       JOIN grants g ON g.id = grd.grant_id
+       JOIN partner_budgets pb ON pb.project_id = g.project_id
+       WHERE grd.id = $1 AND pb.partner_id = $2`,
       [id, req.userOrganization.id]
     );
     
@@ -130,16 +189,21 @@ router.post('/:id/submit', ...guard, async (req, res) => {
       return res.status(404).json({ error: 'Report not found' });
     }
     
-    if (checkResult.rows[0].status !== 'draft') {
-      return res.status(400).json({ error: 'Can only submit draft reports' });
+    if (checkResult.rows[0].status !== 'due') {
+      return res.status(400).json({ error: 'Can only submit due reports' });
     }
     
+    // Update report status to submitted
     const result = await db.pool.query(
-      `UPDATE me_reports 
-       SET status = 'submitted', submitted_at = NOW(), updated_at = NOW()
-       WHERE id = $1 AND organization_id = $2
-       RETURNING id, title, status, submitted_at`,
-      [id, req.userOrganization.id]
+      `UPDATE grant_reporting_dates 
+       SET status = 'submitted', 
+           submitted_at = NOW(), 
+           content = $1,
+           metrics = $2,
+           updated_at = NOW()
+       WHERE id = $3
+       RETURNING id, report_type as title, status, submitted_at, due_date`,
+      [content, JSON.stringify(metrics), id]
     );
     
     res.json({ report: result.rows[0] });

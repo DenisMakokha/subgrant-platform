@@ -11,7 +11,7 @@ const {
 } = require('../middleware/onboarding');
 
 // SSoT imports (JS versions)
-const { OrganizationRepository } = require('../repositories/OrganizationRepository.js');
+const OrganizationRepository = require('../repositories/OrganizationRepository.js');
 const { createEnvelope, createApiError } = require('../core/FormRepository.js');
 
 const router = express.Router();

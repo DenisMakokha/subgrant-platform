@@ -88,6 +88,93 @@ class PartnerBudgetLineRepository {
     return result.rows.map(PartnerBudgetLineRepository.mapRow);
   }
 
+  static async findByBudgetLineId(lineId, client = db.pool) {
+    const query = `
+      SELECT ${LINE_COLUMNS.join(', ')}
+      FROM partner_budget_lines
+      WHERE id = $1
+    `;
+    const result = await client.query(query, [lineId]);
+    if (result.rows.length === 0) {
+      return null;
+    }
+    return PartnerBudgetLineRepository.mapRow(result.rows[0]);
+  }
+
+  static async findById(id, client = db.pool) {
+    const query = `
+      SELECT ${LINE_COLUMNS.join(', ')}
+      FROM partner_budget_lines
+      WHERE id = $1
+    `;
+    const result = await client.query(query, [id]);
+    if (result.rows.length === 0) {
+      return null;
+    }
+    return PartnerBudgetLineRepository.mapRow(result.rows[0]);
+  }
+
+  static async update(id, updates, client = db.pool) {
+    const fields = [];
+    const values = [];
+    let index = 1;
+
+    if (updates.description !== undefined) {
+      fields.push(`description = $${index++}`);
+      values.push(updates.description);
+    }
+    if (updates.unit !== undefined) {
+      fields.push(`unit = $${index++}`);
+      values.push(updates.unit);
+    }
+    if (updates.qty !== undefined) {
+      fields.push(`qty = $${index++}`);
+      values.push(updates.qty);
+    }
+    if (updates.unitCost !== undefined) {
+      fields.push(`unit_cost = $${index++}`);
+      values.push(updates.unitCost);
+    }
+    if (updates.currency !== undefined) {
+      fields.push(`currency = $${index++}`);
+      values.push(updates.currency);
+    }
+    if (updates.periodFrom !== undefined) {
+      fields.push(`period_from = $${index++}`);
+      values.push(updates.periodFrom);
+    }
+    if (updates.periodTo !== undefined) {
+      fields.push(`period_to = $${index++}`);
+      values.push(updates.periodTo);
+    }
+    if (updates.notes !== undefined) {
+      fields.push(`notes = $${index++}`);
+      values.push(updates.notes);
+    }
+    if (updates.status !== undefined) {
+      fields.push(`status = $${index++}`);
+      values.push(updates.status);
+    }
+
+    if (fields.length === 0) {
+      return PartnerBudgetLineRepository.findById(id, client);
+    }
+
+    const query = `
+      UPDATE partner_budget_lines
+      SET ${fields.join(', ')}
+      WHERE id = $${index}
+      RETURNING ${LINE_COLUMNS.join(', ')}
+    `;
+    values.push(id);
+
+    const result = await client.query(query, values);
+    if (result.rows.length === 0) {
+      return null;
+    }
+    return PartnerBudgetLineRepository.mapRow(result.rows[0]);
+  }
+
   static async updateStatus(lineIds, status, client = db.pool) {
     if (!Array.isArray(lineIds) || lineIds.length === 0) {
       return [];

@@ -1,157 +1,177 @@
-const db = require('../config/database');
+const ContractRepository = require('../repositories/contractRepository');
+const ContractSSOTRepository = require('../repositories/contractSSOTRepository');
 
+/**
+ * Contract model - SSOT-enabled wrapper around ContractRepository
+ * Maintains backward compatibility while using SSOT implementation
+ */
 class Contract {
   constructor(data) {
     this.id = data.id;
-    this.budget_id = data.budget_id;
-    this.template_id = data.template_id;
+    this.projectId = data.projectId || data.project_id;
+    this.partnerId = data.partnerId || data.partner_id;
+    this.partnerBudgetId = data.partnerBudgetId || data.partner_budget_id || data.budget_id;
+    this.templateId = data.templateId || data.template_id;
+    this.number = data.number;
     this.title = data.title;
-    this.description = data.description;
-    this.envelope_id = data.envelope_id;
-    this.status = data.status;
-    this.sent_at = data.sent_at;
-    this.completed_at = data.completed_at;
-    this.filed_at = data.filed_at;
-    this.created_at = data.created_at;
-    this.updated_at = data.updated_at;
-    this.created_by = data.created_by;
-    this.updated_by = data.updated_by;
+    this.state = data.state || data.status;
+    this.substatusJson = data.substatusJson || data.substatus_json || {};
+    this.approvalProvider = data.approvalProvider || data.approval_provider;
+    this.approvalRef = data.approvalRef || data.approval_ref;
+    this.docusignEnvelopeId = data.docusignEnvelopeId || data.docusign_envelope_id || data.envelope_id;
+    this.generatedDocxKey = data.generatedDocxKey || data.generated_docx_key;
+    this.approvedDocxKey = data.approvedDocxKey || data.approved_docx_key;
+    this.signedPdfKey = data.signedPdfKey || data.signed_pdf_key;
+    this.metadataJson = data.metadataJson || data.metadata_json || {};
+    this.createdBy = data.createdBy || data.created_by;
+    this.createdAt = data.createdAt || data.created_at;
+    this.updatedAt = data.updatedAt || data.updated_at;
+
+    // Legacy compatibility fields
+    this.budget_id = this.partnerBudgetId;
+    this.template_id = this.templateId;
+    this.status = this.state;
+    this.envelope_id = this.docusignEnvelopeId;
+    this.created_at = this.createdAt;
+    this.updated_at = this.updatedAt;
+    this.created_by = this.createdBy;
   }
 
   static async create(contractData) {
-    const query = `
-      INSERT INTO contracts (
-        budget_id, template_id, title, description, envelope_id, status, 
-        sent_at, completed_at, filed_at, created_by, updated_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-      RETURNING *;
-    `;
-    
-    const values = [
-      contractData.budget_id,
-      contractData.template_id,
-      contractData.title,
-      contractData.description,
-      contractData.envelope_id,
-      contractData.status || 'ready',
-      contractData.sent_at,
-      contractData.completed_at,
-      contractData.filed_at,
-      contractData.created_by,
-      contractData.updated_by
-    ];
-    
-    const result = await db.pool.query(query, values);
-    return new Contract(result.rows[0]);
+    const payload = {
+      id: contractData.id || require('uuid').v4(),
+      projectId: contractData.project_id,
+      partnerId: contractData.partner_id,
+      partnerBudgetId: contractData.budget_id || contractData.partner_budget_id,
+      templateId: contractData.template_id,
+      number: contractData.number,
+      title: contractData.title,
+      state: contractData.status || contractData.state || 'DRAFT',
+      substatusJson: contractData.substatus_json || {},
+      metadataJson: contractData.metadata_json || { description: contractData.description },
+      createdBy: contractData.created_by
+    };
+
+    const result = await ContractRepository.create(payload);
+    return new Contract(result);
   }
 
   static async findById(id) {
-    const query = 'SELECT * FROM contracts WHERE id = $1;';
-    const result = await db.pool.query(query, [id]);
-    
-    if (result.rows.length === 0) {
-      return null;
-    }
-    
-    return new Contract(result.rows[0]);
+    const result = await ContractRepository.findById(id);
+    return result ? new Contract(result) : null;
   }
 
   static async findByBudgetId(budgetId) {
-    const query = 'SELECT * FROM contracts WHERE budget_id = $1 ORDER BY created_at DESC;';
-    const result = await db.pool.query(query, [budgetId]);
-    
-    return result.rows.map(row => new Contract(row));
+    // Use partner_budget_id for SSOT compatibility
+    const filters = { partnerBudgetId: budgetId };
+    const results = await ContractRepository.list(filters);
+    return results.map(row => new Contract(row));
   }
 
   static async findByEnvelopeId(envelopeId) {
-    const query = 'SELECT * FROM contracts WHERE envelope_id = $1;';
-    const result = await db.pool.query(query, [envelopeId]);
-    
-    if (result.rows.length === 0) {
-      return null;
-    }
-    
-    return new Contract(result.rows[0]);
+    const filters = { docusignEnvelopeId: envelopeId };
+    const results = await ContractRepository.list(filters);
+    return results.length > 0 ? new Contract(results[0]) : null;
   }
 
   static async findAll(filters = {}) {
-    let query = 'SELECT * FROM contracts';
-    const values = [];
-    const conditions = [];
-    
-    if (filters.status) {
-      values.push(filters.status);
-      conditions.push(`status = $${values.length}`);
-    }
-    
-    if (filters.budget_id) {
-      values.push(filters.budget_id);
-      conditions.push(`budget_id = $${values.length}`);
-    }
-    
-    if (conditions.length > 0) {
-      query += ' WHERE ' + conditions.join(' AND ');
-    }
-    
-    query += ' ORDER BY created_at DESC;';
-    
-    const result = await db.pool.query(query, values);
-    return result.rows.map(row => new Contract(row));
+    // Map legacy filter names to SSOT names
+    const mappedFilters = {};
+    if (filters.status) mappedFilters.state = filters.status;
+    if (filters.budget_id) mappedFilters.partnerBudgetId = filters.budget_id;
+    if (filters.partner_id) mappedFilters.partnerId = filters.partner_id;
+    if (filters.project_id) mappedFilters.projectId = filters.project_id;
+
+    const results = await ContractRepository.list(mappedFilters);
+    return results.map(row => new Contract(row));
   }
 
   async update(updateData) {
-    const fields = [];
-    const values = [];
-    
-    for (const [key, value] of Object.entries(updateData)) {
-      if (key !== 'id' && key !== 'created_at') {
-        fields.push(`${key} = $${fields.length + 1}`);
-        values.push(value);
+    // Map legacy field names to SSOT names
+    const mappedUpdates = {};
+    if (updateData.status !== undefined) mappedUpdates.state = updateData.status;
+    if (updateData.title !== undefined) mappedUpdates.title = updateData.title;
+    if (updateData.template_id !== undefined) mappedUpdates.templateId = updateData.template_id;
+    if (updateData.envelope_id !== undefined) mappedUpdates.docusignEnvelopeId = updateData.envelope_id;
+    if (updateData.partner_id !== undefined) mappedUpdates.partnerId = updateData.partner_id;
+    if (updateData.project_id !== undefined) mappedUpdates.projectId = updateData.project_id;
+    if (updateData.budget_id !== undefined) mappedUpdates.partnerBudgetId = updateData.budget_id;
+    if (updateData.substatus_json !== undefined) mappedUpdates.substatusJson = updateData.substatus_json;
+    if (updateData.metadata_json !== undefined) mappedUpdates.metadataJson = updateData.metadata_json;
+
+    // Include direct SSOT field updates
+    Object.keys(updateData).forEach(key => {
+      if (!mappedUpdates[key] && updateData[key] !== undefined) {
+        mappedUpdates[key] = updateData[key];
       }
-    }
-    
-    if (fields.length === 0) {
-      return this;
-    }
-    
-    values.push(this.id);
-    const query = `
-      UPDATE contracts 
-      SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $${values.length}
-      RETURNING *;
-    `;
-    
-    const result = await db.pool.query(query, values);
-    
-    if (result.rows.length === 0) {
+    });
+
+    const result = await ContractRepository.update(this.id, mappedUpdates);
+    if (!result) {
       throw new Error('Contract not found');
     }
-    
-    Object.assign(this, result.rows[0]);
+
+    Object.assign(this, result);
     return this;
   }
 
   async delete() {
-    const query = 'DELETE FROM contracts WHERE id = $1 RETURNING *;';
-    const result = await db.pool.query(query, [this.id]);
-    
-    if (result.rows.length === 0) {
-      throw new Error('Contract not found');
-    }
-    
-    return new Contract(result.rows[0]);
+    await ContractRepository.delete(this.id);
+    return this;
   }
 
   static async deleteById(id) {
-    const query = 'DELETE FROM contracts WHERE id = $1 RETURNING *;';
-    const result = await db.pool.query(query, [id]);
-    
-    if (result.rows.length === 0) {
+    const contract = await Contract.findById(id);
+    if (!contract) {
       return null;
     }
     
-    return new Contract(result.rows[0]);
+    await ContractRepository.delete(id);
+    return contract;
+  }
+
+  // Legacy compatibility methods
+  static async findByPartnerAndProject(partnerId, projectId) {
+    return await ContractRepository.findByPartnerAndProject(partnerId, projectId);
+  }
+
+  static async updateFields(id, updates) {
+    return await ContractRepository.updateFields(id, updates);
+  }
+
+  static async updateState(id, state) {
+    return await ContractRepository.updateState(id, state);
+  }
+
+  static async updateSubstatus(id, substatusJson) {
+    return await ContractRepository.updateSubstatus(id, substatusJson);
+  }
+
+  static async setApproval(id, provider, reference) {
+    return await ContractRepository.setApproval(id, provider, reference);
+  }
+
+  static async setEnvelope(id, envelopeId) {
+    return await ContractRepository.setEnvelope(id, envelopeId);
+  }
+
+  static async setDocumentKey(id, column, key) {
+    return await ContractRepository.setDocumentKey(id, column, key);
+  }
+
+  static async setMetadata(id, metadataJson) {
+    return await ContractRepository.setMetadata(id, metadataJson);
+  }
+
+  // SSOT-specific methods
+  static async findFromSSOT(id) {
+    const result = await ContractSSOTRepository.findById(id);
+    return result ? new Contract(result) : null;
+  }
+
+  static async listFromSSOT(filters = {}) {
+    const results = await ContractSSOTRepository.list(filters);
+    return results.map(row => new Contract(row));
   }
 }
 

@@ -16,6 +16,16 @@ async function fetchSSOT(key: string, params: Record<string, any>) {
   return api.fetchWithAuth(`${path}${qs ? `?${qs}` : ''}`);
 }
 
+async function executeSSOTAction(actionKey: string, payload: Record<string, any>) {
+  return api.fetchWithAuth('/ssot/action', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ actionKey, payload }),
+  });
+}
+
 type ApprovedLine = {
   id: string;
   category: string;
@@ -43,9 +53,9 @@ export default function Reconciliation() {
       if (!partnerBudgetId) { setLoading(false); return; }
       try {
         setLoading(true);
-        const res = await fetchSSOT('budget.lines.approved', { partnerBudgetId });
+        const res = await fetchSSOT('recon.summary', { partnerBudgetId });
         if (!mounted) return;
-        setLines(Array.isArray(res) ? res : res?.items || []);
+        setLines(res?.lines || []);
       } catch (e: any) {
         console.error('Recon load failed', e);
         if (!mounted) return;
@@ -74,13 +84,34 @@ export default function Reconciliation() {
     if (!form.lineId || !form.amount || !form.spentAt) return;
     try {
       setSubmitting(true);
-      // Note: If the SSOT requires multipart, backend should accept it; otherwise JSON fallback
-      const payload: any = { lineId: form.lineId, amount: form.amount, spentAt: form.spentAt, note: form.note };
-      await fetchSSOT('recon.upload', payload);
+      // Convert file to base64 if present
+      let documentBuffer = null;
+      if (form.file) {
+        documentBuffer = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const arrayBuffer = reader.result as ArrayBuffer;
+            resolve(Buffer.from(arrayBuffer));
+          };
+          reader.readAsArrayBuffer(form.file!);
+        });
+      }
+
+      const payload: any = {
+        partnerBudgetLineId: form.lineId,
+        amount: form.amount,
+        spentAt: form.spentAt,
+        documentBuffer,
+        documentName: form.file?.name || 'evidence',
+        note: form.note
+      };
+      
+      await executeSSOTAction('recon.upload', payload);
       setForm({ lineId: '', amount: '', spentAt: '', file: null, note: '' });
-      // refresh evidence counts
-      const res = await fetchSSOT('budget.lines.approved', { partnerBudgetId });
-      setLines(Array.isArray(res) ? res : res?.items || []);
+      
+      // refresh summary
+      const res = await fetchSSOT('recon.summary', { partnerBudgetId });
+      setLines(res?.lines || []);
     } catch (e) {
       console.error('Upload evidence failed', e);
     } finally {
@@ -92,14 +123,22 @@ export default function Reconciliation() {
   if (error) return <div className="p-4 bg-rose-50 text-rose-800 border border-rose-200 rounded-xl">{error}</div>;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white">
+        <h1 className="text-2xl font-bold mb-2">Reconciliation</h1>
+        <p className="text-blue-100">Upload spending evidence and track budget utilization</p>
+      </div>
+
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 text-sm font-semibold">Approved Lines</div>
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Approved Budget Lines</h2>
+        </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="text-left bg-slate-50 dark:bg-slate-700/50">
-                {['Category','Description','Approved','Spent (Cum)','Remaining','Evidence'].map(h => (
+                {['Description','Approved','Spent (Cum)','Remaining','Evidence'].map(h => (
                   <th key={h} className="px-6 py-3 text-slate-600 dark:text-slate-300 font-medium">{h}</th>
                 ))}
               </tr>
@@ -107,12 +146,11 @@ export default function Reconciliation() {
             <tbody>
               {lines.map(l => (
                 <tr key={l.id} className="border-t border-slate-200 dark:border-slate-700">
-                  <td className="px-6 py-3">{l.category}</td>
                   <td className="px-6 py-3">{l.description}</td>
-                  <td className="px-6 py-3">{l.total}</td>
-                  <td className="px-6 py-3">{l.spentCumulative ?? '—'}</td>
-                  <td className="px-6 py-3">{l.remaining ?? '—'}</td>
-                  <td className="px-6 py-3">{l.evidenceCount ?? 0}</td>
+                  <td className="px-6 py-3">${l.total?.toFixed(2) || '0.00'}</td>
+                  <td className="px-6 py-3">${l.spentCumulative?.toFixed(2) || '0.00'}</td>
+                  <td className="px-6 py-3">${l.remaining?.toFixed(2) || '0.00'}</td>
+                  <td className="px-6 py-3">{l.evidenceCount || 0}</td>
                 </tr>
               ))}
               {lines.length === 0 && (
@@ -128,7 +166,7 @@ export default function Reconciliation() {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
           <select name="lineId" value={form.lineId} onChange={onChange} className="rounded-lg border-slate-300 dark:border-slate-600">
             <option value="">Select Line</option>
-            {lines.map(l => (<option value={l.id} key={l.id}>{l.category} - {l.description}</option>))}
+            {lines.map(l => (<option value={l.id} key={l.id}>{l.description}</option>))}
           </select>
           <input type="number" name="amount" value={form.amount} onChange={onChange} placeholder="Amount" className="rounded-lg border-slate-300 dark:border-slate-600" />
           <input type="date" name="spentAt" value={form.spentAt} onChange={onChange} className="rounded-lg border-slate-300 dark:border-slate-600" />

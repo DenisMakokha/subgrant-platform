@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import api from '../../../services/api';
 import ReviewThreadPane from '../../../components/review/ReviewThreadPane';
+import ApprovalStatusTracker from '../../../components/approvals/ApprovalStatusTracker';
+import { toast } from 'react-toastify';
 
 type Summary = {
   ceiling?: number;
@@ -12,6 +14,8 @@ type Summary = {
   remaining?: number;
   utilizationPct?: number;
   partnerBudgetId?: string;
+  status?: string;
+  approval_request_id?: string;
 };
 
 type CapItem = { category: string; usedPct: number; capPct: number };
@@ -141,6 +145,33 @@ export default function Budget() {
     }
   };
 
+  const submitBudgetForApproval = async () => {
+    if (!partnerBudgetId) {
+      toast.error('No budget found to submit');
+      return;
+    }
+    
+    if (!confirm('Are you sure you want to submit this budget for approval? You will not be able to edit it after submission.')) {
+      return;
+    }
+
+    try {
+      const response = await api.fetchWithAuth(`/api/budget-ssot/${partnerBudgetId}/submit-for-approval`, {
+        method: 'POST'
+      });
+      
+      if (response.success) {
+        toast.success('Budget submitted for approval successfully!');
+        // Refresh summary to get updated status and approval_request_id
+        const s = await fetchSSOT('budget.pb.summary', { projectId, partnerId });
+        setSummary(s || {});
+      }
+    } catch (e: any) {
+      console.error('Submit budget failed', e);
+      toast.error(e?.message || 'Failed to submit budget for approval');
+    }
+  };
+
   if (loading) return (
     <div className="min-h-[40vh] flex items-center justify-center">
       <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500" />
@@ -149,7 +180,43 @@ export default function Budget() {
   if (error) return <div className="p-4 bg-rose-50 text-rose-800 border border-rose-200 rounded-xl">{error}</div>;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold mb-2">Budget Management</h1>
+            <p className="text-blue-100">Manage your project budget lines and track spending</p>
+          </div>
+          {partnerBudgetId && summary.status !== 'pending_approval' && summary.status !== 'approved' && (
+            <button
+              onClick={submitBudgetForApproval}
+              className="px-6 py-3 bg-white text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-colors flex items-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Submit for Approval
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Approval Status Tracker */}
+      {summary.approval_request_id && (
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Budget Approval Status</h2>
+          <ApprovalStatusTracker 
+            requestId={summary.approval_request_id}
+            onCancel={async () => {
+              // Refresh summary after cancellation
+              const s = await fetchSSOT('budget.pb.summary', { projectId, partnerId });
+              setSummary(s || {});
+            }}
+          />
+        </div>
+      )}
+
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {([

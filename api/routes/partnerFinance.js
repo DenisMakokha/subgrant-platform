@@ -25,15 +25,15 @@ router.get('/disbursements', ...guard, async (req, res) => {
   }
 });
 
-// List contracts for organization (read-only)
+// List contracts for organization (read-only) - using SSOT
 router.get('/contracts', ...guard, async (req, res) => {
   try {
     const result = await db.pool.query(
-      `SELECT c.id, c.title, c.amount, c.currency, c.start_date, c.end_date, c.status,
-              f.id as file_id, f.original_name as contract_filename
+      `SELECT c.id, c.title, cs.total_amount as amount, cs.currency, cs.start_date, cs.end_date, c.state as status,
+              c.signed_pdf_key, c.approved_docx_key
        FROM contracts c
-       LEFT JOIN files f ON c.signed_file_id = f.id
-       WHERE c.organization_id = $1
+       LEFT JOIN contracts_ssot cs ON cs.id = c.id
+       WHERE c.partner_id = $1
        ORDER BY c.created_at DESC`,
       [req.userOrganization.id]
     );
@@ -50,12 +50,11 @@ router.get('/contracts/:id/download', ...guard, async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Verify contract belongs to organization and has signed file
+    // Verify contract belongs to organization and has signed file - using SSOT
     const result = await db.pool.query(
-      `SELECT f.file_key, f.original_name, f.content_type
+      `SELECT c.signed_pdf_key as file_key, 'signed_contract.pdf' as original_name, 'application/pdf' as content_type
        FROM contracts c
-       JOIN files f ON c.signed_file_id = f.id
-       WHERE c.id = $1 AND c.organization_id = $2`,
+       WHERE c.id = $1 AND c.partner_id = $2 AND c.signed_pdf_key IS NOT NULL`,
       [id, req.userOrganization.id]
     );
     

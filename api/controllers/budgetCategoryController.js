@@ -1,146 +1,288 @@
-const BudgetCategory = require('../models/budgetCategory');
+const pool = require('../config/database');
 
-// Create a new budget category
+/**
+ * Create a new budget category
+ */
 exports.createCategory = async (req, res) => {
   try {
-    const { project_id, name, description, cap_amount, cap_percentage, is_active } = req.body;
-    const userId = req.user?.sub || req.user?.id || null;
+    const { project_id, name, description, cap_percentage, is_active } = req.body;
 
-    console.log('Request body:', req.body);
-    console.log('User from request:', req.user);
-    console.log('User ID:', userId);
-
-    // Validate required fields
-    if (!name) {
+    // Validation
+    if (!project_id || !name) {
       return res.status(400).json({ 
-        error: 'Name is required' 
+        error: 'Project ID and category name are required' 
       });
     }
 
-    const categoryData = {
+    const query = `
+      INSERT INTO budget_categories (project_id, name, description, cap_percentage, is_active)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING *
+    `;
+
+    const values = [
       project_id,
       name,
-      description: description || '',
-      cap_amount: cap_amount || null,
-      cap_percentage: cap_percentage || null,
-      is_active: is_active !== undefined ? is_active : true,
-      created_by: userId,
-      updated_by: userId
-    };
+      description || null,
+      cap_percentage || null,
+      is_active !== undefined ? is_active : true
+    ];
 
-    const category = await BudgetCategory.create(categoryData);
-    res.status(201).json(category);
+    const result = await pool.query(query, values);
+
+    res.status(201).json({
+      success: true,
+      data: result.rows[0]
+    });
   } catch (error) {
     console.error('Error creating budget category:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ 
+      error: 'Failed to create budget category',
+      details: error.message 
+    });
   }
 };
 
-// Get all budget categories
+/**
+ * Get all budget categories
+ */
 exports.getAllCategories = async (req, res) => {
   try {
-    const categories = await BudgetCategory.findAll();
-    res.json(categories);
+    const query = `
+      SELECT bc.*, p.name as project_name
+      FROM budget_categories bc
+      LEFT JOIN projects p ON bc.project_id = p.id
+      ORDER BY bc.created_at DESC
+    `;
+
+    const result = await pool.query(query);
+
+    res.json({
+      success: true,
+      data: result.rows,
+      count: result.rows.length
+    });
   } catch (error) {
     console.error('Error fetching budget categories:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ 
+      error: 'Failed to fetch budget categories',
+      details: error.message 
+    });
   }
 };
 
-// Get budget category by ID
+/**
+ * Get budget category by ID
+ */
 exports.getCategoryById = async (req, res) => {
   try {
     const { id } = req.params;
-    const category = await BudgetCategory.findById(id);
-    
-    if (!category) {
-      return res.status(404).json({ error: 'Budget category not found' });
+
+    const query = `
+      SELECT bc.*, p.name as project_name
+      FROM budget_categories bc
+      LEFT JOIN projects p ON bc.project_id = p.id
+      WHERE bc.id = $1
+    `;
+
+    const result = await pool.query(query, [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ 
+        error: 'Budget category not found' 
+      });
     }
-    
-    res.json(category);
+
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
   } catch (error) {
     console.error('Error fetching budget category:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ 
+      error: 'Failed to fetch budget category',
+      details: error.message 
+    });
   }
 };
 
-// Get budget categories by project ID
+/**
+ * Get budget categories by project ID
+ */
 exports.getCategoriesByProjectId = async (req, res) => {
   try {
     const { project_id } = req.params;
-    const categories = await BudgetCategory.findByProjectId(project_id);
-    res.json(categories);
+
+    const query = `
+      SELECT *
+      FROM budget_categories
+      WHERE project_id = $1
+      ORDER BY name ASC
+    `;
+
+    const result = await pool.query(query, [project_id]);
+
+    res.json({
+      success: true,
+      data: result.rows,
+      count: result.rows.length
+    });
   } catch (error) {
     console.error('Error fetching budget categories by project:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ 
+      error: 'Failed to fetch budget categories',
+      details: error.message 
+    });
   }
 };
 
-// Get active budget categories by project ID
+/**
+ * Get active budget categories by project ID
+ */
 exports.getActiveCategoriesByProjectId = async (req, res) => {
   try {
     const { project_id } = req.params;
-    const categories = await BudgetCategory.findActiveByProjectId(project_id);
-    res.json(categories);
+
+    const query = `
+      SELECT *
+      FROM budget_categories
+      WHERE project_id = $1 AND is_active = true
+      ORDER BY name ASC
+    `;
+
+    const result = await pool.query(query, [project_id]);
+
+    res.json({
+      success: true,
+      data: result.rows,
+      count: result.rows.length
+    });
   } catch (error) {
-    console.error('Error fetching active budget categories by project:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Error fetching active budget categories:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch active budget categories',
+      details: error.message 
+    });
   }
 };
 
-// Update budget category
+/**
+ * Update budget category
+ */
 exports.updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, cap_amount, cap_percentage, is_active } = req.body;
-    const userId = req.user.id;
+    const { name, description, cap_percentage, is_active } = req.body;
 
     // Check if category exists
-    const existingCategory = await BudgetCategory.findById(id);
-    if (!existingCategory) {
-      return res.status(404).json({ error: 'Budget category not found' });
+    const checkQuery = 'SELECT * FROM budget_categories WHERE id = $1';
+    const checkResult = await pool.query(checkQuery, [id]);
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ 
+        error: 'Budget category not found' 
+      });
     }
 
-    const categoryData = {
-      name: name || existingCategory.name,
-      description: description !== undefined ? description : existingCategory.description,
-      cap_amount: cap_amount !== undefined ? cap_amount : existingCategory.cap_amount,
-      cap_percentage: cap_percentage !== undefined ? cap_percentage : existingCategory.cap_percentage,
-      is_active: is_active !== undefined ? is_active : existingCategory.is_active,
-      updated_by: userId
-    };
+    // Build update query dynamically
+    const updates = [];
+    const values = [];
+    let paramCount = 1;
 
-    const category = await BudgetCategory.update(id, categoryData);
-    if (!category) {
-      return res.status(404).json({ error: 'Budget category not found' });
+    if (name !== undefined) {
+      updates.push(`name = $${paramCount++}`);
+      values.push(name);
     }
-    
-    res.json(category);
+    if (description !== undefined) {
+      updates.push(`description = $${paramCount++}`);
+      values.push(description);
+    }
+    if (cap_percentage !== undefined) {
+      updates.push(`cap_percentage = $${paramCount++}`);
+      values.push(cap_percentage);
+    }
+    if (is_active !== undefined) {
+      updates.push(`is_active = $${paramCount++}`);
+      values.push(is_active);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ 
+        error: 'No fields to update' 
+      });
+    }
+
+    updates.push(`updated_at = CURRENT_TIMESTAMP`);
+    values.push(id);
+
+    const query = `
+      UPDATE budget_categories
+      SET ${updates.join(', ')}
+      WHERE id = $${paramCount}
+      RETURNING *
+    `;
+
+    const result = await pool.query(query, values);
+
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
   } catch (error) {
     console.error('Error updating budget category:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ 
+      error: 'Failed to update budget category',
+      details: error.message 
+    });
   }
 };
 
-// Delete budget category
+/**
+ * Delete budget category
+ */
 exports.deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Check if category exists
-    const existingCategory = await BudgetCategory.findById(id);
-    if (!existingCategory) {
-      return res.status(404).json({ error: 'Budget category not found' });
+    const checkQuery = 'SELECT * FROM budget_categories WHERE id = $1';
+    const checkResult = await pool.query(checkQuery, [id]);
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ 
+        error: 'Budget category not found' 
+      });
     }
-    
-    const category = await BudgetCategory.delete(id);
-    if (!category) {
-      return res.status(404).json({ error: 'Budget category not found' });
+
+    // Check if category is being used in budget lines
+    const usageQuery = `
+      SELECT COUNT(*) as count 
+      FROM partner_budget_lines 
+      WHERE category = $1
+    `;
+    const usageResult = await pool.query(usageQuery, [checkResult.rows[0].name]);
+
+    if (parseInt(usageResult.rows[0].count) > 0) {
+      return res.status(400).json({ 
+        error: 'Cannot delete budget category that is being used in budget lines',
+        usage_count: usageResult.rows[0].count
+      });
     }
-    
-    res.json({ message: 'Budget category deleted successfully' });
+
+    // Delete the category
+    const deleteQuery = 'DELETE FROM budget_categories WHERE id = $1 RETURNING *';
+    const result = await pool.query(deleteQuery, [id]);
+
+    res.json({
+      success: true,
+      message: 'Budget category deleted successfully',
+      data: result.rows[0]
+    });
   } catch (error) {
     console.error('Error deleting budget category:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ 
+      error: 'Failed to delete budget category',
+      details: error.message 
+    });
   }
 };

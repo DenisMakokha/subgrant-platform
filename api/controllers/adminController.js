@@ -1,3 +1,5 @@
+const capabilitiesCatalog = require('../config/capabilitiesCatalog');
+const scopesCatalog = require('../config/scopesCatalog');
 const { CAPABILITIES } = require('../registry/capabilities');
 const { DATA_KEYS } = require('../registry/dataKeys');
 const { invalidateCache } = require('../cache/cacheInvalidation');
@@ -71,6 +73,48 @@ exports.getCatalogDataKeys = [
   }
 ];
 
+exports.getCapabilitiesCatalog = [
+  sanitizeInput,
+  async (req, res, next) => {
+    const startTime = Date.now();
+    try {
+      // Log successful API call
+      logApiCall('GET', '/admin/catalog/capabilities', 200, Date.now() - startTime, req.user.id);
+      
+      res.json(capabilitiesCatalog);
+    } catch (error) {
+      // Log error
+      logError(error, 'getCapabilitiesCatalog', { userId: req.user.id });
+      
+      // Log failed API call
+      logApiCall('GET', '/admin/catalog/capabilities', 500, Date.now() - startTime, req.user.id);
+      
+      next(error);
+    }
+  }
+];
+
+exports.getScopesCatalog = [
+  sanitizeInput,
+  async (req, res, next) => {
+    const startTime = Date.now();
+    try {
+      // Log successful API call
+      logApiCall('GET', '/admin/catalog/scopes', 200, Date.now() - startTime, req.user.id);
+      
+      res.json(scopesCatalog);
+    } catch (error) {
+      // Log error
+      logError(error, 'getScopesCatalog', { userId: req.user.id });
+      
+      // Log failed API call
+      logApiCall('GET', '/admin/catalog/scopes', 500, Date.now() - startTime, req.user.id);
+      
+      next(error);
+    }
+  }
+];
+
 exports.listRoles = [
   sanitizeInput,
   async (req, res, next) => {
@@ -137,6 +181,170 @@ exports.publishRole = [
       
       // Log failed API call
       logApiCall('POST', '/admin/roles/publish', 500, Date.now() - startTime, req.user.id);
+      
+      next(error);
+    }
+  }
+];
+
+exports.deleteRole = [
+  sanitizeInput,
+  async (req, res, next) => {
+    const startTime = Date.now();
+    try {
+      const { roleId } = req.params;
+      
+      // In a real implementation, check if role has users assigned
+      // If yes, prevent deletion or reassign users
+      
+      // Invalidate cache
+      invalidateCache('roles');
+      
+      // Log successful API call
+      logApiCall('DELETE', `/admin/roles/${roleId}`, 200, Date.now() - startTime, req.user.id);
+      
+      res.json({ message: `Role ${roleId} deleted successfully` });
+    } catch (error) {
+      // Log error
+      logError(error, 'deleteRole', { userId: req.user.id, roleId: req.params.roleId });
+      
+      // Log failed API call
+      logApiCall('DELETE', `/admin/roles/${req.params.roleId}`, 500, Date.now() - startTime, req.user.id);
+      
+      next(error);
+    }
+  }
+];
+
+exports.toggleRoleActive = [
+  sanitizeInput,
+  async (req, res, next) => {
+    const startTime = Date.now();
+    try {
+      const { roleId } = req.params;
+      const { active } = req.body;
+      
+      // In a real implementation, update role active status in database
+      const updatedRole = {
+        id: roleId,
+        active,
+        updatedAt: new Date()
+      };
+      
+      // Invalidate cache
+      invalidateCache('roles');
+      
+      // Log successful API call
+      logApiCall('PUT', `/admin/roles/${roleId}/toggle`, 200, Date.now() - startTime, req.user.id);
+      
+      res.json({ message: `Role ${roleId} ${active ? 'activated' : 'deactivated'} successfully`, role: updatedRole });
+    } catch (error) {
+      // Log error
+      logError(error, 'toggleRoleActive', { userId: req.user.id, roleId: req.params.roleId });
+      
+      // Log failed API call
+      logApiCall('PUT', `/admin/roles/${req.params.roleId}/toggle`, 500, Date.now() - startTime, req.user.id);
+      
+      next(error);
+    }
+  }
+];
+
+exports.cloneRole = [
+  sanitizeInput,
+  async (req, res, next) => {
+    const startTime = Date.now();
+    try {
+      const { roleId } = req.params;
+      const { newRoleId, newLabel } = req.body;
+      
+      // In a real implementation:
+      // 1. Fetch original role
+      // 2. Create new role with new ID and label
+      // 3. Copy all capabilities and scopes
+      
+      const clonedRole = {
+        id: newRoleId,
+        label: newLabel,
+        description: `Cloned from ${roleId}`,
+        capabilities: [], // Would copy from original
+        scopes: {}, // Would copy from original
+        active: false, // Start as inactive
+        version: 1,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      // Invalidate cache
+      invalidateCache('roles');
+      
+      // Log successful API call
+      logApiCall('POST', `/admin/roles/${roleId}/clone`, 200, Date.now() - startTime, req.user.id);
+      
+      res.json({ message: `Role ${roleId} cloned successfully`, role: clonedRole });
+    } catch (error) {
+      // Log error
+      logError(error, 'cloneRole', { userId: req.user.id, roleId: req.params.roleId });
+      
+      // Log failed API call
+      logApiCall('POST', `/admin/roles/${req.params.roleId}/clone`, 500, Date.now() - startTime, req.user.id);
+      
+      next(error);
+    }
+  }
+];
+
+exports.getRoleById = [
+  sanitizeInput,
+  async (req, res, next) => {
+    const startTime = Date.now();
+    try {
+      const { roleId } = req.params;
+      
+      // In a real implementation, fetch from database
+      // For now, return from registry
+      const role = rolesRegistry.find(r => r.id === roleId);
+      
+      if (!role) {
+        return res.status(404).json({ error: 'Role not found' });
+      }
+      
+      // Log successful API call
+      logApiCall('GET', `/admin/roles/${roleId}`, 200, Date.now() - startTime, req.user.id);
+      
+      res.json(role);
+    } catch (error) {
+      // Log error
+      logError(error, 'getRoleById', { userId: req.user.id, roleId: req.params.roleId });
+      
+      // Log failed API call
+      logApiCall('GET', `/admin/roles/${req.params.roleId}`, 500, Date.now() - startTime, req.user.id);
+      
+      next(error);
+    }
+  }
+];
+
+exports.getUsersByRole = [
+  sanitizeInput,
+  async (req, res, next) => {
+    const startTime = Date.now();
+    try {
+      const { roleId } = req.params;
+      
+      // In a real implementation, query users table where role = roleId
+      const users = []; // Would fetch from database
+      
+      // Log successful API call
+      logApiCall('GET', `/admin/roles/${roleId}/users`, 200, Date.now() - startTime, req.user.id);
+      
+      res.json(users);
+    } catch (error) {
+      // Log error
+      logError(error, 'getUsersByRole', { userId: req.user.id, roleId: req.params.roleId });
+      
+      // Log failed API call
+      logApiCall('GET', `/admin/roles/${req.params.roleId}/users`, 500, Date.now() - startTime, req.user.id);
       
       next(error);
     }

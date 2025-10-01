@@ -61,4 +61,10 @@ router.post('/:id/transition',
   budgetSSOTController.transitionStatus
 );
 
+// Submit budget for approval
+router.post('/:id/submit-for-approval', 
+  rbacMiddleware.checkPermission('budget', 'update'),
+  budgetSSOTController.submitForApproval
+);
+
 module.exports = router;

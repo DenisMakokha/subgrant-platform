@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Layout from './components/Layout';
@@ -76,6 +77,7 @@ import SecurityCenter from './pages/admin/SecurityCenter';
 import SystemAdministration from './pages/admin/SystemAdministration';
 import ExecutiveDashboard from './pages/admin/ExecutiveDashboard';
 import KnowledgeManagement from './pages/admin/KnowledgeManagement';
+import ReportedIssues from './pages/admin/ReportedIssues';
 
 import AdminDashboard from './pages/admin/Dashboard';
 import ApprovalManagement from './pages/admin/ApprovalManagement';
@@ -123,7 +125,8 @@ const App: React.FC = () => {
 
   return (
     <AuthProvider>
-      <Router>
+      <NotificationProvider>
+        <Router>
         <Routes>
           {/* Public routes with header and footer */}
           <Route path="/" element={
@@ -350,6 +353,11 @@ const App: React.FC = () => {
                       <ApprovalManagement />
                     </ProtectedRoute>
                   } />
+                  <Route path="/admin/reported-issues" element={
+                    <ProtectedRoute requireRole="admin">
+                      <ReportedIssues />
+                    </ProtectedRoute>
+                  } />
 
                   {/* Essential System Routes */}
                   <Route path="/profile" element={<Profile user={null} />} />
@@ -370,7 +378,8 @@ const App: React.FC = () => {
           draggable
           pauseOnHover
         />
-      </Router>
+        </Router>
+      </NotificationProvider>
     </AuthProvider>
   );
 };

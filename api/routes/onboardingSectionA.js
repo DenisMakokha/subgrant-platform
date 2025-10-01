@@ -15,7 +15,7 @@ const { sendOnboardingCompletedEmail } = require('../services/emailService');
 const router = express.Router();
 
 // SSoT Organization endpoint using repository pattern
-const { OrganizationRepository } = require('../repositories/OrganizationRepository.js');
+const OrganizationRepository = require('../repositories/OrganizationRepository.js');
 const { createEnvelope, createApiError } = require('../core/FormRepository.js');
 
 const orgRepo = new OrganizationRepository();

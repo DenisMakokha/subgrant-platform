@@ -37,13 +37,21 @@ router.get('/kpis', requireAuth, async (req, res) => {
       WHERE organization_id = $1
     `, [organizationId]);
     
-    // Get budget data
+    // Get budget data from SSOT
     const budgetResult = await db.pool.query(`
-      SELECT 
-        COALESCE(SUM(total_budget), 0) as ceiling,
-        COALESCE(SUM(spent_amount), 0) as spent
-      FROM budgets 
-      WHERE organization_id = $1
+      SELECT
+        COALESCE(SUM(ceiling_total), 0) as ceiling,
+        COALESCE(SUM(spent.amount), 0) as spent
+      FROM partner_budgets pb
+      LEFT JOIN (
+        SELECT
+          pbl.partner_budget_id,
+          SUM(re.amount) as amount
+        FROM partner_budget_lines pbl
+        LEFT JOIN recon_line_evidence re ON re.partner_budget_line_id = pbl.id
+        GROUP BY pbl.partner_budget_id
+      ) spent ON spent.partner_budget_id = pb.id
+      WHERE pb.partner_id = $1 AND pb.status = 'APPROVED'
     `, [organizationId]);
     
     // Calculate utilization percentage
@@ -51,14 +59,15 @@ router.get('/kpis', requireAuth, async (req, res) => {
     const spent = parseFloat(budgetResult.rows[0]?.spent || 0);
     const utilizationPct = ceiling > 0 ? (spent / ceiling) * 100 : 0;
     
-    // Get reports due count
+    // Get reports due count from SSOT
     const reportsResult = await db.pool.query(`
       SELECT COUNT(*) as due
-      FROM me_reports mr
-      JOIN budgets b ON mr.budget_id = b.id
-      WHERE b.organization_id = $1 
-        AND COALESCE(mr.due_date, mr.report_date) < NOW() 
-        AND mr.status != 'submitted'
+      FROM grant_reporting_dates grd
+      JOIN grants g ON g.id = grd.grant_id
+      JOIN partner_budgets pb ON pb.project_id = g.project_id
+      WHERE pb.partner_id = $1
+        AND grd.due_date < NOW()
+        AND grd.status = 'due'
     `, [organizationId]);
     
     const kpis = {

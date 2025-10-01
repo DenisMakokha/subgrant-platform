@@ -1,4 +1,5 @@
 const BudgetSSOTService = require('../services/budgets/budgetSSOTService');
+const approvalIntegrationService = require('../services/approvalIntegrationService');
 
 class BudgetSSOTController {
   /**
@@ -200,6 +201,104 @@ class BudgetSSOTController {
         idempotencyKey, 
         requestHash
       );
+      
+      // If transitioning to 'submitted' or 'pending_approval', create approval request
+      if (nextStatus === 'submitted' || nextStatus === 'pending_approval') {
+        try {
+          // Get budget details for metadata
+          const budget = await BudgetSSOTService.getBudgetWithLines(budgetId);
+          
+          if (budget) {
+            const approvalRequest = await approvalIntegrationService.createApprovalRequest({
+              entityType: 'budget',
+              entityId: budgetId,
+              userId: actorId,
+              metadata: {
+                ceiling_total: budget.ceiling_total,
+                project_id: budget.project_id,
+                partner_id: budget.partner_id,
+                currency: budget.currency
+              }
+            });
+            
+            if (approvalRequest) {
+              // Link approval request to budget
+              await approvalIntegrationService.linkApprovalToEntity(
+                'partner_budgets',
+                budgetId,
+                approvalRequest.id
+              );
+              
+              // Add approval_request_id to response
+              result.approval_request_id = approvalRequest.id;
+            }
+          }
+        } catch (approvalError) {
+          console.error('Error creating approval request for budget:', approvalError);
+          // Continue without approval - don't fail the status transition
+        }
+      }
+      
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+  
+  /**
+   * Submit budget for approval
+   * @param {object} req - Express request object
+   * @param {object} res - Express response object
+   */
+  static async submitForApproval(req, res, next) {
+    try {
+      const { id: budgetId } = req.params;
+      const actorId = req.user.id;
+      
+      // Transition to pending_approval status
+      const result = await BudgetSSOTService.transitionStatus(
+        budgetId,
+        'pending_approval',
+        actorId
+      );
+      
+      // Get budget details for metadata
+      const budget = await BudgetSSOTService.getBudgetWithLines(budgetId);
+      
+      if (budget) {
+        try {
+          const approvalRequest = await approvalIntegrationService.createApprovalRequest({
+            entityType: 'budget',
+            entityId: budgetId,
+            userId: actorId,
+            metadata: {
+              ceiling_total: budget.ceiling_total,
+              project_id: budget.project_id,
+              partner_id: budget.partner_id,
+              currency: budget.currency,
+              line_count: budget.lines?.length || 0
+            }
+          });
+          
+          if (approvalRequest) {
+            // Link approval request to budget
+            await approvalIntegrationService.linkApprovalToEntity(
+              'partner_budgets',
+              budgetId,
+              approvalRequest.id
+            );
+            
+            // Add approval_request_id to response
+            result.approval_request_id = approvalRequest.id;
+          }
+        } catch (approvalError) {
+          console.error('Error creating approval request for budget:', approvalError);
+          // Continue without approval
+        }
+      }
       
       res.json({
         success: true,

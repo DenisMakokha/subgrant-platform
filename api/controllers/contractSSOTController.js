@@ -1,4 +1,5 @@
 const ContractSSOTService = require('../services/contracts/contractSSOTService');
+const approvalIntegrationService = require('../services/approvalIntegrationService');
 
 class ContractSSOTController {
   /**
@@ -74,6 +75,36 @@ class ContractSSOTController {
         approvalProvider,
         approvalRef
       });
+      
+      // Create approval request for the contract
+      try {
+        const approvalRequest = await approvalIntegrationService.createApprovalRequest({
+          entityType: 'contract',
+          entityId: contractId,
+          userId: actorId,
+          metadata: {
+            contract_number: contract.number,
+            contract_title: contract.title,
+            partner_id: contract.partner_id,
+            total_amount: contract.total_amount || contract.value
+          }
+        });
+        
+        if (approvalRequest) {
+          // Link approval request to contract
+          await approvalIntegrationService.linkApprovalToEntity(
+            'contracts',
+            contractId,
+            approvalRequest.id
+          );
+          
+          // Add approval_request_id to response
+          contract.approval_request_id = approvalRequest.id;
+        }
+      } catch (approvalError) {
+        console.error('Error creating approval request for contract:', approvalError);
+        // Continue without approval - don't fail the contract submission
+      }
       
       res.json({
         success: true,

@@ -144,6 +144,17 @@ class PartnerBudgetRepository {
     return result.rows.map(PartnerBudgetRepository.mapRow);
   }
 
+  static async findByPartnerAndProject(partnerId, projectId, client = db.pool) {
+    const query = `
+      SELECT ${PARTNER_BUDGET_COLUMNS.join(', ')}
+      FROM partner_budgets
+      WHERE partner_id = $1 AND project_id = $2
+      ORDER BY created_at DESC
+    `;
+    const result = await client.query(query, [partnerId, projectId]);
+    return result.rows.map(PartnerBudgetRepository.mapRow);
+  }
+
   static async transitionStatus(id, nextStatus, actorId, client = db.pool) {
     const query = `
       UPDATE partner_budgets
@@ -196,6 +207,79 @@ class PartnerBudgetRepository {
       createdAt: row.created_at,
       updatedAt: row.updated_at
     };
+  }
+
+  /**
+   * Get total budget from all approved budgets
+   */
+  static async getTotalBudget(client = db.pool) {
+    const query = `
+      SELECT COALESCE(SUM(ceiling_total), 0) as total 
+      FROM partner_budgets 
+      WHERE status = 'approved'
+    `;
+    const result = await client.query(query);
+    return parseFloat(result.rows[0]?.total || 0);
+  }
+
+  /**
+   * Get total disbursed amount
+   */
+  static async getTotalDisbursed(client = db.pool) {
+    const query = `
+      SELECT COALESCE(SUM(amount), 0) as total 
+      FROM disbursements 
+      WHERE status = 'paid'
+    `;
+    const result = await client.query(query);
+    return parseFloat(result.rows[0]?.total || 0);
+  }
+
+  /**
+   * Get quarterly spending data
+   */
+  static async getQuarterlySpending(year = new Date().getFullYear(), client = db.pool) {
+    const query = `
+      SELECT 
+        CONCAT('Q', EXTRACT(QUARTER FROM d.created_at)) as quarter,
+        COALESCE(SUM(d.amount), 0) as amount,
+        COALESCE(SUM(pb.ceiling_total), 0) as budget
+      FROM disbursements d
+      LEFT JOIN partner_budgets pb ON d.partner_budget_id = pb.id
+      WHERE EXTRACT(YEAR FROM d.created_at) = $1
+      GROUP BY EXTRACT(QUARTER FROM d.created_at)
+      ORDER BY EXTRACT(QUARTER FROM d.created_at)
+    `;
+    const result = await client.query(query, [year]);
+    return result.rows.map(row => ({
+      quarter: `${row.quarter} ${year}`,
+      amount: parseFloat(row.amount || 0),
+      budget: parseFloat(row.budget || 0)
+    }));
+  }
+
+  /**
+   * Get top expense categories from budget lines using template categories
+   */
+  static async getTopExpenseCategories(limit = 5, client = db.pool) {
+    const query = `
+      SELECT 
+        pbt.category,
+        COALESCE(SUM(pbl.total), 0) as amount,
+        ROUND((COALESCE(SUM(pbl.total), 0) / NULLIF((SELECT SUM(total) FROM partner_budget_lines), 0) * 100), 2) as percentage
+      FROM partner_budget_lines pbl
+      JOIN partner_budget_templates pbt ON pbl.template_id = pbt.id
+      WHERE pbl.total > 0
+      GROUP BY pbt.category
+      ORDER BY amount DESC
+      LIMIT $1
+    `;
+    const result = await client.query(query, [limit]);
+    return result.rows.map(row => ({
+      category: row.category || 'Uncategorized',
+      amount: parseFloat(row.amount || 0),
+      percentage: parseFloat(row.percentage || 0)
+    }));
   }
 }
 

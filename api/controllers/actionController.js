@@ -1,5 +1,7 @@
 const FundRequestRepository = require('../repositories/fundRequestRepository');
 const NotificationService = require('../services/notificationService');
+const ReconciliationService = require('../services/reconciliationService');
+const PartnerBudgetLineRepository = require('../repositories/partnerBudgetLineRepository');
 const { v4: uuidv4 } = require('uuid');
 const { ValidationError, NotFoundError } = require('../errors');
 const { sanitizeInput } = require('../middleware/sanitization');
@@ -44,6 +46,36 @@ const getActionService = (key) => {
             const fundRequest = await FundRequestRepository.create(fundRequestData);
             return fundRequest;
             
+          case 'fundRequest.submit':
+            const { fundRequestId } = payload;
+            
+            if (!fundRequestId) {
+              throw new Error('fundRequestId is required');
+            }
+            
+            const submittedRequest = await FundRequestRepository.updateStatus(fundRequestId, 'SUBMITTED');
+            return submittedRequest;
+            
+          case 'fundRequest.approve':
+            const { fundRequestId: approveRequestId } = payload;
+            
+            if (!approveRequestId) {
+              throw new Error('fundRequestId is required');
+            }
+            
+            const approvedRequest = await FundRequestRepository.updateStatus(approveRequestId, 'APPROVED');
+            return approvedRequest;
+            
+          case 'fundRequest.reject':
+            const { fundRequestId: rejectRequestId } = payload;
+            
+            if (!rejectRequestId) {
+              throw new Error('fundRequestId is required');
+            }
+            
+            const rejectedRequest = await FundRequestRepository.updateStatus(rejectRequestId, 'REJECTED');
+            return rejectedRequest;
+            
           default:
             throw new Error(`Unknown action key: ${key}`);
         }
@@ -71,6 +103,193 @@ const getActionService = (key) => {
             // Mark all notifications as read for the current user
             const markedNotifications = await NotificationService.markAllAsRead(user.id);
             return { message: `Marked ${markedNotifications.length} notifications as read` };
+            
+          default:
+            throw new Error(`Unknown action key: ${key}`);
+        }
+      }
+    };
+  }
+  
+  // For reconciliation actions
+  if (key.startsWith('recon.')) {
+    return {
+      async executeAction(payload, user) {
+        switch (key) {
+          case 'recon.upload':
+            const { partnerBudgetLineId, amount, spentAt, documentBuffer, documentName, note } = payload;
+            
+            // Validate required fields
+            if (!partnerBudgetLineId || !amount || !spentAt) {
+              throw new Error('partnerBudgetLineId, amount, and spentAt are required');
+            }
+            
+            // Validate amount is a positive number
+            const amountNum = Number(amount);
+            if (isNaN(amountNum) || amountNum <= 0) {
+              throw new Error('amount must be a positive number');
+            }
+            
+            const evidence = await ReconciliationService.uploadEvidence({
+              partnerBudgetLineId,
+              amount: amountNum,
+              spentAt,
+              documentBuffer: documentBuffer || null,
+              documentName: documentName || 'evidence',
+              note,
+              actorId: user.id
+            });
+            
+            return evidence;
+            
+          case 'recon.delete':
+            const { evidenceId } = payload;
+            
+            if (!evidenceId) {
+              throw new Error('evidenceId is required');
+            }
+            
+            const deletedEvidence = await ReconciliationService.deleteEvidence(evidenceId, user.id);
+            return deletedEvidence;
+            
+          default:
+            throw new Error(`Unknown action key: ${key}`);
+        }
+      }
+    };
+  }
+  
+  // For budget line actions
+  if (key.startsWith('line.')) {
+    return {
+      async executeAction(payload, user) {
+        switch (key) {
+          case 'line.create':
+            const { partnerBudgetId, templateId, description, unit, qty, unitCost, currency } = payload;
+            
+            // Validate required fields
+            if (!partnerBudgetId || !templateId || !description || !qty || !unitCost) {
+              throw new Error('partnerBudgetId, templateId, description, qty, and unitCost are required');
+            }
+            
+            const lineData = {
+              id: uuidv4(),
+              partnerBudgetId,
+              templateId,
+              description,
+              unit: unit || 'unit',
+              qty: Number(qty),
+              unitCost: Number(unitCost),
+              currency: currency || 'USD',
+              createdBy: user.id
+            };
+            
+            const line = await PartnerBudgetLineRepository.create(lineData);
+            return line;
+            
+          case 'line.update':
+            const { lineId, updates } = payload;
+            
+            if (!lineId) {
+              throw new Error('lineId is required');
+            }
+            
+            // For now, we'll just return a placeholder since update method needs to be implemented
+            return { message: 'Line update endpoint needs implementation', lineId, updates };
+            
+          case 'line.submit':
+            const { lineIds } = payload;
+            
+            if (!Array.isArray(lineIds) || lineIds.length === 0) {
+              throw new Error('lineIds array is required');
+            }
+            
+            const submittedLines = await PartnerBudgetLineRepository.updateStatus(lineIds, 'SUBMITTED');
+            return submittedLines;
+            
+          default:
+            throw new Error(`Unknown action key: ${key}`);
+        }
+      }
+    };
+  }
+  
+  // For contract actions
+  if (key.startsWith('contract.')) {
+    return {
+      async executeAction(payload, user) {
+        switch (key) {
+          case 'contract.view':
+            // Return placeholder for contract view
+            return { message: 'Contract view action needs implementation' };
+            
+          case 'contract.sign':
+            // Return placeholder for contract sign
+            return { message: 'Contract sign action needs implementation' };
+            
+          default:
+            throw new Error(`Unknown action key: ${key}`);
+        }
+      }
+    };
+  }
+  
+  // For approval actions
+  if (key.startsWith('approval.')) {
+    return {
+      async executeAction(payload, user) {
+        switch (key) {
+          case 'approval.act':
+            const { entityType, entityId, action } = payload;
+            
+            if (!entityType || !entityId || !action) {
+              throw new Error('entityType, entityId, and action are required');
+            }
+            
+            // Return placeholder for approval action
+            return {
+              message: 'Approval action endpoint needs implementation',
+              entityType,
+              entityId,
+              action,
+              approvedBy: user.id
+            };
+            
+          default:
+            throw new Error(`Unknown action key: ${key}`);
+        }
+      }
+    };
+  }
+  
+  // For wizard actions
+  if (key.startsWith('wizard.')) {
+    return {
+      async executeAction(payload, user) {
+        switch (key) {
+          case 'wizard.admin':
+            // Return placeholder for admin wizard
+            return { message: 'Admin wizard action needs implementation' };
+            
+          default:
+            throw new Error(`Unknown action key: ${key}`);
+        }
+      }
+    };
+  }
+  
+  // For report actions
+  if (key.startsWith('report.')) {
+    return {
+      async executeAction(payload, user) {
+        switch (key) {
+          case 'report.generate.financial':
+            // Return placeholder for financial report generation
+            return { message: 'Financial report generation needs implementation' };
+            
+          case 'report.submit.narrative':
+            // Return placeholder for narrative report submission
+            return { message: 'Narrative report submission needs implementation' };
             
           default:
             throw new Error(`Unknown action key: ${key}`);
@@ -118,3 +337,6 @@ exports.executeAction = [
     }
   }
 ];
+
+// Export the getActionService function for testing
+exports.getActionService = getActionService;

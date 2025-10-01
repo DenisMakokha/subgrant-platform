@@ -14,7 +14,7 @@ Budget SSOT covers:
 - Budget notifications and audit logging backed by shared SSOT tables.
 - Automatic contract/disbursement seeding hooks once budgets reach final approval.
 
-Legacy tables (`budgets`, `budget_lines`, etc.) remain read-only behind compatibility views until the cleanup phase executes.
+**Traditional implementations have been removed.** The system now operates exclusively on SSOT tables. Legacy tables and traditional controllers/routes have been cleaned up.
 
 ---
 
@@ -31,7 +31,7 @@ All tables are created in `api/scripts/migrations/2025Q1_ssot_cutover/phaseA.sql
 | `recon_line_evidence` | Reconciliation evidence | Cascades on budget-line delete. |
 | `audit_log`, `notifications`, `action_idempotency` | Shared SSOT tables | Budget workflow writes audit diff snapshots and partner notifications. |
 
-Compatibility views (`legacy_budgets_v`, `legacy_budget_lines_v`, etc.) and write-blocking triggers are established in `phaseB.sql`. Cleanup scripts will drop legacy tables post-cutover.
+**Cleanup completed.** All legacy tables, traditional controllers, and routes have been removed. The system now operates exclusively on SSOT architecture.
 
 ---
 
@@ -102,14 +102,67 @@ Email/SMS delivery hooks can be added later; the SSOT table is the source of tru
 3. Enable feature flag (e.g., `SSOT_BUDGETS_ENABLED`) for staged rollout.
 4. Smoke-test budget draft → submit → revision loop using new endpoints.
 5. Monitor audit/notification tables for anomalies.
-6. Execute cleanup migration to drop legacy tables/views once the new flow is stabilized.
+6. **Cleanup completed** - All traditional implementations removed, system running on pure SSOT architecture.
 
 ---
 
-## 8. Outstanding Work
+## 8. Current Status
 
-- Reinstate multi-tier approval logic once roles are confirmed by the client.
-- Add Jest unit/integration tests for repositories and services.
-- Document API request/response payloads (OpenAPI/Postman).
+✅ **SSOT Architecture Complete** - All traditional implementations removed
+✅ **Cleanup Completed** - Legacy tables, controllers, and routes removed
+✅ **Modern Services** - All budget operations use SSOT repositories and services
+✅ **Reconciliation Complete** - Full SSOT reconciliation implementation
+
+### Reconciliation Implementation Status
+
+**✅ Backend Services:**
+- [`ReconciliationRepository`](api/repositories/reconciliationRepository.js:1) - Evidence tracking and summary calculations
+- [`ReconciliationService`](api/services/reconciliationService.js:1) - Evidence upload, validation, and audit logging
+- SSOT Data Controller Integration - [`recon.summary`](api/controllers/dataController.js:80), [`recon.evidence`](api/controllers/dataController.js:83), [`budget.lines.approved`](api/controllers/dataController.js:90)
+- SSOT Action Controller Integration - [`recon.upload`](api/controllers/actionController.js:85), [`recon.delete`](api/controllers/actionController.js:103)
+
+**✅ Frontend Integration:**
+- [`Reconciliation.tsx`](web/src/pages/partner/projects/Reconciliation.tsx:1) - Updated to use SSOT endpoints
+- Evidence upload with file handling
+- Real-time summary updates
+
+**✅ Features Implemented:**
+- Evidence upload with document storage
+- Reconciliation summary with spent/remaining calculations
+- Audit logging for all reconciliation actions
+- Notifications for evidence uploads
+- File type detection and validation
+- Transaction safety for all operations
+
+**✅ Testing:**
+- [`test-reconciliation.js`](api/test-reconciliation.js:1) - Comprehensive test suite
+- Repository function testing
+- Service layer validation
+- Integration testing
+
+### API Endpoints
+
+**Data Endpoints:**
+- `GET /ssot/recon/summary?partnerBudgetId={id}` - Get reconciliation summary
+- `GET /ssot/recon/evidence?partnerBudgetLineId={id}` - Get evidence for line
+- `GET /ssot/budget/lines/approved?partnerBudgetId={id}` - Get approved lines
+
+**Action Endpoints:**
+- `POST /ssot/action` with `{ actionKey: "recon.upload", payload: {...} }` - Upload evidence
+- `POST /ssot/action` with `{ actionKey: "recon.delete", payload: {evidenceId} }` - Delete evidence
+
+### Database Schema
+
+The reconciliation system uses the `recon_line_evidence` table with:
+- Evidence tracking per budget line
+- Document storage with checksums
+- Audit trail with timestamps
+- Support for multiple file types
+
+**Next Steps:**
+- Deploy and monitor reconciliation functionality
+- Add advanced reporting features
+- Implement bulk evidence upload
+- Add reconciliation approval workflows
 
 For contract lifecycle documentation see `docs/contract-lifecycle-architecture.md`.

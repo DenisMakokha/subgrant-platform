@@ -59,8 +59,10 @@ const Notifications: React.FC = () => {
         return 'border-l-red-500 bg-red-50/50 dark:bg-red-900/10';
       case 'high':
         return 'border-l-orange-500 bg-orange-50/50 dark:bg-orange-900/10';
-      case 'medium':
+      case 'normal':
         return 'border-l-blue-500 bg-blue-50/50 dark:bg-blue-900/10';
+      case 'low':
+        return 'border-l-gray-400 bg-gray-50/50 dark:bg-gray-800/50';
       default:
         return 'border-l-gray-300 bg-gray-50/50 dark:bg-gray-800/50';
     }

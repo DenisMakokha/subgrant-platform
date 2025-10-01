@@ -1,5 +1,9 @@
 const FundRequestRepository = require('../repositories/fundRequestRepository');
 const NotificationService = require('../services/notificationService');
+const ReconciliationService = require('../services/reconciliationService');
+const PartnerBudgetLineRepository = require('../repositories/partnerBudgetLineRepository');
+const PartnerBudgetRepository = require('../repositories/partnerBudgetRepository');
+const ContractRepository = require('../repositories/contractRepository');
 const registryCache = require('../cache/registryCache');
 const { ValidationError, NotFoundError } = require('../errors');
 const { sanitizeInput } = require('../middleware/sanitization');
@@ -75,6 +79,196 @@ const getDataService = (key) => {
     };
   }
   
+  // For reconciliation data
+  if (key.startsWith('recon.')) {
+    return {
+      async getData(params, user) {
+        const normalizedKey = key.replace('/', '.');
+        
+        switch (normalizedKey) {
+          case 'recon.summary':
+            if (!params.partnerBudgetId) {
+              throw new Error('partnerBudgetId is required');
+            }
+            const summary = await ReconciliationService.getReconciliationSummary(params.partnerBudgetId);
+            return summary;
+            
+          case 'recon.evidence':
+            if (!params.partnerBudgetLineId) {
+              throw new Error('partnerBudgetLineId is required');
+            }
+            const evidence = await ReconciliationService.getEvidenceByBudgetLine(params.partnerBudgetLineId);
+            return { items: evidence };
+            
+          case 'budget.lines.approved':
+            if (!params.partnerBudgetId) {
+              throw new Error('partnerBudgetId is required');
+            }
+            const lines = await PartnerBudgetLineRepository.findByBudget(params.partnerBudgetId);
+            const approvedLines = lines.map(line => ({
+              id: line.id,
+              category: line.description, // Using description as category for now
+              description: line.description,
+              total: line.total,
+              spentCumulative: 0, // Will be calculated by reconciliation service
+              remaining: line.total,
+              evidenceCount: 0
+            }));
+            return { items: approvedLines };
+            
+          default:
+            throw new Error(`Unknown data key: ${key}`);
+        }
+      }
+    };
+  }
+  
+  // For budget data
+  if (key.startsWith('budget.')) {
+    return {
+      async getData(params, user) {
+        const normalizedKey = key.replace('/', '.');
+        
+        switch (normalizedKey) {
+          case 'budget.pb.summary':
+            if (!params.partnerId || !params.projectId) {
+              throw new Error('partnerId and projectId are required');
+            }
+            // Get partner budget summary
+            const budgets = await PartnerBudgetRepository.findByPartnerAndProject(
+              params.partnerId,
+              params.projectId
+            );
+            const totalApproved = budgets.reduce((sum, budget) => sum + (budget.ceilingTotal || 0), 0);
+            const totalSpent = 0; // Would need reconciliation data
+            return {
+              partnerId: params.partnerId,
+              projectId: params.projectId,
+              totalApproved,
+              totalSpent,
+              totalRemaining: totalApproved - totalSpent,
+              budgetCount: budgets.length
+            };
+            
+          case 'budget.lines':
+            if (!params.partnerBudgetId) {
+              throw new Error('partnerBudgetId is required');
+            }
+            const lines = await PartnerBudgetLineRepository.findByBudget(params.partnerBudgetId);
+            return { items: lines };
+            
+          default:
+            throw new Error(`Unknown data key: ${key}`);
+        }
+      }
+    };
+  }
+  
+  // For contract data
+  if (key.startsWith('contract.')) {
+    return {
+      async getData(params, user) {
+        const normalizedKey = key.replace('/', '.');
+        
+        switch (normalizedKey) {
+          case 'contract.list':
+            if (!params.partnerId || !params.projectId) {
+              throw new Error('partnerId and projectId are required');
+            }
+            const contracts = await ContractRepository.findByPartnerAndProject(
+              params.partnerId,
+              params.projectId
+            );
+            return { items: contracts };
+            
+          case 'contract.files':
+            if (!params.contractId) {
+              throw new Error('contractId is required');
+            }
+            // Return placeholder for contract files
+            return { items: [], message: 'Contract files endpoint needs implementation' };
+            
+          default:
+            throw new Error(`Unknown data key: ${key}`);
+        }
+      }
+    };
+  }
+  
+  // For report data
+  if (key.startsWith('report.')) {
+    return {
+      async getData(params, user) {
+        const normalizedKey = key.replace('/', '.');
+        
+        switch (normalizedKey) {
+          case 'report.schedule':
+            if (!params.projectId || !params.partnerId) {
+              throw new Error('projectId and partnerId are required');
+            }
+            // Return placeholder for report schedule
+            return { items: [], message: 'Report schedule endpoint needs implementation' };
+            
+          case 'report.history':
+            if (!params.projectId || !params.partnerId) {
+              throw new Error('projectId and partnerId are required');
+            }
+            // Return placeholder for report history
+            return { items: [], message: 'Report history endpoint needs implementation' };
+            
+          default:
+            throw new Error(`Unknown data key: ${key}`);
+        }
+      }
+    };
+  }
+  
+  // For approval data
+  if (key.startsWith('approval.')) {
+    return {
+      async getData(params, user) {
+        const normalizedKey = key.replace('/', '.');
+        
+        switch (normalizedKey) {
+          case 'approval.queue':
+            if (!params.role || !params.scope) {
+              throw new Error('role and scope are required');
+            }
+            // Return placeholder for approval queue
+            return { items: [], message: 'Approval queue endpoint needs implementation' };
+            
+          default:
+            throw new Error(`Unknown data key: ${key}`);
+        }
+      }
+    };
+  }
+  
+  // For admin data
+  if (key.startsWith('admin.')) {
+    return {
+      async getData(params, user) {
+        const normalizedKey = key.replace('/', '.');
+        
+        switch (normalizedKey) {
+          case 'admin.kpis':
+            // Return placeholder for admin KPIs
+            return {
+              totalPartners: 0,
+              totalProjects: 0,
+              totalBudgets: 0,
+              totalContracts: 0,
+              totalDisbursements: 0,
+              message: 'Admin KPIs endpoint needs implementation'
+            };
+            
+          default:
+            throw new Error(`Unknown data key: ${key}`);
+        }
+      }
+    };
+  }
+  
   // For other data keys, we would return appropriate services
   throw new Error(`Data service not implemented for key: ${key}`);
 };
@@ -140,3 +334,6 @@ exports.getDataByKey = [
     }
   }
 ];
+
+// Export the getDataService function for testing
+exports.getDataService = getDataService;

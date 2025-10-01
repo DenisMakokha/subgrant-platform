@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../../services/api';
 import { useAuth } from '../../../contexts/AuthContext';
+import ApprovalStatusTracker from '../../../components/approvals/ApprovalStatusTracker';
 
 function buildQuery(params: Record<string, any>) {
   const usp = new URLSearchParams();
@@ -17,7 +18,7 @@ async function fetchSSOT(key: string, params: Record<string, any>) {
   return api.fetchWithAuth(`${path}${qs ? `?${qs}` : ''}`);
 }
 
-type HistoryItem = { id: string; type: string; period: string; status: string; submittedAt?: string };
+type HistoryItem = { id: string; type: string; period: string; status: string; submittedAt?: string; approval_request_id?: string; };
 
 type CalendarEntry = { id: string; date: string; type: string; period?: string; title?: string };
 
@@ -77,7 +78,13 @@ export default function Reports() {
   if (loading) return <div className="min-h-[40vh] flex items-center justify-center"><div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500" /></div>;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white">
+        <h1 className="text-2xl font-bold mb-2">M&E Reports</h1>
+        <p className="text-blue-100">Manage monitoring and evaluation reports for your project</p>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
           <div className="text-sm font-semibold text-slate-900 dark:text-white mb-4">Reporting Calendar</div>
@@ -125,12 +132,28 @@ export default function Reports() {
             </thead>
             <tbody>
               {history.map(h => (
-                <tr key={h.id} className="border-t border-slate-200 dark:border-slate-700">
-                  <td className="px-6 py-3">{h.type}</td>
-                  <td className="px-6 py-3">{h.period}</td>
-                  <td className="px-6 py-3">{h.status}</td>
-                  <td className="px-6 py-3">{h.submittedAt ? new Date(h.submittedAt).toLocaleString() : '—'}</td>
-                </tr>
+                <React.Fragment key={h.id}>
+                  <tr className="border-t border-slate-200 dark:border-slate-700">
+                    <td className="px-6 py-3">{h.type}</td>
+                    <td className="px-6 py-3">{h.period}</td>
+                    <td className="px-6 py-3">{h.status}</td>
+                    <td className="px-6 py-3">{h.submittedAt ? new Date(h.submittedAt).toLocaleString() : '—'}</td>
+                  </tr>
+                  {h.status === 'submitted' && h.approval_request_id && (
+                    <tr className="border-t border-slate-200 dark:border-slate-700">
+                      <td colSpan={4} className="px-6 py-4 bg-slate-50 dark:bg-slate-700/30">
+                        <ApprovalStatusTracker 
+                          requestId={h.approval_request_id}
+                          onCancel={async () => {
+                            // Refresh history after cancellation
+                            const hist = await fetchSSOT('report.history', { projectId, partnerId });
+                            setHistory(Array.isArray(hist) ? hist : hist?.items || []);
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))}
               {history.length === 0 && (
                 <tr><td className="px-6 py-6 text-center text-slate-500" colSpan={4}>No history</td></tr>
