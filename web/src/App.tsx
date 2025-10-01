@@ -66,21 +66,34 @@ import HelpCenter from './pages/partner/HelpCenter';
 import FundRequest from './pages/partner/projects/FundRequest';
 import PartnerProfile from './pages/partner/PartnerProfile';
 import Notifications from './pages/partner/Notifications';
+import UserManagement from './pages/admin/UserManagement';
+import AuditCenter from './pages/admin/AuditCenter';
+import ConfigurationCenter from './pages/admin/ConfigurationCenter';
+import AdminWizard from './pages/admin/Wizard';
+import RoleManagement from './pages/admin/RoleManagement';
+import AdvancedReporting from './pages/admin/AdvancedReporting';
+import SecurityCenter from './pages/admin/SecurityCenter';
+import SystemAdministration from './pages/admin/SystemAdministration';
+import ExecutiveDashboard from './pages/admin/ExecutiveDashboard';
+import KnowledgeManagement from './pages/admin/KnowledgeManagement';
+
+import AdminDashboard from './pages/admin/Dashboard';
+import ApprovalManagement from './pages/admin/ApprovalManagement';
 
 // Dashboard Router Component
 const DashboardRouter: React.FC = () => {
   const { user } = useAuth();
-  
+
   console.log('DashboardRouter - User:', user);
   console.log('DashboardRouter - User role:', user?.role);
-  
+
   if (user?.role === 'partner_user') {
     console.log('DashboardRouter - Redirecting to partner dashboard');
     return <Navigate to="/partner" replace />;
   }
-  
-  console.log('DashboardRouter - Showing admin dashboard');
-  return <Dashboard />;
+
+  console.log('DashboardRouter - Showing advanced admin dashboard');
+  return <AdminDashboard />;
 };
 
 const App: React.FC = () => {
@@ -264,108 +277,81 @@ const App: React.FC = () => {
             <ProtectedRoute>
               <Layout>
                 <Routes>
-                  {/* Admin Dashboard */}
-                  <Route path="/dashboard/*" element={
+                  {/* Admin Dashboard Routes */}
+                  <Route path="/admin" element={
+                    <ProtectedRoute requireRole="admin">
+                      <Navigate to="/admin/dashboard" replace />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin/dashboard" element={
                     <ProtectedRoute requireRole="admin">
                       <DashboardRouter />
                     </ProtectedRoute>
                   } />
-                  
-                  
-                  
-                  {/* Donor Dashboard */}
-                  <Route path="/donor/*" element={
-                    <ProtectedRoute requireRole="donor">
-                      <div>Donor Dashboard - Coming Soon</div>
+                  <Route path="/dashboard/*" element={
+                    <ProtectedRoute requireRole="admin">
+                      <Navigate to="/admin/dashboard" replace />
                     </ProtectedRoute>
                   } />
-                  
-                  {/* Partner routes moved outside Layout to avoid double sidebar */}
-                  
-                  {/* Legacy routes */}
-                  <Route path="/projects" element={<ProjectManagementTabs />} />
-                  <Route path="/projects/create" element={<ProjectManagementTabs />} />
-                  <Route path="/projects/timeline" element={<ProjectManagementTabs />} />
-                  <Route path="/projects/categories" element={<ProjectManagementTabs />} />
-                  <Route path="/partners" element={<PartnerManagementTabs />} />
-                  <Route path="/partners/add-partner" element={<PartnerManagementTabs />} />
-                  <Route path="/partners/onboarding" element={<PartnerOnboarding />} />
-                  <Route path="/onboarding/section-c" element={
-                    <ProtectedOnboardingRoute requiredStatus={['attachments_pending', 'changes_requested']}>
-                      <SectionC />
-                    </ProtectedOnboardingRoute>
+
+                  {/* Admin Sub-routes - SSOT Implementation Only */}
+                  <Route path="/admin/users" element={
+                    <ProtectedRoute requireRole="admin">
+                      <UserManagement />
+                    </ProtectedRoute>
                   } />
-                  <Route path="/onboarding/section-b" element={
-                    <ProtectedOnboardingRoute requiredStatus={['financials_pending', 'changes_requested']}>
-                      <SectionB />
-                    </ProtectedOnboardingRoute>
+                  <Route path="/admin/audit" element={
+                    <ProtectedRoute requireRole="admin">
+                      <AuditCenter />
+                    </ProtectedRoute>
                   } />
-                  <Route path="/onboarding/section-a" element={
-                    <ProtectedOnboardingRoute requiredStatus={['approved']}>
-                      <SectionA />
-                    </ProtectedOnboardingRoute>
+                  <Route path="/admin/wizard" element={
+                    <ProtectedRoute requireRole="admin">
+                      <AdminWizard />
+                    </ProtectedRoute>
                   } />
-                  <Route path="/onboarding/review-status" element={
-                    <ProtectedOnboardingRoute requiredStatus={['under_review', 'changes_requested']}>
-                      <ReviewStatus />
-                    </ProtectedOnboardingRoute>
+                  <Route path="/admin/role-management" element={
+                    <ProtectedRoute requireRole="admin">
+                      <RoleManagement />
+                    </ProtectedRoute>
                   } />
-                  <Route path="/partners/due-diligence" element={<PartnerManagementTabs />} />
-                  <Route path="/partners/compliance" element={<PartnerManagementTabs />} />
-                  <Route path="/partner-management" element={<PartnerManagementTabs />} />
-                  <Route path="/partner-management/onboarding" element={<PartnerManagementTabs />} />
-                  <Route path="/partner-management/due-diligence" element={<PartnerManagementTabs />} />
-                  <Route path="/partner-management/compliance" element={<PartnerManagementTabs />} />
-                  <Route path="/contracts" element={<ContractManagementTabs />} />
-                  <Route path="/contracts/templates" element={<ContractManagementTabs />} />
-                  <Route path="/contracts/create" element={<ContractManagementTabs />} />
-                  <Route path="/contracts/settings" element={<ContractManagementTabs />} />
-                  <Route path="/contract-signing" element={<ProtectedRoute><ContractSigning /></ProtectedRoute>} />
-                  <Route path="/contracts/signing" element={<ContractManagementTabs />} />
-                  <Route path="/contracts/compliance" element={<ContractManagementTabs />} />
-                  <Route path="/kpi-dashboard" element={<KpiDashboard />} />
-                  <Route path="/donor-reporting" element={<DonorReporting />} />
-                  <Route path="/disbursements" element={<DisbursementManagement />} />
-                  <Route path="/organizations/:organizationId/compliance" element={<ComplianceManagement />} />
-                  <Route path="/budgets" element={<BudgetManagementTabs />} />
-                  <Route path="/budgets/create" element={<BudgetManagementTabs />} />
-                  <Route path="/budgets/review" element={<BudgetManagementTabs />} />
-                  <Route path="/budgets/approval" element={<BudgetManagementTabs />} />
-                  <Route path="/budgets/tracking" element={<BudgetManagementTabs />} />
-                  <Route path="/financial-dashboard" element={<FinancialManagementTabs />} />
-                  <Route path="/financial/retirement" element={<FinancialManagementTabs />} />
-                  <Route path="/financial/reconciliation" element={<FinancialManagementTabs />} />
-                  <Route path="/financial/reports" element={<FinancialManagementTabs />} />
-                  <Route path="/financial/analytics" element={<FinancialManagementTabs />} />
-                  <Route path="/monitoring/kpi" element={<MEReportsTabs />} />
-                  <Route path="/monitoring/risks" element={<MEReportsTabs />} />
-                  <Route path="/monitoring/milestones" element={<MEReportsTabs />} />
-                  <Route path="/me-reports" element={<MEReportsTabs />} />
-                  <Route path="/me-reports-management" element={<MeReportManagement />} />
-                  <Route path="/financial-reports" element={<FinancialReportManagement />} />
-                  <Route path="/receipts" element={<ReceiptManagement />} />
-                  <Route path="/compliance-dashboard" element={<ComplianceDashboard />} />
-                  <Route path="/reporting-analytics" element={<ReportingAnalyticsTabs />} />
-                  <Route path="/reporting/dashboards" element={<ReportingAnalyticsTabs />} />
-                  <Route path="/reporting/insights" element={<ReportingAnalyticsTabs />} />
-                  <Route path="/reporting/exports" element={<ReportingAnalyticsTabs />} />
-                  <Route path="/reporting/settings" element={<ReportingAnalyticsTabs />} />
-                  <Route path="/documents" element={<DocumentsManagementTabs />} />
-                  <Route path="/documents/versions" element={<DocumentsManagementTabs />} />
-                  <Route path="/documents/audit" element={<DocumentsManagementTabs />} />
-                  <Route path="/documents/templates" element={<DocumentsManagementTabs />} />
-                  <Route path="/documents/settings" element={<DocumentsManagementTabs />} />
-                  <Route path="/notifications" element={<NotificationsManagementTabs />} />
-                  <Route path="/notifications/settings" element={<NotificationsManagementTabs />} />
-                  <Route path="/notifications/deadlines" element={<NotificationsManagementTabs />} />
-                  <Route path="/notifications/escalation" element={<NotificationsManagementTabs />} />
-                  <Route path="/notifications/templates" element={<NotificationsManagementTabs />} />
-                  <Route path="/forum" element={<Forum />} />
-                  <Route path="/forum/categories" element={<Forum />} />
-                  <Route path="/forum/tags" element={<Forum />} />
-                  <Route path="/forum/settings" element={<Forum />} />
-                  <Route path="/forum/topics/:id" element={<TopicDetail />} />
-                  <Route path="/forum/new-topic" element={<NewTopic />} />
+                  <Route path="/admin/config" element={
+                    <ProtectedRoute requireRole="admin">
+                      <ConfigurationCenter />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin/reporting" element={
+                    <ProtectedRoute requireRole="admin">
+                      <AdvancedReporting />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin/security" element={
+                    <ProtectedRoute requireRole="admin">
+                      <SecurityCenter />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin/system" element={
+                    <ProtectedRoute requireRole="admin">
+                      <SystemAdministration />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin/executive" element={
+                    <ProtectedRoute requireRole="admin">
+                      <ExecutiveDashboard />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin/knowledge" element={
+                    <ProtectedRoute requireRole="admin">
+                      <KnowledgeManagement />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin/approvals" element={
+                    <ProtectedRoute requireRole="admin">
+                      <ApprovalManagement />
+                    </ProtectedRoute>
+                  } />
+
+                  {/* Essential System Routes */}
                   <Route path="/profile" element={<Profile user={null} />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
