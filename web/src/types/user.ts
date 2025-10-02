@@ -7,7 +7,8 @@ export interface User {
   firstName?: string;
   lastName?: string;
   phone?: string;
-  role: 'admin' | 'partner_user' | 'grants_manager' | 'chief_operations_officer' | 'donor';
+  role: string; // Changed from union to string to support custom roles from Role Wizard
+  capabilities?: string[]; // User's capabilities from role or custom role
   email_verified?: boolean;
   email_verified_at?: Date;
   organizationId?: string;
