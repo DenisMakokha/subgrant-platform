@@ -154,6 +154,18 @@ const getIssueById = async (req, res) => {
   }
 };
 
+// Sanitize input to prevent XSS
+const sanitizeInput = (input) => {
+  if (!input || typeof input !== 'string') return input;
+  
+  return input
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '') // Remove iframe tags
+    .replace(/javascript:/gi, '') // Remove javascript: protocol
+    .replace(/on\w+\s*=/gi, '') // Remove event handlers
+    .trim();
+};
+
 // Create new issue (Any authenticated user)
 const createIssue = async (req, res) => {
   try {
@@ -167,6 +179,44 @@ const createIssue = async (req, res) => {
       screenshot_url,
       attachments = []
     } = req.body;
+
+    // Validate required fields
+    if (!title || !description) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Title and description are required' 
+      });
+    }
+
+    // Validate title length
+    if (title.length > 255) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Title must be 255 characters or less' 
+      });
+    }
+
+    // Validate category
+    const validCategories = ['bug', 'feature_request', 'question', 'complaint', 'other'];
+    if (!validCategories.includes(category)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Invalid category' 
+      });
+    }
+
+    // Validate priority
+    const validPriorities = ['low', 'medium', 'high', 'critical'];
+    if (!validPriorities.includes(priority)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Invalid priority' 
+      });
+    }
+
+    // Sanitize inputs
+    const sanitizedTitle = sanitizeInput(title);
+    const sanitizedDescription = sanitizeInput(description);
 
     const userId = req.auth.sub || req.auth.user_id;
 
@@ -185,8 +235,8 @@ const createIssue = async (req, res) => {
     `;
 
     const values = [
-      title,
-      description,
+      sanitizedTitle,
+      sanitizedDescription,
       category,
       priority,
       'open',
@@ -254,13 +304,13 @@ const updateIssue = async (req, res) => {
 
     if (admin_notes !== undefined) {
       updates.push(`admin_notes = $${paramCount}`);
-      values.push(admin_notes);
+      values.push(sanitizeInput(admin_notes));
       paramCount++;
     }
 
     if (resolution_notes !== undefined) {
       updates.push(`resolution_notes = $${paramCount}`);
-      values.push(resolution_notes);
+      values.push(sanitizeInput(resolution_notes));
       paramCount++;
     }
 
@@ -300,13 +350,23 @@ const addComment = async (req, res) => {
     const { comment, is_internal = false } = req.body;
     const userId = req.auth.sub || req.auth.user_id;
 
+    // Validate and sanitize comment
+    if (!comment || !comment.trim()) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Comment cannot be empty' 
+      });
+    }
+
+    const sanitizedComment = sanitizeInput(comment);
+
     const query = `
       INSERT INTO reported_issue_comments (issue_id, user_id, comment, is_internal)
       VALUES ($1, $2, $3, $4)
       RETURNING *
     `;
 
-    const result = await db.pool.query(query, [id, userId, comment, is_internal]);
+    const result = await db.pool.query(query, [id, userId, sanitizedComment, is_internal]);
 
     res.status(201).json({
       success: true,
