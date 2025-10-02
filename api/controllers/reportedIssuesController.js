@@ -5,13 +5,14 @@ const db = require('../config/database');
  * Handles all operations for reported issues system
  */
 
-// Get all reported issues (Admin sees all, users see only their own)
+// Get all reported issues (Users with issues.view capability see all, others see only their own)
 const getAllIssues = async (req, res) => {
   try {
     const { status, priority, category, page = 1, limit = 50 } = req.query;
     const offset = (page - 1) * limit;
     const userId = req.auth.sub || req.auth.user_id;
     const userRole = req.auth.role;
+    const userCapabilities = req.auth.capabilities || [];
 
     let query = `
       SELECT 
@@ -31,8 +32,12 @@ const getAllIssues = async (req, res) => {
     const params = [];
     let paramCount = 1;
 
-    // Non-admin users can only see their own issues
-    if (userRole !== 'admin') {
+    // Check if user has capability to view all issues
+    const canViewAll = userRole === 'admin' || 
+                      (Array.isArray(userCapabilities) && userCapabilities.includes('issues.view'));
+
+    // Users without issues.view capability can only see their own issues
+    if (!canViewAll) {
       query += ` AND ri.reported_by_user_id = $${paramCount}`;
       params.push(userId);
       paramCount++;

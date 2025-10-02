@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { requireAuth, requireRole } = require('../middleware/auth');
+const { requireAuth } = require('../middleware/auth');
+const rbacMiddleware = require('../middleware/rbac');
 const {
   getAllIssues,
   getIssueById,
@@ -12,19 +13,27 @@ const {
 } = require('../controllers/reportedIssuesController');
 
 /**
- * Reported Issues SSOT Routes
+ * Reported Issues SSOT Routes with Capability-Based Access Control
  * Base path: /api/reported-issues
+ * 
+ * Capabilities:
+ * - issues.view: View reported issues
+ * - issues.create: Report new issues
+ * - issues.update: Update issue status/priority
+ * - issues.assign: Assign issues to users
+ * - issues.resolve: Resolve issues
+ * - issues.delete: Delete issues
  */
 
-// Authenticated user routes (users can see their own issues, admins see all)
+// All authenticated users can view their own issues and create new ones
 router.get('/', requireAuth, getAllIssues);
-router.get('/stats', requireAuth, requireRole('admin'), getIssueStats);
 router.get('/:id', requireAuth, getIssueById);
 router.post('/', requireAuth, createIssue);
 router.post('/:id/comments', requireAuth, addComment);
 
-// Admin-only routes
-router.put('/:id', requireAuth, requireRole('admin'), updateIssue);
-router.delete('/:id', requireAuth, requireRole('admin'), deleteIssue);
+// Capability-based routes (checks user's role capabilities)
+router.get('/stats', requireAuth, rbacMiddleware.checkPermission('issues', 'view'), getIssueStats);
+router.put('/:id', requireAuth, rbacMiddleware.checkPermission('issues', 'update'), updateIssue);
+router.delete('/:id', requireAuth, rbacMiddleware.checkPermission('issues', 'delete'), deleteIssue);
 
 module.exports = router;
