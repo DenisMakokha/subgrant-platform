@@ -80,6 +80,7 @@ import KnowledgeManagement from './pages/admin/KnowledgeManagement';
 import ReportedIssues from './pages/admin/ReportedIssues';
 import ReportIssue from './pages/ReportIssue';
 import MyReportedIssues from './pages/MyReportedIssues';
+import IssuesHub from './pages/IssuesHub';
 
 import AdminDashboard from './pages/admin/Dashboard';
 import ApprovalManagement from './pages/admin/ApprovalManagement';
@@ -248,10 +249,11 @@ const App: React.FC = () => {
             <Route path="profile" element={<PartnerProfile />} />
             {/* Partner Notifications */}
             <Route path="notifications" element={<Notifications />} />
-            {/* Report Issue */}
-            <Route path="report-issue" element={<ReportIssue />} />
-            {/* My Reported Issues */}
-            <Route path="my-issues" element={<MyReportedIssues />} />
+            {/* Issues Hub - Combined Report and Track */}
+            <Route path="issues" element={<IssuesHub />} />
+            {/* Legacy routes - redirect to issues hub */}
+            <Route path="report-issue" element={<IssuesHub />} />
+            <Route path="my-issues" element={<IssuesHub />} />
             {/* Dashboard route disabled - redirects to /partner/ instead */}
             <Route path="dashboard" element={<Navigate to="/partner/" replace />} />
             {/* Catch-all route for partners - redirect to partner home */}
@@ -364,14 +366,20 @@ const App: React.FC = () => {
                       <ReportedIssues />
                     </ProtectedRoute>
                   } />
+                  <Route path="/admin/issues" element={
+                    <ProtectedRoute requireRole="admin">
+                      <IssuesHub />
+                    </ProtectedRoute>
+                  } />
+                  {/* Legacy routes - redirect to issues hub */}
                   <Route path="/admin/report-issue" element={
                     <ProtectedRoute requireRole="admin">
-                      <ReportIssue />
+                      <IssuesHub />
                     </ProtectedRoute>
                   } />
                   <Route path="/admin/my-issues" element={
                     <ProtectedRoute requireRole="admin">
-                      <MyReportedIssues />
+                      <IssuesHub />
                     </ProtectedRoute>
                   } />
 
