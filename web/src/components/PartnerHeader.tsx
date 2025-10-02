@@ -83,11 +83,7 @@ const PartnerHeader: React.FC<PartnerHeaderProps> = ({
             {/* Report an issue quick action */}
             <button
               onClick={() => {
-                const params = new URLSearchParams();
-                const fullName = getUserDisplayName(user);
-                if (fullName) params.set('name', fullName);
-                if (user?.email) params.set('email', user.email);
-                navigate(`/partner/help?${params.toString()}#contact`);
+                navigate('/partner/report-issue?source=partner');
               }}
               className="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-xl text-white bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 shadow-md hover:shadow-lg text-sm"
               title="Report an issue"

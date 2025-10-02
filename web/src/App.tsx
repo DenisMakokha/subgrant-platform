@@ -78,6 +78,8 @@ import SystemAdministration from './pages/admin/SystemAdministration';
 import ExecutiveDashboard from './pages/admin/ExecutiveDashboard';
 import KnowledgeManagement from './pages/admin/KnowledgeManagement';
 import ReportedIssues from './pages/admin/ReportedIssues';
+import ReportIssue from './pages/ReportIssue';
+import MyReportedIssues from './pages/MyReportedIssues';
 
 import AdminDashboard from './pages/admin/Dashboard';
 import ApprovalManagement from './pages/admin/ApprovalManagement';
@@ -246,6 +248,10 @@ const App: React.FC = () => {
             <Route path="profile" element={<PartnerProfile />} />
             {/* Partner Notifications */}
             <Route path="notifications" element={<Notifications />} />
+            {/* Report Issue */}
+            <Route path="report-issue" element={<ReportIssue />} />
+            {/* My Reported Issues */}
+            <Route path="my-issues" element={<MyReportedIssues />} />
             {/* Dashboard route disabled - redirects to /partner/ instead */}
             <Route path="dashboard" element={<Navigate to="/partner/" replace />} />
             {/* Catch-all route for partners - redirect to partner home */}
@@ -356,6 +362,16 @@ const App: React.FC = () => {
                   <Route path="/admin/reported-issues" element={
                     <ProtectedRoute requireRole="admin">
                       <ReportedIssues />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin/report-issue" element={
+                    <ProtectedRoute requireRole="admin">
+                      <ReportIssue />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin/my-issues" element={
+                    <ProtectedRoute requireRole="admin">
+                      <MyReportedIssues />
                     </ProtectedRoute>
                   } />
 
