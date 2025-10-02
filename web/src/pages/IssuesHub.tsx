@@ -26,13 +26,17 @@ const IssuesHub: React.FC = () => {
   
   // Report form state
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     category: searchParams.get('category') || 'bug',
     priority: 'medium',
     page_url: window.location.href,
-    browser_info: navigator.userAgent
+    browser_info: navigator.userAgent,
+    screenshot_url: ''
   });
 
   // Tracking state
@@ -73,6 +77,71 @@ const IssuesHub: React.FC = () => {
     }
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size must be less than 5MB');
+      return;
+    }
+
+    setSelectedFile(file);
+    
+    // Create preview URL
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreviewUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setFormData({ ...formData, screenshot_url: '' });
+  };
+
+  const uploadScreenshot = async (): Promise<string> => {
+    if (!selectedFile) return '';
+
+    setUploading(true);
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append('file', selectedFile);
+      formDataUpload.append('type', 'issue-screenshot');
+
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/documents/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formDataUpload
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload screenshot');
+      }
+
+      const data = await response.json();
+      return data.url || data.file_path || '';
+    } catch (error) {
+      console.error('Error uploading screenshot:', error);
+      toast.error('Failed to upload screenshot');
+      return '';
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -84,6 +153,12 @@ const IssuesHub: React.FC = () => {
     setSubmitting(true);
 
     try {
+      // Upload screenshot if selected
+      let screenshotUrl = formData.screenshot_url;
+      if (selectedFile && !screenshotUrl) {
+        screenshotUrl = await uploadScreenshot();
+      }
+
       const token = localStorage.getItem('token');
       const response = await fetch('/api/reported-issues', {
         method: 'POST',
@@ -91,7 +166,10 @@ const IssuesHub: React.FC = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          screenshot_url: screenshotUrl
+        })
       });
 
       if (!response.ok) {
@@ -107,8 +185,11 @@ const IssuesHub: React.FC = () => {
         category: 'bug',
         priority: 'medium',
         page_url: window.location.href,
-        browser_info: navigator.userAgent
+        browser_info: navigator.userAgent,
+        screenshot_url: ''
       });
+      setSelectedFile(null);
+      setPreviewUrl(null);
 
       // Switch to tracking tab
       handleTabChange('track');
@@ -325,6 +406,65 @@ const IssuesHub: React.FC = () => {
                   />
                   <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                     The more details you provide, the faster we can help you
+                  </p>
+                </div>
+
+                {/* Screenshot Upload */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Screenshot (Optional)
+                  </label>
+                  <div className="space-y-3">
+                    {!previewUrl ? (
+                      <div className="relative">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileSelect}
+                          className="hidden"
+                          id="screenshot-upload"
+                        />
+                        <label
+                          htmlFor="screenshot-upload"
+                          className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl cursor-pointer hover:border-rose-500 dark:hover:border-rose-400 transition-colors bg-gray-50 dark:bg-gray-900/50"
+                        >
+                          <svg className="w-10 h-10 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            <span className="font-semibold text-rose-600 dark:text-rose-400">Click to upload</span> or drag and drop
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                            PNG, JPG, GIF up to 5MB
+                          </p>
+                        </label>
+                      </div>
+                    ) : (
+                      <div className="relative rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700">
+                        <img
+                          src={previewUrl}
+                          alt="Screenshot preview"
+                          className="w-full h-48 object-contain bg-gray-100 dark:bg-gray-900"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleRemoveFile}
+                          className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-lg transition-colors"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                        {uploading && (
+                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                    Upload a screenshot to help us understand the issue better
                   </p>
                 </div>
 
