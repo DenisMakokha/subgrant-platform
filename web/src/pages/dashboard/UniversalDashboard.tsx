@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { DashboardShell } from '../../components/dashboard/shells';
 import { PageLayout, GridLayout } from '../../components/dashboard/layouts';
 import { useDashboard } from '../../hooks/useDashboard';
 import { useCapabilities } from '../../hooks/useCapabilities';
 import { useAuth } from '../../contexts/AuthContext';
 import { getUserDisplayName } from '../../utils/format';
+import { useRealTimeWidgets } from '../../hooks/useRealTimeWidgets';
+import { exportDashboardToPDF } from '../../utils/dashboardExport';
+import DraggableDashboard from '../../components/dashboard/DraggableDashboard';
+import { WidgetConfig } from '../../config/dashboards/types';
 import {
   BudgetSummaryWidget,
   ProjectTimelineWidget,
@@ -27,9 +31,57 @@ import { KPIWidget } from '../../components/dashboard/widgets/base';
  */
 
 export default function UniversalDashboard() {
-  const { dashboard, loading, error, refreshDashboard } = useDashboard();
+  const { dashboard, loading, error, refreshDashboard, updatePreferences } = useDashboard();
   const { hasCapability } = useCapabilities();
   const { user, organization } = useAuth();
+  const [editMode, setEditMode] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [widgetData, setWidgetData] = useState<Record<string, any>>({});
+
+  // Real-time updates
+  const handleWidgetUpdate = useCallback((widgetId: string, data: any) => {
+    setWidgetData(prev => ({
+      ...prev,
+      [widgetId]: data
+    }));
+  }, []);
+
+  const { connected: wsConnected } = useRealTimeWidgets({
+    widgetIds: dashboard?.widgets.map(w => w.id) || [],
+    onUpdate: handleWidgetUpdate,
+    enabled: !!dashboard
+  });
+
+  // Handle widget reorder
+  const handleWidgetReorder = useCallback(async (reorderedWidgets: WidgetConfig[]) => {
+    if (!dashboard) return;
+
+    try {
+      await updatePreferences({
+        widgetOrder: reorderedWidgets.map(w => w.id),
+        updatedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Failed to save widget order:', error);
+    }
+  }, [dashboard, updatePreferences]);
+
+  // Handle PDF export
+  const handleExport = useCallback(async () => {
+    setExporting(true);
+    try {
+      await exportDashboardToPDF('dashboard-content', {
+        filename: `${dashboard?.name || 'dashboard'}-${new Date().toISOString().split('T')[0]}.pdf`,
+        orientation: 'landscape',
+        includeHeader: true,
+        includeFooter: true
+      });
+    } catch (error) {
+      console.error('Export failed:', error);
+    } finally {
+      setExporting(false);
+    }
+  }, [dashboard]);
 
   // Widget component mapping
   const widgetComponents: Record<string, React.ComponentType<any>> = {
@@ -168,7 +220,47 @@ export default function UniversalDashboard() {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  {/* Real-time Status Indicator */}
+                  {wsConnected && (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30">
+                      <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                      <span className="text-xs font-medium text-white">Live</span>
+                    </div>
+                  )}
+                  
+                  {/* Edit Mode Toggle */}
+                  <button
+                    onClick={() => setEditMode(!editMode)}
+                    className={`p-3 rounded-xl backdrop-blur-sm border transition-all duration-300 shadow-lg hover:shadow-xl ${
+                      editMode
+                        ? 'bg-yellow-500/90 border-yellow-400 text-white'
+                        : 'bg-white/20 border-white/30 text-white hover:bg-white/30'
+                    }`}
+                    title={editMode ? 'Exit edit mode' : 'Edit layout'}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                  
+                  {/* Export PDF */}
+                  <button
+                    onClick={handleExport}
+                    disabled={exporting}
+                    className="p-3 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 text-white hover:bg-white/30 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Export to PDF"
+                  >
+                    {exporting ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    )}
+                  </button>
+                  
+                  {/* Refresh */}
                   <button
                     onClick={refreshDashboard}
                     className="p-3 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 text-white hover:bg-white/30 transition-all duration-300 shadow-lg hover:shadow-xl"
@@ -178,6 +270,8 @@ export default function UniversalDashboard() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                   </button>
+                  
+                  {/* Customize */}
                   <button
                     onClick={() => window.location.href = '/dashboard/customize'}
                     className="p-3 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 text-white hover:bg-white/30 transition-all duration-300 shadow-lg hover:shadow-xl"
@@ -198,10 +292,39 @@ export default function UniversalDashboard() {
             <div className="absolute top-1/4 right-1/3 w-4 h-4 bg-white/15 rounded-full animate-pulse delay-1000"></div>
           </div>
 
+          {/* Edit Mode Banner */}
+          {editMode && (
+            <div className="bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl p-4 shadow-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  <div>
+                    <h3 className="text-white font-semibold">Edit Mode Active</h3>
+                    <p className="text-white/90 text-sm">Drag and drop widgets to rearrange your dashboard</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setEditMode(false)}
+                  className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Widgets Grid */}
-          <GridLayout columns={dashboard.columns as 1 | 2 | 3 | 4 || 3}>
-            {dashboard.widgets.map(renderWidget)}
-          </GridLayout>
+          <div id="dashboard-content">
+            <DraggableDashboard
+              widgets={dashboard.widgets}
+              onReorder={handleWidgetReorder}
+              renderWidget={(widget, index) => renderWidget(widget)}
+              columns={dashboard.columns as number || 3}
+              editMode={editMode}
+            />
+          </div>
         </div>
       </div>
     </DashboardShell>
