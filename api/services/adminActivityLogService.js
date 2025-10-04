@@ -431,6 +431,144 @@ async function searchActivities(keyword, options = {}) {
   }
 }
 
+/**
+ * Get single activity by ID
+ * @param {number} id - Activity ID
+ */
+async function getActivityById(id) {
+  try {
+    const query = `
+      SELECT 
+        aal.*,
+        u.email as admin_email,
+        u.role as admin_role,
+        u.first_name,
+        u.last_name
+      FROM admin_activity_log aal
+      LEFT JOIN users u ON aal.admin_id = u.id
+      WHERE aal.id = $1
+    `;
+
+    const result = await db.pool.query(query, [id]);
+    return result.rows[0] || null;
+  } catch (error) {
+    logger.error('Error fetching activity by ID:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get list of available action types
+ */
+async function getAvailableActions() {
+  try {
+    const query = `
+      SELECT DISTINCT action
+      FROM admin_activity_log
+      ORDER BY action ASC
+    `;
+
+    const result = await db.pool.query(query);
+    return result.rows.map(row => row.action);
+  } catch (error) {
+    logger.error('Error fetching available actions:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get list of admins who have logged activity
+ */
+async function getActiveAdmins() {
+  try {
+    const query = `
+      SELECT DISTINCT
+        u.id,
+        u.email,
+        u.first_name,
+        u.last_name,
+        u.role,
+        COUNT(aal.id) as activity_count,
+        MAX(aal.created_at) as last_activity
+      FROM users u
+      INNER JOIN admin_activity_log aal ON u.id = aal.admin_id
+      GROUP BY u.id, u.email, u.first_name, u.last_name, u.role
+      ORDER BY activity_count DESC
+    `;
+
+    const result = await db.pool.query(query);
+    return result.rows;
+  } catch (error) {
+    logger.error('Error fetching active admins:', error);
+    throw error;
+  }
+}
+
+/**
+ * Export activities in specified format
+ * @param {Object} filters - Filter options
+ * @param {string} format - Export format (csv, json, pdf)
+ */
+async function exportActivities(filters = {}, format = 'json') {
+  try {
+    // Get filtered activities
+    const activities = await getActivities(filters);
+
+    if (format === 'json') {
+      return {
+        format: 'json',
+        data: activities,
+        timestamp: new Date().toISOString(),
+        count: activities.length
+      };
+    }
+
+    if (format === 'csv') {
+      // Convert to CSV format
+      const headers = ['ID', 'Timestamp', 'Admin Email', 'Action', 'Entity Type', 'Entity ID', 'Result', 'IP Address'];
+      const csvRows = [headers.join(',')];
+      
+      activities.forEach(activity => {
+        const row = [
+          activity.id,
+          activity.created_at,
+          activity.admin_email || '',
+          activity.action,
+          activity.entity_type,
+          activity.entity_id || '',
+          activity.result,
+          activity.ip_address || ''
+        ];
+        csvRows.push(row.join(','));
+      });
+
+      return {
+        format: 'csv',
+        data: csvRows.join('\n'),
+        timestamp: new Date().toISOString(),
+        count: activities.length
+      };
+    }
+
+    if (format === 'pdf') {
+      // For PDF, return data that can be used by a PDF generator
+      return {
+        format: 'pdf',
+        data: activities,
+        timestamp: new Date().toISOString(),
+        count: activities.length,
+        title: 'Admin Activity Log Export',
+        message: 'PDF generation requires additional processing on the client side'
+      };
+    }
+
+    throw new Error(`Unsupported export format: ${format}`);
+  } catch (error) {
+    logger.error('Error exporting activities:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   logActivity,
   getActivities,
@@ -439,5 +577,9 @@ module.exports = {
   getActionDistribution,
   getEntityDistribution,
   getActivityTimeline,
-  searchActivities
+  searchActivities,
+  getActivityById,
+  getAvailableActions,
+  getActiveAdmins,
+  exportActivities
 };

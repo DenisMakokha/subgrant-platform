@@ -267,4 +267,110 @@ router.get('/my-activity', async (req, res) => {
   }
 });
 
+/**
+ * GET /admin/activity/actions
+ * Get list of all available action types
+ */
+router.get('/actions', async (req, res) => {
+  try {
+    const actions = await adminActivityLogService.getAvailableActions();
+
+    res.json({
+      success: true,
+      data: actions
+    });
+  } catch (error) {
+    logger.error('Error fetching available actions:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch available actions',
+      details: error.message
+    });
+  }
+});
+
+/**
+ * GET /admin/activity/admins
+ * Get list of admins who have logged activity
+ */
+router.get('/admins', async (req, res) => {
+  try {
+    const admins = await adminActivityLogService.getActiveAdmins();
+
+    res.json({
+      success: true,
+      data: admins
+    });
+  } catch (error) {
+    logger.error('Error fetching active admins:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch active admins',
+      details: error.message
+    });
+  }
+});
+
+/**
+ * POST /admin/activity/export
+ * Export activities to specified format
+ */
+router.post('/export', async (req, res) => {
+  try {
+    const { format, filters } = req.body;
+
+    if (!format || !['csv', 'json', 'pdf'].includes(format)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Valid format is required (csv, json, or pdf)'
+      });
+    }
+
+    const exportData = await adminActivityLogService.exportActivities(filters, format);
+
+    res.json({
+      success: true,
+      data: exportData
+    });
+  } catch (error) {
+    logger.error('Error exporting activities:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to export activities',
+      details: error.message
+    });
+  }
+});
+
+/**
+ * GET /admin/activity/:id
+ * Get single activity details
+ */
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const activity = await adminActivityLogService.getActivityById(parseInt(id));
+
+    if (!activity) {
+      return res.status(404).json({
+        success: false,
+        error: 'Activity not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: activity
+    });
+  } catch (error) {
+    logger.error('Error fetching activity:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch activity',
+      details: error.message
+    });
+  }
+});
+
 module.exports = router;
