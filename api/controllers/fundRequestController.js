@@ -1,5 +1,6 @@
 const FundRequestRepository = require('../repositories/fundRequestRepository');
 const approvalIntegrationService = require('../services/approvalIntegrationService');
+const logger = require('../utils/logger');
 const { v4: uuidv4 } = require('uuid');
 
 // SSoT endpoints for the frontend
@@ -81,7 +82,7 @@ exports.ssotCreate = async (req, res, next) => {
           result.approval_request_id = approvalRequest.id;
         }
       } catch (approvalError) {
-        console.error('Error creating approval request:', approvalError);
+        logger.error('Error creating approval request:', approvalError);
         // Continue without approval - don't fail the fund request creation
       }
     }
@@ -183,7 +184,7 @@ exports.ssotSubmit = async (req, res, next) => {
         result.approval_request_id = approvalRequest.id;
       }
     } catch (approvalError) {
-      console.error('Error creating approval request:', approvalError);
+      logger.error('Error creating approval request:', approvalError);
       // Continue without approval - don't fail the submission
     }
 

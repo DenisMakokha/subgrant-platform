@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 /**
  * @route GET /api/grants-analytics/envelope/overview/:projectId
@@ -39,7 +40,7 @@ router.get('/envelope/overview/:projectId', async (req, res) => {
       data: result.rows[0]
     });
   } catch (error) {
-    console.error('Error fetching envelope overview:', error);
+    logger.error('Error fetching envelope overview:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch envelope overview'
@@ -84,7 +85,7 @@ router.get('/envelope/trend/:projectId', async (req, res) => {
       data: result.rows
     });
   } catch (error) {
-    console.error('Error fetching envelope trend:', error);
+    logger.error('Error fetching envelope trend:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch envelope trend'
@@ -131,7 +132,7 @@ router.get('/by-partner/:projectId', async (req, res) => {
       data: result.rows
     });
   } catch (error) {
-    console.error('Error fetching partner analytics:', error);
+    logger.error('Error fetching partner analytics:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch partner analytics'
@@ -193,7 +194,7 @@ router.get('/by-category/:projectId', async (req, res) => {
       data: result.rows
     });
   } catch (error) {
-    console.error('Error fetching category analytics:', error);
+    logger.error('Error fetching category analytics:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch category analytics'
@@ -254,7 +255,7 @@ router.get('/burn-rate/:projectId', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching burn rate:', error);
+    logger.error('Error fetching burn rate:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch burn rate'
@@ -299,7 +300,7 @@ router.get('/approvals/metrics/:projectId', async (req, res) => {
       data: result.rows
     });
   } catch (error) {
-    console.error('Error fetching approval metrics:', error);
+    logger.error('Error fetching approval metrics:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch approval metrics'
@@ -335,7 +336,7 @@ router.get('/contracts/cycle/:projectId', async (req, res) => {
       data: result.rows[0] || {}
     });
   } catch (error) {
-    console.error('Error fetching contract cycle metrics:', error);
+    logger.error('Error fetching contract cycle metrics:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch contract cycle metrics'
@@ -370,7 +371,7 @@ router.get('/fund-requests/flow/:projectId', async (req, res) => {
       data: result.rows[0] || {}
     });
   } catch (error) {
-    console.error('Error fetching fund request flow:', error);
+    logger.error('Error fetching fund request flow:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch fund request flow'
@@ -417,7 +418,7 @@ router.get('/reports/sla/:projectId', async (req, res) => {
       data: result.rows
     });
   } catch (error) {
-    console.error('Error fetching reporting SLA:', error);
+    logger.error('Error fetching reporting SLA:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch reporting SLA'
@@ -444,7 +445,7 @@ router.post('/refresh/:projectId', async (req, res) => {
       message: 'Analytics data refreshed successfully'
     });
   } catch (error) {
-    console.error('Error refreshing analytics:', error);
+    logger.error('Error refreshing analytics:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to refresh analytics data'

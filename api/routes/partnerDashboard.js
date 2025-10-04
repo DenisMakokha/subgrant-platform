@@ -2,8 +2,15 @@ const express = require('express');
 const { requireAuth } = require('../middleware/onboarding');
 const { getPartnerSummaries } = require('../services/partnerSummaries');
 const db = require('../config/database');
+const logger = require('../utils/logger');
+
+// Import activity routes
+const activityRoutes = require('./partnerDashboardActivity');
 
 const router = express.Router();
+
+// Mount activity routes
+router.use('/activity', activityRoutes);
 
 /**
  * Get partner dashboard KPI data
@@ -90,7 +97,7 @@ router.get('/kpis', requireAuth, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Error fetching partner dashboard KPIs:', error);
+    logger.error('Error fetching partner dashboard KPIs:', error);
     res.status(500).json({ 
       success: false,
       error: 'Failed to fetch dashboard data',
@@ -142,7 +149,7 @@ router.get('/summary', requireAuth, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Error fetching partner dashboard summary:', error);
+    logger.error('Error fetching partner dashboard summary:', error);
     res.status(500).json({ 
       success: false,
       error: 'Failed to fetch dashboard summary'

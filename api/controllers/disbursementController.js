@@ -3,6 +3,7 @@ const { validateDisbursement } = require('../middleware/validation');
 const currencyService = require('../services/currencyService');
 const xeroService = require('../services/xeroService');
 const auditLogger = require('../middleware/auditLogger');
+const logger = require('../utils/logger');
 
 class DisbursementController {
   // Create a new disbursement
@@ -35,7 +36,7 @@ class DisbursementController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.status(201).json(disbursement);
@@ -121,7 +122,7 @@ class DisbursementController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json(updatedDisbursement);
@@ -155,7 +156,7 @@ class DisbursementController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
 
       res.json({ message: 'Disbursement deleted successfully' });
@@ -186,7 +187,7 @@ class DisbursementController {
           const xeroResponse = await xeroService.createDisbursementInvoice(disbursement, organization);
           updateData.invoice_id = xeroResponse.InvoiceID;
         } catch (xeroError) {
-          console.error('Error creating Xero invoice:', xeroError);
+          logger.error('Error creating Xero invoice:', xeroError);
           // Depending on requirements, we might want to continue or fail here
         }
       }
@@ -195,10 +196,10 @@ class DisbursementController {
       if (status === 'paid' && disbursement.status !== 'paid') {
         try {
           // In a real implementation, we would reconcile with Xero
-          console.log(`Would reconcile Xero payment for disbursement ${disbursement.id}`);
+          logger.info(`Would reconcile Xero payment for disbursement ${disbursement.id}`);
           // const xeroResponse = await xeroService.reconcilePayment(disbursement.invoice_id);
         } catch (xeroError) {
-          console.error('Error reconciling Xero payment:', xeroError);
+          logger.error('Error reconciling Xero payment:', xeroError);
           // Depending on requirements, we might want to continue or fail here
         }
       }
@@ -225,7 +226,7 @@ class DisbursementController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json(updatedDisbursement);
@@ -251,7 +252,7 @@ class DisbursementController {
           // Reconcile with Xero
           const xeroResponse = await xeroService.reconcilePayment(disbursement.invoice_id);
         } catch (xeroError) {
-          console.error('Error reconciling Xero payment:', xeroError);
+          logger.error('Error reconciling Xero payment:', xeroError);
           // Depending on requirements, we might want to continue or fail here
         }
       }
@@ -276,7 +277,7 @@ class DisbursementController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json(updatedDisbursement);
@@ -301,7 +302,7 @@ class DisbursementController {
           // Reconcile with Xero
           const xeroResponse = await xeroService.reconcilePayment(disbursement.invoice_id);
         } catch (xeroError) {
-          console.error('Error reconciling Xero payment:', xeroError);
+          logger.error('Error reconciling Xero payment:', xeroError);
           // Depending on requirements, we might want to continue or fail here
         }
       }
@@ -327,7 +328,7 @@ class DisbursementController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json(updatedDisbursement);

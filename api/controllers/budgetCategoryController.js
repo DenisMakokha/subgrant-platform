@@ -1,4 +1,6 @@
 const pool = require('../config/database');
+const logger = require('../utils/logger');
+const activityLogService = require('../services/activityLogService');
 
 /**
  * Create a new budget category
@@ -30,12 +32,32 @@ exports.createCategory = async (req, res) => {
 
     const result = await pool.query(query, values);
 
+    // Log activity
+    if (req.user && req.user.organizationId) {
+      await activityLogService.logActivity({
+        organizationId: req.user.organizationId,
+        userId: req.user.id,
+        activityType: 'budget_category_created',
+        activityCategory: 'budget',
+        title: 'Budget Category Created',
+        description: `Created budget category: ${name}`,
+        metadata: {
+          categoryId: result.rows[0].id,
+          projectId: project_id,
+          categoryName: name
+        },
+        entityType: 'budget_category',
+        entityId: result.rows[0].id,
+        severity: 'success'
+      });
+    }
+
     res.status(201).json({
       success: true,
       data: result.rows[0]
     });
   } catch (error) {
-    console.error('Error creating budget category:', error);
+    logger.error('Error creating budget category:', error);
     res.status(500).json({ 
       error: 'Failed to create budget category',
       details: error.message 
@@ -63,7 +85,7 @@ exports.getAllCategories = async (req, res) => {
       count: result.rows.length
     });
   } catch (error) {
-    console.error('Error fetching budget categories:', error);
+    logger.error('Error fetching budget categories:', error);
     res.status(500).json({ 
       error: 'Failed to fetch budget categories',
       details: error.message 
@@ -98,7 +120,7 @@ exports.getCategoryById = async (req, res) => {
       data: result.rows[0]
     });
   } catch (error) {
-    console.error('Error fetching budget category:', error);
+    logger.error('Error fetching budget category:', error);
     res.status(500).json({ 
       error: 'Failed to fetch budget category',
       details: error.message 
@@ -128,7 +150,7 @@ exports.getCategoriesByProjectId = async (req, res) => {
       count: result.rows.length
     });
   } catch (error) {
-    console.error('Error fetching budget categories by project:', error);
+    logger.error('Error fetching budget categories by project:', error);
     res.status(500).json({ 
       error: 'Failed to fetch budget categories',
       details: error.message 
@@ -158,7 +180,7 @@ exports.getActiveCategoriesByProjectId = async (req, res) => {
       count: result.rows.length
     });
   } catch (error) {
-    console.error('Error fetching active budget categories:', error);
+    logger.error('Error fetching active budget categories:', error);
     res.status(500).json({ 
       error: 'Failed to fetch active budget categories',
       details: error.message 
@@ -224,12 +246,31 @@ exports.updateCategory = async (req, res) => {
 
     const result = await pool.query(query, values);
 
+    // Log activity
+    if (req.user && req.user.organizationId) {
+      await activityLogService.logActivity({
+        organizationId: req.user.organizationId,
+        userId: req.user.id,
+        activityType: 'budget_category_updated',
+        activityCategory: 'budget',
+        title: 'Budget Category Updated',
+        description: `Updated budget category: ${result.rows[0].name}`,
+        metadata: {
+          categoryId: id,
+          updates: req.body
+        },
+        entityType: 'budget_category',
+        entityId: parseInt(id),
+        severity: 'info'
+      });
+    }
+
     res.json({
       success: true,
       data: result.rows[0]
     });
   } catch (error) {
-    console.error('Error updating budget category:', error);
+    logger.error('Error updating budget category:', error);
     res.status(500).json({ 
       error: 'Failed to update budget category',
       details: error.message 
@@ -273,13 +314,32 @@ exports.deleteCategory = async (req, res) => {
     const deleteQuery = 'DELETE FROM budget_categories WHERE id = $1 RETURNING *';
     const result = await pool.query(deleteQuery, [id]);
 
+    // Log activity
+    if (req.user && req.user.organizationId) {
+      await activityLogService.logActivity({
+        organizationId: req.user.organizationId,
+        userId: req.user.id,
+        activityType: 'budget_category_deleted',
+        activityCategory: 'budget',
+        title: 'Budget Category Deleted',
+        description: `Deleted budget category: ${result.rows[0].name}`,
+        metadata: {
+          categoryId: id,
+          categoryName: result.rows[0].name
+        },
+        entityType: 'budget_category',
+        entityId: parseInt(id),
+        severity: 'warning'
+      });
+    }
+
     res.json({
       success: true,
       message: 'Budget category deleted successfully',
       data: result.rows[0]
     });
   } catch (error) {
-    console.error('Error deleting budget category:', error);
+    logger.error('Error deleting budget category:', error);
     res.status(500).json({ 
       error: 'Failed to delete budget category',
       details: error.message 

@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 /**
  * Get lightweight module summaries for partner dashboard
@@ -86,7 +87,7 @@ async function getPartnerSummaries(organizationId) {
         try { await db.pool.query(q); } catch (_) { /* ignore */ }
       }
     } catch (schemaErr) {
-      console.warn('partnerSummaries: schema ensure failed (non-fatal):', schemaErr.message || schemaErr);
+      logger.warn('partnerSummaries: schema ensure failed (non-fatal):', schemaErr.message || schemaErr);
     }
 
     // Applications summary
@@ -165,7 +166,7 @@ async function getPartnerSummaries(organizationId) {
       messages: messagesResult.rows[0] || { unread: 0 }
     };
   } catch (error) {
-    console.error('Error fetching partner summaries:', error);
+    logger.error('Error fetching partner summaries:', error);
     // Return empty summaries on error to prevent dashboard failure
     return {
       applications: { drafts: 0, submitted: 0, under_review: 0, approved: 0, rejected: 0 },

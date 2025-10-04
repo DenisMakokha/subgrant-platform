@@ -1,5 +1,6 @@
 const ContractSSOTService = require('../services/contracts/contractSSOTService');
 const approvalIntegrationService = require('../services/approvalIntegrationService');
+const logger = require('../utils/logger');
 
 class ContractSSOTController {
   /**
@@ -102,7 +103,7 @@ class ContractSSOTController {
           contract.approval_request_id = approvalRequest.id;
         }
       } catch (approvalError) {
-        console.error('Error creating approval request for contract:', approvalError);
+        logger.error('Error creating approval request for contract:', approvalError);
         // Continue without approval - don't fail the contract submission
       }
       

@@ -2,6 +2,7 @@
 
 const { Pool } = require('pg');
 const dotenv = require('dotenv');
+const logger = require('../utils/logger');
 
 dotenv.config();
 
@@ -20,7 +21,7 @@ async function checkSchema() {
     const client = await pool.connect();
     
     // Check organizations table structure
-    console.log('📋 Organizations table columns:');
+    logger.info('📋 Organizations table columns:');
     const columnsResult = await client.query(`
       SELECT column_name, data_type, is_nullable, column_default 
       FROM information_schema.columns 
@@ -28,20 +29,20 @@ async function checkSchema() {
       ORDER BY ordinal_position
     `);
     columnsResult.rows.forEach(row => {
-      console.log(`  ${row.column_name}: ${row.data_type} ${row.is_nullable === 'NO' ? 'NOT NULL' : ''} ${row.column_default || ''}`);
+      logger.info(`  ${row.column_name}: ${row.data_type} ${row.is_nullable === 'NO' ? 'NOT NULL' : ''} ${row.column_default || ''}`);
     });
     
     // Check if organization_status enum exists
-    console.log('\n🔍 Checking for organization_status enum:');
+    logger.info('\n🔍 Checking for organization_status enum:');
     const enumResult = await client.query(`
       SELECT EXISTS (
         SELECT 1 FROM pg_type WHERE typname = 'organization_status'
       ) as enum_exists
     `);
-    console.log(`  Enum exists: ${enumResult.rows[0].enum_exists}`);
+    logger.info(`  Enum exists: ${enumResult.rows[0].enum_exists}`);
     
     // Check current status values in organizations table
-    console.log('\n📊 Current status values:');
+    logger.info('\n📊 Current status values:');
     const statusResult = await client.query(`
       SELECT status, COUNT(*) as count 
       FROM organizations 
@@ -49,12 +50,12 @@ async function checkSchema() {
       ORDER BY count DESC
     `);
     statusResult.rows.forEach(row => {
-      console.log(`  "${row.status}": ${row.count} organizations`);
+      logger.info(`  "${row.status}": ${row.count} organizations`);
     });
     
     client.release();
   } catch (error) {
-    console.error('❌ Schema check failed:', error.message);
+    logger.error('❌ Schema check failed:', error.message);
   } finally {
     await pool.end();
   }

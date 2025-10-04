@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../config/database');
 const jwt = require('jsonwebtoken');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -17,7 +18,7 @@ router.get('/debug/org-status', async (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.sub || decoded.id;
 
-    console.log('Debug: User ID from token:', userId);
+    logger.info('Debug: User ID from token:', userId);
 
     // Get user info
     const userResult = await db.pool.query(
@@ -30,7 +31,7 @@ router.get('/debug/org-status', async (req, res) => {
     }
 
     const user = userResult.rows[0];
-    console.log('Debug: User data:', user);
+    logger.info('Debug: User data:', user);
 
     // Get organization by owner_user_id (like getUserOrganization middleware)
     const orgByOwnerResult = await db.pool.query(
@@ -38,7 +39,7 @@ router.get('/debug/org-status', async (req, res) => {
       [userId]
     );
 
-    console.log('Debug: Organization by owner_user_id:', orgByOwnerResult.rows);
+    logger.info('Debug: Organization by owner_user_id:', orgByOwnerResult.rows);
 
     // Get organization by user.organization_id (like session endpoint)
     let orgByUserIdResult = { rows: [] };
@@ -49,7 +50,7 @@ router.get('/debug/org-status', async (req, res) => {
       );
     }
 
-    console.log('Debug: Organization by user.organization_id:', orgByUserIdResult.rows);
+    logger.info('Debug: Organization by user.organization_id:', orgByUserIdResult.rows);
 
     res.json({
       user: user,
@@ -64,7 +65,7 @@ router.get('/debug/org-status', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Debug endpoint error:', error);
+    logger.error('Debug endpoint error:', error);
     res.status(500).json({ error: 'Debug failed', details: error.message });
   }
 });

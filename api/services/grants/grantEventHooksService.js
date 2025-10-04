@@ -1,5 +1,6 @@
 const db = require('../../config/database');
 const notificationService = require('../notificationService');
+const logger = require('../../utils/logger');
 
 /**
  * Event hooks service for grants SSOT
@@ -322,7 +323,7 @@ class GrantEventHooksService {
           `, [job.id]);
 
         } catch (error) {
-          console.error(`Failed to refresh analytics for job ${job.id}:`, error);
+          logger.error(`Failed to refresh analytics for job ${job.id}:`, error);
           await client.query(`
             UPDATE analytics_refresh_queue 
             SET status = 'FAILED', error_message = $2, updated_at = now()

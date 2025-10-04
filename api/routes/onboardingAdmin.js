@@ -1,5 +1,6 @@
 const express = require('express');
 const db = require('../config/database');
+const logger = require('../utils/logger');
 const { validateSchema } = require('../validators/onboarding');
 const { 
   ReviewDecisionSchema, 
@@ -154,7 +155,7 @@ router.get('/review/:organizationId',
       });
 
     } catch (error) {
-      console.error('Get review dossier error:', error);
+      logger.error('Get review dossier error:', error);
       res.status(500).json({ error: 'Failed to load review dossier' });
     }
   }
@@ -203,7 +204,7 @@ router.post('/review/:organizationId/flags',
       }
 
     } catch (error) {
-      console.error('Create review flags error:', error);
+      logger.error('Create review flags error:', error);
       res.status(500).json({ error: 'Failed to create review flags' });
     }
   }
@@ -309,7 +310,7 @@ router.post('/review/:organizationId/decision',
       }
 
     } catch (error) {
-      console.error('Review decision error:', error);
+      logger.error('Review decision error:', error);
       res.status(500).json({ error: 'Failed to record review decision' });
     }
   }
@@ -375,7 +376,7 @@ router.get('/assessment/:organizationId',
       res.json({ assessments });
 
     } catch (error) {
-      console.error('Get assessment streams error:', error);
+      logger.error('Get assessment streams error:', error);
       res.status(500).json({ error: 'Failed to load assessment streams' });
     }
   }
@@ -443,7 +444,7 @@ router.post('/assessment/:organizationId',
       res.json({ message: 'Assessment stream saved successfully' });
 
     } catch (error) {
-      console.error('Save assessment stream error:', error);
+      logger.error('Save assessment stream error:', error);
       res.status(500).json({ error: 'Failed to save assessment stream' });
     }
   }

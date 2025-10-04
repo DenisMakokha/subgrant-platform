@@ -1,6 +1,7 @@
 const Project = require('../models/project');
 const BudgetCategory = require('../models/budgetCategory');
 const auditLogger = require('../middleware/auditLogger');
+const logger = require('../utils/logger');
 
 // Create a new project
 exports.createProject = async (req, res) => {
@@ -47,12 +48,12 @@ exports.createProject = async (req, res) => {
         user_agent: req.get('User-Agent')
       });
     } catch (auditError) {
-      console.error('Error creating audit log:', auditError);
+      logger.error('Error creating audit log:', auditError);
     }
     
     res.status(201).json(project);
   } catch (error) {
-    console.error('Error creating project:', error);
+    logger.error('Error creating project:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -63,7 +64,7 @@ exports.getAllProjects = async (req, res) => {
     const projects = await Project.findAll();
     res.json(projects);
   } catch (error) {
-    console.error('Error fetching projects:', error);
+    logger.error('Error fetching projects:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -86,7 +87,7 @@ exports.getProjectById = async (req, res) => {
       budget_categories: categories
     });
   } catch (error) {
-    console.error('Error fetching project:', error);
+    logger.error('Error fetching project:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -139,12 +140,12 @@ exports.updateProject = async (req, res) => {
         user_agent: req.get('User-Agent')
       });
     } catch (auditError) {
-      console.error('Error creating audit log:', auditError);
+      logger.error('Error creating audit log:', auditError);
     }
     
     res.json(project);
   } catch (error) {
-    console.error('Error updating project:', error);
+    logger.error('Error updating project:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -178,12 +179,12 @@ exports.deleteProject = async (req, res) => {
         user_agent: req.get('User-Agent')
       });
     } catch (auditError) {
-      console.error('Error creating audit log:', auditError);
+      logger.error('Error creating audit log:', auditError);
     }
     
     res.json({ message: 'Project deleted successfully' });
   } catch (error) {
-    console.error('Error deleting project:', error);
+    logger.error('Error deleting project:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -195,7 +196,7 @@ exports.getProjectsByStatus = async (req, res) => {
     const projects = await Project.findByStatus(status);
     res.json(projects);
   } catch (error) {
-    console.error('Error fetching projects by status:', error);
+    logger.error('Error fetching projects by status:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -246,12 +247,12 @@ exports.addBudgetCategory = async (req, res) => {
         user_agent: req.get('User-Agent')
       });
     } catch (auditError) {
-      console.error('Error creating audit log:', auditError);
+      logger.error('Error creating audit log:', auditError);
     }
     
     res.status(201).json(category);
   } catch (error) {
-    console.error('Error adding budget category:', error);
+    logger.error('Error adding budget category:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -270,7 +271,7 @@ exports.getProjectBudgetCategories = async (req, res) => {
     const categories = await Project.getBudgetCategories(id);
     res.json(categories);
   } catch (error) {
-    console.error('Error fetching budget categories:', error);
+    logger.error('Error fetching budget categories:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -311,12 +312,12 @@ exports.archiveProject = async (req, res) => {
         user_agent: req.get('User-Agent')
       });
     } catch (auditError) {
-      console.error('Error creating audit log:', auditError);
+      logger.error('Error creating audit log:', auditError);
     }
     
     res.json({ message: 'Project archived successfully', project });
   } catch (error) {
-    console.error('Error archiving project:', error);
+    logger.error('Error archiving project:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -357,12 +358,12 @@ exports.closeProject = async (req, res) => {
         user_agent: req.get('User-Agent')
       });
     } catch (auditError) {
-      console.error('Error creating audit log:', auditError);
+      logger.error('Error creating audit log:', auditError);
     }
     
     res.json({ message: 'Project closed successfully', project });
   } catch (error) {
-    console.error('Error closing project:', error);
+    logger.error('Error closing project:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -373,7 +374,7 @@ exports.getArchivedProjects = async (req, res) => {
     const projects = await Project.findArchived();
     res.json(projects);
   } catch (error) {
-    console.error('Error fetching archived projects:', error);
+    logger.error('Error fetching archived projects:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -384,7 +385,7 @@ exports.getClosedProjects = async (req, res) => {
     const projects = await Project.findClosed();
     res.json(projects);
   } catch (error) {
-    console.error('Error fetching closed projects:', error);
+    logger.error('Error fetching closed projects:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -401,7 +402,7 @@ exports.searchProjects = async (req, res) => {
     const projects = await Project.search(q);
     res.json(projects);
   } catch (error) {
-    console.error('Error searching projects:', error);
+    logger.error('Error searching projects:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

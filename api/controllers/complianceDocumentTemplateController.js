@@ -1,5 +1,6 @@
 const ComplianceDocumentTemplate = require('../models/complianceDocumentTemplate');
 const auditLogger = require('../middleware/auditLogger');
+const logger = require('../utils/logger');
 
 class ComplianceDocumentTemplateController {
   // Create a new compliance document template
@@ -32,7 +33,7 @@ class ComplianceDocumentTemplateController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
 
       res.status(201).json({
@@ -62,7 +63,7 @@ class ComplianceDocumentTemplateController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
 
       res.json(templates);
@@ -94,7 +95,7 @@ class ComplianceDocumentTemplateController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
 
       res.json(template);
@@ -135,7 +136,7 @@ class ComplianceDocumentTemplateController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
 
       res.json({
@@ -177,7 +178,7 @@ class ComplianceDocumentTemplateController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
 
       res.json({

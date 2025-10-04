@@ -4,6 +4,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { getUserDisplayName } from '../../utils/format';
 import { fetchWithAuth } from '../../services/api';
+import { RecentActivityWidget } from '../../components/partner/RecentActivityWidget';
+import { ActivityStatsWidget } from '../../components/partner/ActivityStatsWidget';
 
 // SVG Icons
 const DocumentIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
@@ -346,6 +348,21 @@ export default function PartnerHome() {
             </div>
           </div>
         </div>
+
+        {/* Activity Tracking Dashboard */}
+        {!onboardingLocked && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Recent Activity Widget - Takes 2 columns */}
+            <div className="lg:col-span-2">
+              <RecentActivityWidget limit={8} />
+            </div>
+            
+            {/* Activity Stats Widget - Takes 1 column */}
+            <div className="lg:col-span-1">
+              <ActivityStatsWidget />
+            </div>
+          </div>
+        )}
 
         {/* Notifications Overview */}
         {unreadCount > 0 && (

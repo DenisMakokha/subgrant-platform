@@ -1,5 +1,6 @@
 const db = require('../config/database');
 const { logApiCall, logError } = require('../services/observabilityService');
+const adminActivityLogService = require('../services/adminActivityLogService');
 
 /**
  * Get organizations with filtering and pagination
@@ -146,13 +147,25 @@ exports.updateOrganization = async (req, res) => {
     const { orgId } = req.params;
     const { name, legalName, type, status } = req.body;
 
-    // Check if organization exists
-    const existingOrg = await db.pool.query('SELECT id FROM organizations WHERE id = $1', [orgId]);
-    if (existingOrg.rows.length === 0) {
+    // Get current organization state (REAL DB query for before state)
+    const existingOrgQuery = await db.pool.query(
+      'SELECT id, name, legal_name, type, status FROM organizations WHERE id = $1',
+      [orgId]
+    );
+    
+    if (existingOrgQuery.rows.length === 0) {
       return res.status(404).json({ error: 'Organization not found' });
     }
 
-    // Update organization
+    const beforeState = {
+      id: existingOrgQuery.rows[0].id,
+      name: existingOrgQuery.rows[0].name,
+      legalName: existingOrgQuery.rows[0].legal_name,
+      type: existingOrgQuery.rows[0].type,
+      status: existingOrgQuery.rows[0].status
+    };
+
+    // Update organization (REAL DB UPDATE)
     const result = await db.pool.query(`
       UPDATE organizations
       SET name = $1, legal_name = $2, type = $3, status = $4, updated_at = NOW()
@@ -173,9 +186,43 @@ exports.updateOrganization = async (req, res) => {
       projectCount: 0, // Would need to calculate
     };
 
+    const afterState = {
+      id: org.id,
+      name: org.name,
+      legalName: org.legal_name,
+      type: org.type,
+      status: org.status
+    };
+
+    // Log admin activity with REAL before/after data
+    await adminActivityLogService.logActivity({
+      adminId: req.user?.id,
+      action: 'update_organization',
+      entityType: 'organization',
+      entityId: orgId,
+      changes: {
+        before: beforeState,
+        after: afterState
+      },
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
     logApiCall('PUT', `/admin/organizations/${orgId}`, 200, Date.now() - startTime, req.user?.id);
     res.json(organization);
   } catch (error) {
+    // Log failed activity
+    await adminActivityLogService.logActivity({
+      adminId: req.user?.id,
+      action: 'update_organization',
+      entityType: 'organization',
+      entityId: req.params.orgId,
+      result: 'error',
+      errorMessage: error.message,
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
     logError(error, 'updateOrganization', { userId: req.user?.id, orgId: req.params.orgId });
     logApiCall('PUT', `/admin/organizations/${req.params.orgId}`, 500, Date.now() - startTime, req.user?.id);
     res.status(500).json({ error: error.message });

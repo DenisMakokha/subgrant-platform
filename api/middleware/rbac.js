@@ -1,5 +1,6 @@
 const User = require('../models/user');
 const { applyRLS } = require('./security');
+const logger = require('../utils/logger');
 
 // Define role permissions (resource-based)
 const rolePermissions = {
@@ -139,7 +140,15 @@ function checkPermission(resource, action) {
         next();
       });
     } catch (error) {
-      console.error('Error checking permissions:', error);
+      logger.error('RBAC permission check failed', {
+        error: error.message,
+        stack: error.stack,
+        resource,
+        action,
+        userId: req.user?.id || req.user?.sub,
+        role: req.user?.role,
+        correlationId: req.correlationId
+      });
       res.status(500).json({ error: 'Internal server error' });
     }
   };
@@ -161,7 +170,14 @@ function requireRole(allowedRoles) {
 
       next();
     } catch (error) {
-      console.error('Error checking role:', error);
+      logger.error('RBAC role check failed', {
+        error: error.message,
+        stack: error.stack,
+        allowedRoles,
+        userRole: req.user?.role,
+        userId: req.user?.id,
+        correlationId: req.correlationId
+      });
       res.status(500).json({ error: 'Internal server error' });
     }
   };
@@ -177,13 +193,26 @@ function requireAdmin(req, res, next) {
     }
 
     if (userRole !== 'admin') {
-      console.warn(`⚠️ Unauthorized admin access attempt by user ${req.user?.id} with role ${userRole}`);
+      logger.security('Unauthorized admin access attempt', {
+        userId: req.user?.id,
+        role: userRole,
+        ip: req.ip,
+        url: req.originalUrl || req.url,
+        method: req.method,
+        correlationId: req.correlationId
+      });
       return res.status(403).json({ error: 'Access denied: Admin privileges required' });
     }
 
     next();
   } catch (error) {
-    console.error('Error checking admin role:', error);
+    logger.error('RBAC admin check failed', {
+      error: error.message,
+      stack: error.stack,
+      userId: req.user?.id,
+      role: req.user?.role,
+      correlationId: req.correlationId
+    });
     res.status(500).json({ error: 'Internal server error' });
   }
 }

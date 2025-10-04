@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 async function checkSchema() {
   try {
@@ -10,9 +11,9 @@ async function checkSchema() {
       ORDER BY ordinal_position
     `);
     
-    console.log('Notifications table columns:');
+    logger.info('Notifications table columns:');
     result.rows.forEach(row => {
-      console.log(`- ${row.column_name}: ${row.data_type} (nullable: ${row.is_nullable}, default: ${row.column_default})`);
+      logger.info(`- ${row.column_name}: ${row.data_type} (nullable: ${row.is_nullable}, default: ${row.column_default})`);
     });
 
     // Check if table exists
@@ -23,11 +24,11 @@ async function checkSchema() {
       )
     `);
     
-    console.log('Table exists:', tableExists.rows[0].exists);
+    logger.info('Table exists:', tableExists.rows[0].exists);
 
     process.exit(0);
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Error:', error);
     process.exit(1);
   }
 }

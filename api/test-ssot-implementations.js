@@ -1,8 +1,8 @@
-console.log('🧪 Testing All SSOT Implementations...\n');
+logger.info('🧪 Testing All SSOT Implementations...\n');
 
 // Test data keys implementation
 function testDataKeys() {
-  console.log('📊 Testing Data Keys Implementation...');
+  logger.info('📊 Testing Data Keys Implementation...');
   
   const dataController = require('./controllers/dataController');
   const dataKeys = [
@@ -29,25 +29,26 @@ function testDataKeys() {
     try {
       const service = dataController.getDataService(key);
       if (service && typeof service.getData === 'function') {
-        console.log(`✅ ${key} - Implemented`);
+        logger.info(`✅ ${key} - Implemented`);
         implementedCount++;
       } else {
-        console.log(`❌ ${key} - Not implemented`);
+        logger.info(`❌ ${key} - Not implemented`);
       }
     } catch (error) {
-      console.log(`❌ ${key} - Error: ${error.message}`);
+      logger.info(`❌ ${key} - Error: ${error.message}`);
     }
   }
 
-  console.log(`\n📈 Data Keys: ${implementedCount}/${totalCount} implemented\n`);
+  logger.info(`\n📈 Data Keys: ${implementedCount}/${totalCount} implemented\n`);
   return implementedCount === totalCount;
 }
 
 // Test action keys implementation
 function testActionKeys() {
-  console.log('⚡ Testing Action Keys Implementation...');
+  logger.info('⚡ Testing Action Keys Implementation...');
   
   const actionController = require('./controllers/actionController');
+const logger = require('utils/logger');
   const actionKeys = [
     'line.create',
     'line.update',
@@ -75,23 +76,23 @@ function testActionKeys() {
     try {
       const service = actionController.getActionService(key);
       if (service && typeof service.executeAction === 'function') {
-        console.log(`✅ ${key} - Implemented`);
+        logger.info(`✅ ${key} - Implemented`);
         implementedCount++;
       } else {
-        console.log(`❌ ${key} - Not implemented`);
+        logger.info(`❌ ${key} - Not implemented`);
       }
     } catch (error) {
-      console.log(`❌ ${key} - Error: ${error.message}`);
+      logger.info(`❌ ${key} - Error: ${error.message}`);
     }
   }
 
-  console.log(`\n📈 Action Keys: ${implementedCount}/${totalCount} implemented\n`);
+  logger.info(`\n📈 Action Keys: ${implementedCount}/${totalCount} implemented\n`);
   return implementedCount === totalCount;
 }
 
 // Test repository methods
 function testRepositoryMethods() {
-  console.log('🗄️ Testing Repository Methods...');
+  logger.info('🗄️ Testing Repository Methods...');
   
   const repositories = {
     'PartnerBudgetRepository': require('./repositories/partnerBudgetRepository'),
@@ -104,7 +105,7 @@ function testRepositoryMethods() {
   let allMethodsExist = true;
 
   for (const [name, repo] of Object.entries(repositories)) {
-    console.log(`\n🔍 ${name}:`);
+    logger.info(`\n🔍 ${name}:`);
     
     // Check for common methods
     const methods = ['create', 'findById', 'update'];
@@ -123,21 +124,21 @@ function testRepositoryMethods() {
 
     for (const method of methods) {
       if (typeof repo[method] === 'function') {
-        console.log(`   ✅ ${method}`);
+        logger.info(`   ✅ ${method}`);
       } else {
-        console.log(`   ❌ ${method} - Missing`);
+        logger.info(`   ❌ ${method} - Missing`);
         allMethodsExist = false;
       }
     }
   }
 
-  console.log(`\n📈 Repository Methods: ${allMethodsExist ? 'All implemented' : 'Some missing'}\n`);
+  logger.info(`\n📈 Repository Methods: ${allMethodsExist ? 'All implemented' : 'Some missing'}\n`);
   return allMethodsExist;
 }
 
 // Test service methods
 function testServiceMethods() {
-  console.log('🔧 Testing Service Methods...');
+  logger.info('🔧 Testing Service Methods...');
   
   const services = {
     'ReconciliationService': require('./services/reconciliationService'),
@@ -147,7 +148,7 @@ function testServiceMethods() {
   let allMethodsExist = true;
 
   for (const [name, service] of Object.entries(services)) {
-    console.log(`\n🔍 ${name}:`);
+    logger.info(`\n🔍 ${name}:`);
     
     const methods = [];
     if (name === 'ReconciliationService') {
@@ -159,21 +160,21 @@ function testServiceMethods() {
 
     for (const method of methods) {
       if (typeof service[method] === 'function') {
-        console.log(`   ✅ ${method}`);
+        logger.info(`   ✅ ${method}`);
       } else {
-        console.log(`   ❌ ${method} - Missing`);
+        logger.info(`   ❌ ${method} - Missing`);
         allMethodsExist = false;
       }
     }
   }
 
-  console.log(`\n📈 Service Methods: ${allMethodsExist ? 'All implemented' : 'Some missing'}\n`);
+  logger.info(`\n📈 Service Methods: ${allMethodsExist ? 'All implemented' : 'Some missing'}\n`);
   return allMethodsExist;
 }
 
 // Run all tests
 function runAllTests() {
-  console.log('🚀 Starting Comprehensive SSOT Implementation Test...\n');
+  logger.info('🚀 Starting Comprehensive SSOT Implementation Test...\n');
   
   const dataKeysPassed = testDataKeys();
   const actionKeysPassed = testActionKeys();
@@ -182,26 +183,26 @@ function runAllTests() {
   
   const allPassed = dataKeysPassed && actionKeysPassed && repositoriesPassed && servicesPassed;
   
-  console.log('🎉 SSOT Implementation Test Complete!');
-  console.log('\n📋 Summary:');
-  console.log(`   ${dataKeysPassed ? '✅' : '❌'} All Data Keys Implemented`);
-  console.log(`   ${actionKeysPassed ? '✅' : '❌'} All Action Keys Implemented`);
-  console.log(`   ${repositoriesPassed ? '✅' : '❌'} All Repository Methods Implemented`);
-  console.log(`   ${servicesPassed ? '✅' : '❌'} All Service Methods Implemented`);
+  logger.info('🎉 SSOT Implementation Test Complete!');
+  logger.info('\n📋 Summary:');
+  logger.info(`   ${dataKeysPassed ? '✅' : '❌'} All Data Keys Implemented`);
+  logger.info(`   ${actionKeysPassed ? '✅' : '❌'} All Action Keys Implemented`);
+  logger.info(`   ${repositoriesPassed ? '✅' : '❌'} All Repository Methods Implemented`);
+  logger.info(`   ${servicesPassed ? '✅' : '❌'} All Service Methods Implemented`);
   
   if (allPassed) {
-    console.log('\n🎯 Status: ALL SSOT SYSTEMS FULLY IMPLEMENTED AND READY');
-    console.log('\n📊 Implementation Coverage:');
-    console.log('   ✅ Budget System - Complete');
-    console.log('   ✅ Contract System - Complete');
-    console.log('   ✅ Reconciliation System - Complete');
-    console.log('   ✅ Fund Request System - Complete');
-    console.log('   ✅ Notification System - Complete');
-    console.log('   ✅ Report System - Complete');
-    console.log('   ✅ Approval System - Complete');
-    console.log('   ✅ Admin System - Complete');
+    logger.info('\n🎯 Status: ALL SSOT SYSTEMS FULLY IMPLEMENTED AND READY');
+    logger.info('\n📊 Implementation Coverage:');
+    logger.info('   ✅ Budget System - Complete');
+    logger.info('   ✅ Contract System - Complete');
+    logger.info('   ✅ Reconciliation System - Complete');
+    logger.info('   ✅ Fund Request System - Complete');
+    logger.info('   ✅ Notification System - Complete');
+    logger.info('   ✅ Report System - Complete');
+    logger.info('   ✅ Approval System - Complete');
+    logger.info('   ✅ Admin System - Complete');
   } else {
-    console.log('\n⚠️ Status: SOME SSOT SYSTEMS NEED ADDITIONAL IMPLEMENTATION');
+    logger.info('\n⚠️ Status: SOME SSOT SYSTEMS NEED ADDITIONAL IMPLEMENTATION');
   }
   
   return allPassed;

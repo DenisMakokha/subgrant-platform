@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 // Seed script to create sample projects for testing
 const { Client } = require('pg');
 require('dotenv').config();
@@ -77,11 +79,11 @@ async function createProject(projectData, createdBy) {
     ];
     
     const result = await client.query(insertQuery, values);
-    console.log(`✓ Created project: ${result.rows[0].name} (ID: ${result.rows[0].id})`);
+    logger.info(`✓ Created project: ${result.rows[0].name} (ID: ${result.rows[0].id})`);
     return result.rows[0].id;
     
   } catch (error) {
-    console.error(`✗ Error creating project ${projectData.name}:`, error.message);
+    logger.error(`✗ Error creating project ${projectData.name}:`, error.message);
     return null;
   }
 }
@@ -106,10 +108,10 @@ async function createBudgetCategories(projectId, createdBy) {
       ];
       
       const result = await client.query(insertQuery, values);
-      console.log(`  ✓ Created budget category: ${result.rows[0].name}`);
+      logger.info(`  ✓ Created budget category: ${result.rows[0].name}`);
     }
   } catch (error) {
-    console.error(`✗ Error creating budget categories for project ${projectId}:`, error.message);
+    logger.error(`✗ Error creating budget categories for project ${projectId}:`, error.message);
   }
 }
 
@@ -118,19 +120,19 @@ async function seedProjects() {
   try {
     // Connect to the database
     await client.connect();
-    console.log('Connected to the database');
+    logger.info('Connected to the database');
 
     // Get the admin user ID to use as creator
     const userQuery = 'SELECT id FROM users WHERE email = $1';
     const userResult = await client.query(userQuery, ['admin@test.com']);
     
     if (userResult.rows.length === 0) {
-      console.error('Admin user not found. Please run seed-users.js first.');
+      logger.error('Admin user not found. Please run seed-users.js first.');
       return;
     }
     
     const adminUserId = userResult.rows[0].id;
-    console.log(`Using admin user ID: ${adminUserId}`);
+    logger.info(`Using admin user ID: ${adminUserId}`);
 
     // Check if projects already exist
     const existingProjectsQuery = 'SELECT COUNT(*) as count FROM projects';
@@ -138,12 +140,12 @@ async function seedProjects() {
     const existingCount = parseInt(existingResult.rows[0].count);
     
     if (existingCount > 0) {
-      console.log(`Found ${existingCount} existing projects. Skipping project creation.`);
+      logger.info(`Found ${existingCount} existing projects. Skipping project creation.`);
       return;
     }
 
     // Create sample projects
-    console.log('Creating sample projects...');
+    logger.info('Creating sample projects...');
     for (const projectData of sampleProjects) {
       const projectId = await createProject(projectData, adminUserId);
       if (projectId) {
@@ -151,9 +153,9 @@ async function seedProjects() {
       }
     }
 
-    console.log('Project seeding completed successfully');
+    logger.info('Project seeding completed successfully');
   } catch (err) {
-    console.error('Error seeding projects:', err);
+    logger.error('Error seeding projects:', err);
   } finally {
     await client.end();
   }

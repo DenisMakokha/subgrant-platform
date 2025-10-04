@@ -6,6 +6,7 @@ const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
+const logger = require('../utils/logger');
 
 // Load environment variables
 dotenv.config();
@@ -20,8 +21,8 @@ const dbConfig = {
 };
 
 async function testAdminDashboardDB() {
-  console.log('🔍 Testing Admin Dashboard Database Setup...');
-  console.log('=' .repeat(60));
+  logger.info('🔍 Testing Admin Dashboard Database Setup...');
+  logger.info('=' .repeat(60));
 
   const pool = new Pool(dbConfig);
 
@@ -29,7 +30,7 @@ async function testAdminDashboardDB() {
     const client = await pool.connect();
 
     // Test if required tables exist
-    console.log('\n📊 Checking existing tables:');
+    logger.info('\n📊 Checking existing tables:');
 
     const tables = ['users', 'organizations', 'projects', 'approvals', 'audit_log'];
     for (const table of tables) {
@@ -37,14 +38,14 @@ async function testAdminDashboardDB() {
         const result = await client.query(`
           SELECT COUNT(*) as count FROM ${table}
         `);
-        console.log(`  ✅ ${table}: ${result.rows[0].count} rows`);
+        logger.info(`  ✅ ${table}: ${result.rows[0].count} rows`);
       } catch (error) {
-        console.log(`  ❌ ${table}: ${error.message}`);
+        logger.info(`  ❌ ${table}: ${error.message}`);
       }
     }
 
     // Test admin dashboard queries
-    console.log('\n🧪 Testing admin dashboard queries:');
+    logger.info('\n🧪 Testing admin dashboard queries:');
 
     try {
       // Test user stats query
@@ -54,25 +55,25 @@ async function testAdminDashboardDB() {
           COUNT(*) FILTER (WHERE last_login > NOW() - INTERVAL '24 hours') as active_users
         FROM users
       `);
-      console.log(`  ✅ User stats: ${userStats.rows[0].total_users} total, ${userStats.rows[0].active_users} active`);
+      logger.info(`  ✅ User stats: ${userStats.rows[0].total_users} total, ${userStats.rows[0].active_users} active`);
     } catch (error) {
-      console.log(`  ❌ User stats query failed: ${error.message}`);
+      logger.info(`  ❌ User stats query failed: ${error.message}`);
     }
 
     try {
       // Test organization count
       const orgStats = await client.query('SELECT COUNT(*) as total_organizations FROM organizations');
-      console.log(`  ✅ Organizations: ${orgStats.rows[0].total_organizations} total`);
+      logger.info(`  ✅ Organizations: ${orgStats.rows[0].total_organizations} total`);
     } catch (error) {
-      console.log(`  ❌ Organizations query failed: ${error.message}`);
+      logger.info(`  ❌ Organizations query failed: ${error.message}`);
     }
 
     try {
       // Test projects count
       const projectStats = await client.query('SELECT COUNT(*) as total_projects FROM projects');
-      console.log(`  ✅ Projects: ${projectStats.rows[0].total_projects} total`);
+      logger.info(`  ✅ Projects: ${projectStats.rows[0].total_projects} total`);
     } catch (error) {
-      console.log(`  ❌ Projects query failed: ${error.message}`);
+      logger.info(`  ❌ Projects query failed: ${error.message}`);
     }
 
     try {
@@ -82,9 +83,9 @@ async function testAdminDashboardDB() {
         FROM approvals
         WHERE status = 'pending'
       `);
-      console.log(`  ✅ Pending approvals: ${approvalStats.rows[0].pending_approvals} total`);
+      logger.info(`  ✅ Pending approvals: ${approvalStats.rows[0].pending_approvals} total`);
     } catch (error) {
-      console.log(`  ❌ Approvals query failed: ${error.message}`);
+      logger.info(`  ❌ Approvals query failed: ${error.message}`);
     }
 
     try {
@@ -101,28 +102,28 @@ async function testAdminDashboardDB() {
         ORDER BY created_at DESC
         LIMIT 5
       `);
-      console.log(`  ✅ Recent audit logs: ${auditLogs.rows.length} entries`);
+      logger.info(`  ✅ Recent audit logs: ${auditLogs.rows.length} entries`);
     } catch (error) {
-      console.log(`  ❌ Audit log query failed: ${error.message}`);
+      logger.info(`  ❌ Audit log query failed: ${error.message}`);
     }
 
     client.release();
 
   } catch (error) {
-    console.error('❌ Database connection failed:', error.message);
-    console.error('Stack trace:', error.stack);
+    logger.error('❌ Database connection failed:', error.message);
+    logger.error('Stack trace:', error.stack);
     process.exit(1);
   } finally {
     await pool.end();
   }
 
-  console.log('\n' + '=' .repeat(60));
-  console.log('✅ Admin Dashboard Database Test completed!');
-  console.log('\n📝 Summary:');
-  console.log('  - Database connection: Working');
-  console.log('  - Required tables: Checked');
-  console.log('  - Admin queries: Tested');
-  console.log('  - Dashboard functionality: Ready');
+  logger.info('\n' + '=' .repeat(60));
+  logger.info('✅ Admin Dashboard Database Test completed!');
+  logger.info('\n📝 Summary:');
+  logger.info('  - Database connection: Working');
+  logger.info('  - Required tables: Checked');
+  logger.info('  - Admin queries: Tested');
+  logger.info('  - Dashboard functionality: Ready');
 }
 
 // Run the test if this script is executed directly

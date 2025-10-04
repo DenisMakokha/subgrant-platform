@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const logger = require('../utils/logger');
 const { logApiCall, logError } = require('../services/observabilityService');
 
 /**
@@ -189,7 +190,7 @@ async function getSystemMetrics() {
       const orgStats = await db.pool.query('SELECT COUNT(*) as total_organizations FROM organizations');
       totalOrganizations = parseInt(orgStats.rows[0].total_organizations) || 0;
     } catch (err) {
-      console.log('⚠️ Organizations table does not exist yet');
+      logger.info('⚠️ Organizations table does not exist yet');
     }
 
     // Get project count - with fallback
@@ -198,7 +199,7 @@ async function getSystemMetrics() {
       const projectStats = await db.pool.query('SELECT COUNT(*) as total_projects FROM projects');
       totalProjects = parseInt(projectStats.rows[0].total_projects) || 0;
     } catch (err) {
-      console.log('⚠️ Projects table does not exist yet');
+      logger.info('⚠️ Projects table does not exist yet');
     }
 
     // Get real API response time from recent API calls
@@ -211,7 +212,7 @@ async function getSystemMetrics() {
       `);
       apiResponseTime = Math.round(parseFloat(apiStats.rows[0].avg_duration) || 0);
     } catch (err) {
-      console.log('⚠️ API calls table does not exist yet');
+      logger.info('⚠️ API calls table does not exist yet');
     }
 
     // Get real error rate from recent API calls
@@ -228,7 +229,7 @@ async function getSystemMetrics() {
       const total = parseInt(errorStats.rows[0].total) || 0;
       errorRate = total > 0 ? ((errors / total) * 100).toFixed(2) : 0;
     } catch (err) {
-      console.log('⚠️ API calls table does not exist yet');
+      logger.info('⚠️ API calls table does not exist yet');
     }
 
     // Get system load (CPU usage if available)
@@ -244,7 +245,7 @@ async function getSystemMetrics() {
       systemLoad,
     };
   } catch (error) {
-    console.error('❌ Error getting system metrics:', error);
+    logger.error('❌ Error getting system metrics:', error);
     throw error;
   }
 }
@@ -280,7 +281,7 @@ async function getActiveAlerts() {
       severity: alert.severity,
     }));
   } catch (error) {
-    console.log('⚠️ System alerts table does not exist yet');
+    logger.info('⚠️ System alerts table does not exist yet');
     return [];
   }
 }

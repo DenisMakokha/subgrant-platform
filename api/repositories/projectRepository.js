@@ -1,4 +1,5 @@
 const Project = require('../models/project');
+const logger = require('../utils/logger');
 const { Op } = require('sequelize');
 
 class ProjectRepository {
@@ -26,7 +27,7 @@ class ProjectRepository {
       // Default count all
       return await Project.countAll();
     } catch (error) {
-      console.error('Error counting projects:', error);
+      logger.error('Error counting projects:', error);
       return 0;
     }
   }
@@ -53,7 +54,7 @@ class ProjectRepository {
       // Default find all
       return await Project.findAll();
     } catch (error) {
-      console.error('Error finding projects:', error);
+      logger.error('Error finding projects:', error);
       return [];
     }
   }
@@ -65,7 +66,7 @@ class ProjectRepository {
     try {
       return await Project.findById(id);
     } catch (error) {
-      console.error('Error finding project by ID:', error);
+      logger.error('Error finding project by ID:', error);
       return null;
     }
   }
@@ -77,7 +78,7 @@ class ProjectRepository {
     try {
       return await Project.create(projectData);
     } catch (error) {
-      console.error('Error creating project:', error);
+      logger.error('Error creating project:', error);
       throw error;
     }
   }
@@ -89,7 +90,7 @@ class ProjectRepository {
     try {
       return await Project.update(id, projectData);
     } catch (error) {
-      console.error('Error updating project:', error);
+      logger.error('Error updating project:', error);
       throw error;
     }
   }
@@ -101,7 +102,7 @@ class ProjectRepository {
     try {
       return await Project.delete(id);
     } catch (error) {
-      console.error('Error deleting project:', error);
+      logger.error('Error deleting project:', error);
       throw error;
     }
   }
@@ -115,7 +116,7 @@ class ProjectRepository {
       // For now, return 0 as placeholder
       return 0;
     } catch (error) {
-      console.error('Error getting total budget:', error);
+      logger.error('Error getting total budget:', error);
       return 0;
     }
   }
@@ -129,7 +130,7 @@ class ProjectRepository {
       // For now, return 0 as placeholder
       return 0;
     } catch (error) {
-      console.error('Error getting total disbursed:', error);
+      logger.error('Error getting total disbursed:', error);
       return 0;
     }
   }

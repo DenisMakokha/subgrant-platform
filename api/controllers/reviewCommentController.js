@@ -1,4 +1,5 @@
 const ReviewComment = require('../models/reviewComment');
+const logger = require('../utils/logger');
 
 // Create a new review comment
 exports.createComment = async (req, res) => {
@@ -25,7 +26,7 @@ exports.createComment = async (req, res) => {
     const comment = await ReviewComment.create(commentData);
     res.status(201).json(comment);
   } catch (error) {
-    console.error('Error creating review comment:', error);
+    logger.error('Error creating review comment:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -36,7 +37,7 @@ exports.getAllComments = async (req, res) => {
     const comments = await ReviewComment.findAll();
     res.json(comments);
   } catch (error) {
-    console.error('Error fetching review comments:', error);
+    logger.error('Error fetching review comments:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -53,7 +54,7 @@ exports.getCommentById = async (req, res) => {
     
     res.json(comment);
   } catch (error) {
-    console.error('Error fetching review comment:', error);
+    logger.error('Error fetching review comment:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -65,7 +66,7 @@ exports.getCommentsByEntity = async (req, res) => {
     const comments = await ReviewComment.findByEntity(entity_type, entity_id);
     res.json(comments);
   } catch (error) {
-    console.error('Error fetching review comments by entity:', error);
+    logger.error('Error fetching review comments by entity:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -77,7 +78,7 @@ exports.getCommentsByAuthorId = async (req, res) => {
     const comments = await ReviewComment.findByAuthorId(author_id);
     res.json(comments);
   } catch (error) {
-    console.error('Error fetching review comments by author:', error);
+    logger.error('Error fetching review comments by author:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -111,7 +112,7 @@ exports.updateComment = async (req, res) => {
     
     res.json(comment);
   } catch (error) {
-    console.error('Error updating review comment:', error);
+    logger.error('Error updating review comment:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -140,7 +141,7 @@ exports.deleteComment = async (req, res) => {
     
     res.json({ message: 'Review comment deleted successfully' });
   } catch (error) {
-    console.error('Error deleting review comment:', error);
+    logger.error('Error deleting review comment:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -164,7 +165,7 @@ exports.resolveComment = async (req, res) => {
     
     res.json(comment);
   } catch (error) {
-    console.error('Error resolving review comment:', error);
+    logger.error('Error resolving review comment:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

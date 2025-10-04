@@ -1,5 +1,6 @@
 const db = require('../config/database');
 const notificationService = require('../services/notificationService');
+const logger = require('../utils/logger');
 
 async function testRealNotifications() {
   try {
@@ -7,7 +8,7 @@ async function testRealNotifications() {
     const usersResult = await db.pool.query('SELECT id, email, role FROM users WHERE role = $1 LIMIT 1', ['partner_user']);
     
     if (usersResult.rows.length === 0) {
-      console.log('No partner users found. Creating a test user...');
+      logger.info('No partner users found. Creating a test user...');
       
       const createUserResult = await db.pool.query(`
         INSERT INTO users (first_name, last_name, email, role, password_hash)
@@ -16,17 +17,17 @@ async function testRealNotifications() {
         RETURNING id, email, role
       `);
       
-      console.log('Test user created/updated:', createUserResult.rows[0]);
+      logger.info('Test user created/updated:', createUserResult.rows[0]);
     }
 
     // Get the user again
     const userResult = await db.pool.query('SELECT id FROM users WHERE role = $1 LIMIT 1', ['partner_user']);
     const userId = userResult.rows[0].id;
     
-    console.log('Testing with user ID:', userId);
+    logger.info('Testing with user ID:', userId);
 
     // Create test notifications using the updated service
-    console.log('Creating test notifications...');
+    logger.info('Creating test notifications...');
     
     const notification1 = await notificationService.createNotification({
       userId,
@@ -39,7 +40,7 @@ async function testRealNotifications() {
       action_text: 'Complete Onboarding'
     });
     
-    console.log('Created notification 1:', notification1);
+    logger.info('Created notification 1:', notification1);
 
     const notification2 = await notificationService.createNotification({
       userId,
@@ -52,20 +53,20 @@ async function testRealNotifications() {
       action_text: 'Upload Documents'
     });
     
-    console.log('Created notification 2:', notification2);
+    logger.info('Created notification 2:', notification2);
 
     // Test fetching notifications
     const notifications = await notificationService.getUserNotifications(userId);
-    console.log('Fetched notifications:', notifications.length);
+    logger.info('Fetched notifications:', notifications.length);
 
     // Test unread count
     const unreadCount = await notificationService.getUnreadCount(userId);
-    console.log('Unread count:', unreadCount);
+    logger.info('Unread count:', unreadCount);
 
-    console.log('✅ All notification tests passed!');
+    logger.info('✅ All notification tests passed!');
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error:', error);
+    logger.error('❌ Error:', error);
     process.exit(1);
   }
 }

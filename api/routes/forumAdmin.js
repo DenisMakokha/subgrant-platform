@@ -1,6 +1,7 @@
 const express = require('express');
 const { Pool } = require('pg');
 const jwt = require('jsonwebtoken');
+const logger = require('../utils/logger');
 const router = express.Router();
 
 // Database connection
@@ -43,7 +44,7 @@ router.get('/categories', verifyAdminToken, async (req, res) => {
     );
     res.json(result.rows);
   } catch (error) {
-    console.error('Error fetching forum categories:', error);
+    logger.error('Error fetching forum categories:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -65,7 +66,7 @@ router.post('/categories', verifyAdminToken, async (req, res) => {
     
     res.status(201).json(result.rows[0]);
   } catch (error) {
-    console.error('Error creating forum category:', error);
+    logger.error('Error creating forum category:', error);
     if (error.code === '23505') { // Unique constraint violation
       res.status(400).json({ error: 'Category slug already exists' });
     } else {
@@ -93,7 +94,7 @@ router.put('/categories/:id', verifyAdminToken, async (req, res) => {
     
     res.json(result.rows[0]);
   } catch (error) {
-    console.error('Error updating forum category:', error);
+    logger.error('Error updating forum category:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -111,7 +112,7 @@ router.delete('/categories/:id', verifyAdminToken, async (req, res) => {
     
     res.json({ message: 'Category deleted successfully' });
   } catch (error) {
-    console.error('Error deleting forum category:', error);
+    logger.error('Error deleting forum category:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -122,7 +123,7 @@ router.get('/tags', verifyAdminToken, async (req, res) => {
     const result = await pool.query('SELECT * FROM forum_tags ORDER BY name ASC');
     res.json(result.rows);
   } catch (error) {
-    console.error('Error fetching forum tags:', error);
+    logger.error('Error fetching forum tags:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -144,7 +145,7 @@ router.post('/tags', verifyAdminToken, async (req, res) => {
     
     res.status(201).json(result.rows[0]);
   } catch (error) {
-    console.error('Error creating forum tag:', error);
+    logger.error('Error creating forum tag:', error);
     if (error.code === '23505') { // Unique constraint violation
       res.status(400).json({ error: 'Tag slug already exists' });
     } else {
@@ -172,7 +173,7 @@ router.put('/tags/:id', verifyAdminToken, async (req, res) => {
     
     res.json(result.rows[0]);
   } catch (error) {
-    console.error('Error updating forum tag:', error);
+    logger.error('Error updating forum tag:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -190,7 +191,7 @@ router.delete('/tags/:id', verifyAdminToken, async (req, res) => {
     
     res.json({ message: 'Tag deleted successfully' });
   } catch (error) {
-    console.error('Error deleting forum tag:', error);
+    logger.error('Error deleting forum tag:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -260,7 +261,7 @@ router.post('/initialize', verifyAdminToken, async (req, res) => {
     }
     
   } catch (error) {
-    console.error('Error initializing forum data:', error);
+    logger.error('Error initializing forum data:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

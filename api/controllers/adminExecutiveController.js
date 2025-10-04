@@ -1,4 +1,5 @@
 const executiveDashboardService = require('../services/executiveDashboardService');
+const logger = require('../utils/logger');
 
 class AdminExecutiveController {
   /**
@@ -13,7 +14,7 @@ class AdminExecutiveController {
         data: dashboardData
       });
     } catch (error) {
-      console.error('Error fetching executive dashboard data:', error);
+      logger.error('Error fetching executive dashboard data:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch executive dashboard data',
@@ -34,7 +35,7 @@ class AdminExecutiveController {
         data: kpis
       });
     } catch (error) {
-      console.error('Error fetching executive KPIs:', error);
+      logger.error('Error fetching executive KPIs:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch executive KPIs',
@@ -55,7 +56,7 @@ class AdminExecutiveController {
         data: financialSummary
       });
     } catch (error) {
-      console.error('Error fetching financial summary:', error);
+      logger.error('Error fetching financial summary:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch financial summary',
@@ -76,7 +77,7 @@ class AdminExecutiveController {
         data: programPerformance
       });
     } catch (error) {
-      console.error('Error fetching program performance:', error);
+      logger.error('Error fetching program performance:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch program performance',
@@ -97,7 +98,7 @@ class AdminExecutiveController {
         data: initiatives
       });
     } catch (error) {
-      console.error('Error fetching strategic initiatives:', error);
+      logger.error('Error fetching strategic initiatives:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch strategic initiatives',
@@ -118,7 +119,7 @@ class AdminExecutiveController {
         data: alerts
       });
     } catch (error) {
-      console.error('Error fetching executive alerts:', error);
+      logger.error('Error fetching executive alerts:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch executive alerts',
@@ -139,7 +140,7 @@ class AdminExecutiveController {
         data: trends
       });
     } catch (error) {
-      console.error('Error fetching trends:', error);
+      logger.error('Error fetching trends:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch trends',
@@ -175,7 +176,7 @@ class AdminExecutiveController {
         data: summary
       });
     } catch (error) {
-      console.error('Error fetching dashboard summary:', error);
+      logger.error('Error fetching dashboard summary:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch dashboard summary',
@@ -227,7 +228,7 @@ class AdminExecutiveController {
           res.json(dashboardData);
       }
     } catch (error) {
-      console.error('Error exporting dashboard data:', error);
+      logger.error('Error exporting dashboard data:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to export dashboard data',

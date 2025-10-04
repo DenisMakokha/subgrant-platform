@@ -4,17 +4,18 @@ const { execSync } = require('child_process');
 
 // Database connection
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 async function runEmailSSOTMigrations(shouldClosePool = true) {
   try {
-    console.log('Running Email SSOT migrations...');
+    logger.info('Running Email SSOT migrations...');
     
     // Get the migration directory
     const migrationDir = path.join(__dirname, 'migrations', '2025Q4_email_ssot');
     
     // Check if migration directory exists
     if (!fs.existsSync(migrationDir)) {
-      console.log('Migration directory does not exist:', migrationDir);
+      logger.info('Migration directory does not exist:', migrationDir);
       return;
     }
     
@@ -24,28 +25,28 @@ async function runEmailSSOTMigrations(shouldClosePool = true) {
       .sort();
     
     if (files.length === 0) {
-      console.log('No migration files found');
+      logger.info('No migration files found');
       return;
     }
     
-    console.log(`Found ${files.length} migration files`);
+    logger.info(`Found ${files.length} migration files`);
     
     // Run each migration file
     for (const file of files) {
       const filePath = path.join(migrationDir, file);
-      console.log(`Running migration: ${file}`);
+      logger.info(`Running migration: ${file}`);
       
       // Read the SQL file
       const sql = fs.readFileSync(filePath, 'utf8');
       
       // Execute the SQL
       await db.pool.query(sql);
-      console.log(`Successfully ran migration: ${file}`);
+      logger.info(`Successfully ran migration: ${file}`);
     }
     
-    console.log('All Email SSOT migrations completed successfully');
+    logger.info('All Email SSOT migrations completed successfully');
   } catch (error) {
-    console.error('Error running Email SSOT migrations:', error);
+    logger.error('Error running Email SSOT migrations:', error);
     process.exit(1);
   } finally {
     // Close the database connection only if shouldClosePool is true

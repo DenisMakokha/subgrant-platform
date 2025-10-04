@@ -1,10 +1,11 @@
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 async function checkSpecificMigrations() {
   const client = await db.pool.connect();
   
   try {
-    console.log('Checking specific migrations...\n');
+    logger.info('Checking specific migrations...\n');
     
     // Check fund request tables
     const fundRequestTables = [
@@ -15,7 +16,7 @@ async function checkSpecificMigrations() {
       'approval_docs'
     ];
     
-    console.log('Checking fund request related tables...\n');
+    logger.info('Checking fund request related tables...\n');
     
     for (const table of fundRequestTables) {
       try {
@@ -28,12 +29,12 @@ async function checkSpecificMigrations() {
         `, [table]);
         
         if (result.rows[0].exists) {
-          console.log(`✅ ${table} table exists`);
+          logger.info(`✅ ${table} table exists`);
         } else {
-          console.log(`❌ ${table} table does not exist`);
+          logger.info(`❌ ${table} table does not exist`);
         }
       } catch (error) {
-        console.log(`❌ Error checking ${table} table:`, error.message);
+        logger.info(`❌ Error checking ${table} table:`, error.message);
       }
     }
     
@@ -45,7 +46,7 @@ async function checkSpecificMigrations() {
       'dashboards_active'  // This is a view
     ];
     
-    console.log('\nChecking role and dashboard related tables/views...\n');
+    logger.info('\nChecking role and dashboard related tables/views...\n');
     
     for (const table of roleDashboardTables) {
       try {
@@ -60,9 +61,9 @@ async function checkSpecificMigrations() {
           `, [table]);
           
           if (result.rows[0].exists) {
-            console.log(`✅ ${table} view exists`);
+            logger.info(`✅ ${table} view exists`);
           } else {
-            console.log(`❌ ${table} view does not exist`);
+            logger.info(`❌ ${table} view does not exist`);
           }
         } else {
           const result = await client.query(`
@@ -74,18 +75,18 @@ async function checkSpecificMigrations() {
           `, [table]);
           
           if (result.rows[0].exists) {
-            console.log(`✅ ${table} table exists`);
+            logger.info(`✅ ${table} table exists`);
           } else {
-            console.log(`❌ ${table} table does not exist`);
+            logger.info(`❌ ${table} table does not exist`);
           }
         }
       } catch (error) {
-        console.log(`❌ Error checking ${table}:`, error.message);
+        logger.info(`❌ Error checking ${table}:`, error.message);
       }
     }
     
     // Check if the tables have data (which would indicate they've been properly seeded)
-    console.log('\nChecking if tables have data...\n');
+    logger.info('\nChecking if tables have data...\n');
     
     const tablesWithData = [
       'fund_requests',
@@ -99,17 +100,17 @@ async function checkSpecificMigrations() {
         const count = parseInt(result.rows[0].count);
         
         if (count > 0) {
-          console.log(`✅ ${table} table has ${count} rows of data`);
+          logger.info(`✅ ${table} table has ${count} rows of data`);
         } else {
-          console.log(`⚠️  ${table} table exists but has no data`);
+          logger.info(`⚠️  ${table} table exists but has no data`);
         }
       } catch (error) {
-        console.log(`❌ Error checking data in ${table} table:`, error.message);
+        logger.info(`❌ Error checking data in ${table} table:`, error.message);
       }
     }
     
   } catch (error) {
-    console.error('Error checking specific migrations:', error.message);
+    logger.error('Error checking specific migrations:', error.message);
   } finally {
     client.release();
   }

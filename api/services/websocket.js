@@ -1,5 +1,6 @@
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
+const logger = require('../utils/logger');
 
 /**
  * WebSocket Service for Real-time Updates
@@ -43,7 +44,7 @@ function initializeWebSocket(server) {
 
   // Connection handler
   io.on('connection', (socket) => {
-    console.log(`WebSocket client connected: ${socket.userId}`);
+    logger.info(`WebSocket client connected: ${socket.userId}`);
 
     // Join user-specific room
     socket.join(`user:${socket.userId}`);
@@ -51,7 +52,7 @@ function initializeWebSocket(server) {
     // Dashboard subscription
     socket.on('dashboard:subscribe', (data) => {
       const { widgetIds } = data;
-      console.log(`User ${socket.userId} subscribed to widgets:`, widgetIds);
+      logger.info(`User ${socket.userId} subscribed to widgets:`, widgetIds);
       
       // Join widget-specific rooms
       widgetIds.forEach(widgetId => {
@@ -62,7 +63,7 @@ function initializeWebSocket(server) {
     // Dashboard unsubscribe
     socket.on('dashboard:unsubscribe', (data) => {
       const { widgetIds } = data;
-      console.log(`User ${socket.userId} unsubscribed from widgets:`, widgetIds);
+      logger.info(`User ${socket.userId} unsubscribed from widgets:`, widgetIds);
       
       // Leave widget-specific rooms
       widgetIds.forEach(widgetId => {
@@ -73,7 +74,7 @@ function initializeWebSocket(server) {
     // Widget refresh request
     socket.on('widget:refresh', async (data) => {
       const { widgetId } = data;
-      console.log(`Refresh requested for widget ${widgetId} by user ${socket.userId}`);
+      logger.info(`Refresh requested for widget ${widgetId} by user ${socket.userId}`);
       
       // Emit refresh event to trigger data reload
       socket.emit(`widget:${widgetId}:update`, {
@@ -85,7 +86,7 @@ function initializeWebSocket(server) {
     // Dashboard refresh request
     socket.on('dashboard:refresh', async (data) => {
       const { widgetIds } = data;
-      console.log(`Dashboard refresh requested by user ${socket.userId}`);
+      logger.info(`Dashboard refresh requested by user ${socket.userId}`);
       
       // Emit refresh for all widgets
       widgetIds.forEach(widgetId => {
@@ -98,11 +99,11 @@ function initializeWebSocket(server) {
 
     // Disconnect handler
     socket.on('disconnect', () => {
-      console.log(`WebSocket client disconnected: ${socket.userId}`);
+      logger.info(`WebSocket client disconnected: ${socket.userId}`);
     });
   });
 
-  console.log('WebSocket server initialized');
+  logger.info('WebSocket server initialized');
   return io;
 }
 

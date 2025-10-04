@@ -1,5 +1,6 @@
 const { Client } = require('pg');
 const fs = require('fs');
+const logger = require('utils/logger');
 
 async function runIntegrationSettingsMigration() {
   const client = new Client({
@@ -11,35 +12,35 @@ async function runIntegrationSettingsMigration() {
   });
 
   try {
-    console.log('Connecting to PostgreSQL...');
+    logger.info('Connecting to PostgreSQL...');
     await client.connect();
-    console.log('✅ Connected successfully');
+    logger.info('✅ Connected successfully');
 
     // Read SQL file
     const sql = fs.readFileSync('./scripts/create_integration_settings_table.sql', 'utf8');
-    console.log(`📄 Loaded SQL file (${sql.length} characters)`);
+    logger.info(`📄 Loaded SQL file (${sql.length} characters)`);
 
     // Execute migration
-    console.log('🚀 Running Integration Settings migration...');
+    logger.info('🚀 Running Integration Settings migration...');
     await client.query(sql);
 
-    console.log('✅ Integration Settings migration completed successfully!');
-    console.log('📊 Created:');
-    console.log('   - integration_settings table');
-    console.log('   - Default integration types (DocuSign, SendGrid, Custom SMTP, etc.)');
-    console.log('   - Indexes and triggers for performance');
+    logger.info('✅ Integration Settings migration completed successfully!');
+    logger.info('📊 Created:');
+    logger.info('   - integration_settings table');
+    logger.info('   - Default integration types (DocuSign, SendGrid, Custom SMTP, etc.)');
+    logger.info('   - Indexes and triggers for performance');
 
   } catch (error) {
-    console.error('❌ Error:', error.message);
+    logger.error('❌ Error:', error.message);
     
     if (error.code === 'ECONNREFUSED') {
-      console.error('PostgreSQL server is not running on localhost:5432');
+      logger.error('PostgreSQL server is not running on localhost:5432');
     } else if (error.code === '28P01') {
-      console.error('Authentication failed - check credentials');
+      logger.error('Authentication failed - check credentials');
     } else if (error.code === '3D000') {
-      console.error('Database "subgrant_platform" does not exist');
+      logger.error('Database "subgrant_platform" does not exist');
     } else if (error.code === 'ENOTFOUND') {
-      console.error('Cannot resolve hostname "localhost"');
+      logger.error('Cannot resolve hostname "localhost"');
     }
     
     process.exit(1);

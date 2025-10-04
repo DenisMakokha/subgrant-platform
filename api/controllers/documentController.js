@@ -1,5 +1,6 @@
 const Document = require('../models/document');
 const auditLogger = require('../middleware/auditLogger');
+const logger = require('../utils/logger');
 
 class DocumentController {
   // Get all documents with optional filters
@@ -74,7 +75,7 @@ class DocumentController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.status(201).json(document);
@@ -113,7 +114,7 @@ class DocumentController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json(updatedDocument);
@@ -147,7 +148,7 @@ class DocumentController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json({ message: 'Document deleted successfully' });
@@ -192,7 +193,7 @@ class DocumentController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json({ valid: isValid });

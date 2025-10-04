@@ -46,7 +46,7 @@ router.get('/progress/:organizationId', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Get onboarding progress error:', error);
+    logger.error('Get onboarding progress error:', error);
     res.status(500).json({ error: 'Failed to get onboarding progress' });
   }
 });
@@ -70,7 +70,7 @@ router.put('/progress/:organizationId', async (req, res) => {
         return res.status(409).json({ error: 'Organization is finalized and cannot be modified' });
       }
     } catch (sErr) {
-      console.warn('Could not verify organization status for immutability check:', sErr.message || sErr);
+      logger.warn('Could not verify organization status for immutability check:', sErr.message || sErr);
     }
     
     await db.pool.query(
@@ -81,7 +81,7 @@ router.put('/progress/:organizationId', async (req, res) => {
     res.json({ success: true });
     
   } catch (error) {
-    console.error('Save onboarding progress error:', error);
+    logger.error('Save onboarding progress error:', error);
     res.status(500).json({ error: 'Failed to save onboarding progress' });
   }
 });
@@ -89,50 +89,51 @@ router.put('/progress/:organizationId', async (req, res) => {
 // Section A - Organization Profile
 router.post('/section-a', async (req, res) => {
   try {
-    console.log('=== SECTION A ENDPOINT HIT ===');
-    console.log('req.user:', req.user);
-    console.log('Request body:', req.body);
-    console.log('Headers:', req.headers.authorization);
+    logger.info('=== SECTION A ENDPOINT HIT ===');
+    logger.info('req.user:', req.user);
+    logger.info('Request body:', req.body);
+    logger.info('Headers:', req.headers.authorization);
     
     // Get organization ID from user's organization_id field
     let userId = req.user?.id || req.user?.sub;
-    console.log('Extracted userId from req.user:', userId);
+    logger.info('Extracted userId from req.user:', userId);
     
     // If no user from middleware, try to decode JWT manually
     if (!userId) {
-      console.log('No user from middleware, trying manual JWT decode...');
+      logger.info('No user from middleware, trying manual JWT decode...');
       const authHeader = req.headers.authorization;
       if (authHeader && authHeader.startsWith('Bearer ')) {
         try {
           const token = authHeader.substring(7);
           const jwt = require('jsonwebtoken');
+const logger = require('../../utils/logger');
           const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
           userId = decoded.id || decoded.sub;
-          console.log('Manual JWT decode successful, userId:', userId);
+          logger.info('Manual JWT decode successful, userId:', userId);
         } catch (jwtError) {
-          console.log('Manual JWT decode failed:', jwtError.message);
+          logger.info('Manual JWT decode failed:', jwtError.message);
         }
       }
     }
     
     if (!userId) {
-      console.log('No userId found after all attempts');
+      logger.info('No userId found after all attempts');
       return res.status(401).json({ error: 'User authentication required' });
     }
     
     // Get user's organization_id from database
-    console.log('Querying for user organization...');
+    logger.info('Querying for user organization...');
     const userResult = await db.pool.query(
       'SELECT organization_id FROM users WHERE id = $1',
       [userId]
     );
     
-    console.log('User query result:', userResult.rows);
+    logger.info('User query result:', userResult.rows);
     const orgId = userResult.rows[0]?.organization_id;
-    console.log('Found orgId:', orgId);
+    logger.info('Found orgId:', orgId);
     
     if (!orgId) {
-      console.log('No organization found for user');
+      logger.info('No organization found for user');
       return res.status(400).json({ 
         error: 'No organization found for user. Please create an organization first.',
         userId: userId,
@@ -148,7 +149,7 @@ router.post('/section-a', async (req, res) => {
         return res.status(409).json({ error: 'Organization is finalized and cannot be modified' });
       }
     } catch (sErr) {
-      console.warn('Section A immutability check failed:', sErr.message || sErr);
+      logger.warn('Section A immutability check failed:', sErr.message || sErr);
     }
     const {
       name,
@@ -183,7 +184,7 @@ router.post('/section-a', async (req, res) => {
         ADD COLUMN IF NOT EXISTS year_established INTEGER
       `);
     } catch (error) {
-      console.log('Column year_established might already exist:', error.message);
+      logger.info('Column year_established might already exist:', error.message);
     }
 
     // Update organization with Section A data including banking information
@@ -232,7 +233,7 @@ router.post('/section-a', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Section A save error:', error);
+    logger.error('Section A save error:', error);
     res.status(500).json({ error: 'Failed to save Section A data' });
   }
 });
@@ -250,7 +251,7 @@ router.post('/section-b', async (req, res) => {
         return res.status(409).json({ error: 'Organization is finalized and cannot be modified' });
       }
     } catch (sErr) {
-      console.warn('Section B immutability check failed:', sErr.message || sErr);
+      logger.warn('Section B immutability check failed:', sErr.message || sErr);
     }
     const {
       bank_name,
@@ -289,7 +290,7 @@ router.post('/section-b', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Section B save error:', error);
+    logger.error('Section B save error:', error);
     res.status(500).json({ error: 'Failed to save Section B data' });
   }
 });
@@ -334,7 +335,7 @@ router.post('/section-b-financial', async (req, res) => {
         return res.status(409).json({ error: 'Organization is finalized and cannot be modified' });
       }
     } catch (sErr) {
-      console.warn('Section B financial immutability check failed:', sErr.message || sErr);
+      logger.warn('Section B financial immutability check failed:', sErr.message || sErr);
     }
 
     const {
@@ -345,7 +346,7 @@ router.post('/section-b-financial', async (req, res) => {
       otherFunds
     } = req.body;
 
-    console.log('Section B Financial - Received data:', req.body);
+    logger.info('Section B Financial - Received data:', req.body);
 
     // Upsert financial assessment data
     await db.pool.query(`
@@ -392,7 +393,7 @@ router.post('/section-b-financial', async (req, res) => {
       WHERE id = $2
     `, [ORG_STATUS.C_PENDING, orgId]);
 
-    console.log('Section B Financial - Successfully saved for org:', orgId);
+    logger.info('Section B Financial - Successfully saved for org:', orgId);
 
     res.json({ 
       success: true, 
@@ -401,7 +402,7 @@ router.post('/section-b-financial', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Section B Financial save error:', error);
+    logger.error('Section B Financial save error:', error);
     res.status(500).json({ error: 'Failed to save Section B financial data' });
   }
 });
@@ -419,7 +420,7 @@ router.post('/section-c', async (req, res) => {
         return res.status(409).json({ error: 'Organization is finalized and cannot be modified' });
       }
     } catch (sErr) {
-      console.warn('Section C immutability check failed:', sErr.message || sErr);
+      logger.warn('Section C immutability check failed:', sErr.message || sErr);
     }
     const { documents } = req.body; // Array of uploaded document info
     
@@ -443,7 +444,7 @@ router.post('/section-c', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Section C save error:', error);
+    logger.error('Section C save error:', error);
     res.status(500).json({ error: 'Failed to save Section C data' });
   }
 });
@@ -491,7 +492,7 @@ router.post('/submit', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Submit application error:', error);
+    logger.error('Submit application error:', error);
     res.status(500).json({ error: 'Failed to submit application' });
   }
 });

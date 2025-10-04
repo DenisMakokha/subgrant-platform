@@ -4,12 +4,13 @@ const { CAPABILITIES } = require('../registry/capabilities');
 const { DATA_KEYS } = require('../registry/dataKeys');
 const { FEATURE_FLAGS } = require('../registry/featureFlags');
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 /**
  * Check that all capabilities are properly defined
  */
 async function checkCapabilities() {
-  console.log('Checking capabilities...');
+  logger.info('Checking capabilities...');
   
   // Check that all capabilities have descriptions
   for (const cap of CAPABILITIES) {
@@ -26,7 +27,7 @@ async function checkCapabilities() {
     }
   }
   
-  console.log('✓ All capabilities are properly defined');
+  logger.info('✓ All capabilities are properly defined');
   return true;
 }
 
@@ -34,7 +35,7 @@ async function checkCapabilities() {
  * Check that all data keys are properly defined
  */
 async function checkDataKeys() {
-  console.log('Checking data keys...');
+  logger.info('Checking data keys...');
   
   // Check that all data keys have descriptions
   for (const key of DATA_KEYS) {
@@ -47,7 +48,7 @@ async function checkDataKeys() {
     }
   }
   
-  console.log('✓ All data keys are properly defined');
+  logger.info('✓ All data keys are properly defined');
   return true;
 }
 
@@ -55,7 +56,7 @@ async function checkDataKeys() {
  * Check that all feature flags are properly defined
  */
 async function checkFeatureFlags() {
-  console.log('Checking feature flags...');
+  logger.info('Checking feature flags...');
   
   // Check that all feature flags have descriptions
   for (const flag of FEATURE_FLAGS) {
@@ -68,7 +69,7 @@ async function checkFeatureFlags() {
     }
   }
   
-  console.log('✓ All feature flags are properly defined');
+  logger.info('✓ All feature flags are properly defined');
   return true;
 }
 
@@ -76,12 +77,12 @@ async function checkFeatureFlags() {
  * Check database connectivity
  */
 async function checkDatabase() {
-  console.log('Checking database connectivity...');
+  logger.info('Checking database connectivity...');
   
   const client = await db.pool.connect();
   try {
     await client.query('SELECT 1');
-    console.log('✓ Database connectivity OK');
+    logger.info('✓ Database connectivity OK');
     return true;
   } catch (error) {
     throw new Error(`Database connectivity check failed: ${error.message}`);
@@ -94,7 +95,7 @@ async function checkDatabase() {
  * Check that required tables exist
  */
 async function checkTables() {
-  console.log('Checking required tables...');
+  logger.info('Checking required tables...');
   
   const requiredTables = [
     'roles',
@@ -117,7 +118,7 @@ async function checkTables() {
       }
     }
     
-    console.log('✓ All required tables exist');
+    logger.info('✓ All required tables exist');
     return true;
   } catch (error) {
     throw new Error(`Table check failed: ${error.message}`);
@@ -131,7 +132,7 @@ async function checkTables() {
  */
 async function runCiChecks() {
   try {
-    console.log('Running CI checks...');
+    logger.info('Running CI checks...');
     
     await checkCapabilities();
     await checkDataKeys();
@@ -139,10 +140,10 @@ async function runCiChecks() {
     await checkDatabase();
     await checkTables();
     
-    console.log('✓ All CI checks passed');
+    logger.info('✓ All CI checks passed');
     return true;
   } catch (error) {
-    console.error('CI checks failed:', error.message);
+    logger.error('CI checks failed:', error.message);
     process.exit(1);
   }
 }
@@ -151,11 +152,11 @@ async function runCiChecks() {
 if (require.main === module) {
   runCiChecks()
     .then(() => {
-      console.log('CI checks completed successfully');
+      logger.info('CI checks completed successfully');
       process.exit(0);
     })
     .catch((error) => {
-      console.error('CI checks failed:', error);
+      logger.error('CI checks failed:', error);
       process.exit(1);
     });
 }

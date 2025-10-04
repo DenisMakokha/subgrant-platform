@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 /**
  * Reported Issues SSOT Controller
@@ -101,7 +102,7 @@ const getAllIssues = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching reported issues:', error);
+    logger.error('Error fetching reported issues:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch reported issues' });
   }
 };
@@ -154,7 +155,7 @@ const getIssueById = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching issue:', error);
+    logger.error('Error fetching issue:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch issue' });
   }
 };
@@ -263,7 +264,7 @@ const createIssue = async (req, res) => {
       message: 'Issue reported successfully'
     });
   } catch (error) {
-    console.error('Error creating issue:', error);
+    logger.error('Error creating issue:', error);
     res.status(500).json({ success: false, error: 'Failed to create issue' });
   }
 };
@@ -343,7 +344,7 @@ const updateIssue = async (req, res) => {
       message: 'Issue updated successfully'
     });
   } catch (error) {
-    console.error('Error updating issue:', error);
+    logger.error('Error updating issue:', error);
     res.status(500).json({ success: false, error: 'Failed to update issue' });
   }
 };
@@ -379,7 +380,7 @@ const addComment = async (req, res) => {
       message: 'Comment added successfully'
     });
   } catch (error) {
-    console.error('Error adding comment:', error);
+    logger.error('Error adding comment:', error);
     res.status(500).json({ success: false, error: 'Failed to add comment' });
   }
 };
@@ -408,7 +409,7 @@ const getIssueStats = async (req, res) => {
       data: result.rows[0]
     });
   } catch (error) {
-    console.error('Error fetching issue stats:', error);
+    logger.error('Error fetching issue stats:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch statistics' });
   }
 };
@@ -436,7 +437,7 @@ const deleteIssue = async (req, res) => {
       message: 'Issue closed successfully'
     });
   } catch (error) {
-    console.error('Error deleting issue:', error);
+    logger.error('Error deleting issue:', error);
     res.status(500).json({ success: false, error: 'Failed to delete issue' });
   }
 };

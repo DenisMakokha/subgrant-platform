@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 // Rate limiting for sensitive operations
 const createEmailVerificationLimiter = rateLimit({
@@ -50,7 +51,7 @@ const requireAuth = async (req, res, next) => {
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({ error: 'Token expired' });
     }
-    console.error('Auth middleware error:', error);
+    logger.error('Auth middleware error:', error);
     res.status(500).json({ error: 'Authentication error' });
   }
 };
@@ -66,7 +67,7 @@ const requireEmailVerified = async (req, res, next) => {
     }
     next();
   } catch (error) {
-    console.error('Email verification middleware error:', error);
+    logger.error('Email verification middleware error:', error);
     res.status(500).json({ error: 'Verification check failed' });
   }
 };
@@ -98,7 +99,7 @@ const requireOrgOwnership = async (req, res, next) => {
     req.organization = organization;
     next();
   } catch (error) {
-    console.error('Organization ownership middleware error:', error);
+    logger.error('Organization ownership middleware error:', error);
     res.status(500).json({ error: 'Authorization check failed' });
   }
 };
@@ -132,7 +133,7 @@ const requireOrgStatus = (...allowedStatuses) => {
 
       next();
     } catch (error) {
-      console.error('Organization status middleware error:', error);
+      logger.error('Organization status middleware error:', error);
       res.status(500).json({ error: 'Status check failed' });
     }
   };
@@ -171,7 +172,7 @@ const requireAdminRole = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error('Admin role middleware error:', error);
+    logger.error('Admin role middleware error:', error);
     res.status(500).json({ error: 'Role check failed' });
   }
 };
@@ -192,7 +193,7 @@ const getUserOrganization = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error('Get user organization middleware error:', error);
+    logger.error('Get user organization middleware error:', error);
     res.status(500).json({ error: 'Failed to get organization' });
   }
 };
@@ -219,7 +220,7 @@ const auditLog = (action) => {
             `INSERT INTO audit_logs (actor_user_id, organization_id, action, payload_hash, ip_address, user_agent)
              VALUES ($1, $2, $3, $4, $5, $6)`,
             [logData.actor_user_id, logData.organization_id, logData.action, logData.payload_hash, logData.ip_address, logData.user_agent]
-          ).catch(err => console.error('Audit log error:', err));
+          ).catch(err => logger.error('Audit log error:', err));
         }
         
         originalSend.call(this, data);
@@ -227,7 +228,7 @@ const auditLog = (action) => {
 
       next();
     } catch (error) {
-      console.error('Audit middleware error:', error);
+      logger.error('Audit middleware error:', error);
       next();
     }
   };

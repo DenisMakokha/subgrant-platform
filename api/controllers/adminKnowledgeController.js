@@ -3,6 +3,7 @@ const trainingModuleRepository = require('../repositories/trainingModuleReposito
 const { validationResult } = require('express-validator');
 const fs = require('fs').promises;
 const path = require('path');
+const logger = require('../utils/logger');
 
 class AdminKnowledgeController {
   /**
@@ -31,7 +32,7 @@ class AdminKnowledgeController {
         pagination: result.pagination
       });
     } catch (error) {
-      console.error('Error fetching documents:', error);
+      logger.error('Error fetching documents:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch documents',
@@ -63,7 +64,7 @@ class AdminKnowledgeController {
         data: document
       });
     } catch (error) {
-      console.error('Error fetching document:', error);
+      logger.error('Error fetching document:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch document',
@@ -104,7 +105,7 @@ class AdminKnowledgeController {
         message: 'Document created successfully'
       });
     } catch (error) {
-      console.error('Error creating document:', error);
+      logger.error('Error creating document:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to create document',
@@ -153,7 +154,7 @@ class AdminKnowledgeController {
         message: 'Document updated successfully'
       });
     } catch (error) {
-      console.error('Error updating document:', error);
+      logger.error('Error updating document:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to update document',
@@ -182,7 +183,7 @@ class AdminKnowledgeController {
         message: 'Document deleted successfully'
       });
     } catch (error) {
-      console.error('Error deleting document:', error);
+      logger.error('Error deleting document:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to delete document',
@@ -212,7 +213,7 @@ class AdminKnowledgeController {
       // Send file
       res.download(document.filePath, document.title);
     } catch (error) {
-      console.error('Error downloading document:', error);
+      logger.error('Error downloading document:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to download document',
@@ -233,7 +234,7 @@ class AdminKnowledgeController {
         data: stats
       });
     } catch (error) {
-      console.error('Error fetching document statistics:', error);
+      logger.error('Error fetching document statistics:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch document statistics',
@@ -254,7 +255,7 @@ class AdminKnowledgeController {
         data: categories
       });
     } catch (error) {
-      console.error('Error fetching document categories:', error);
+      logger.error('Error fetching document categories:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch document categories',
@@ -275,7 +276,7 @@ class AdminKnowledgeController {
         data: tags
       });
     } catch (error) {
-      console.error('Error fetching document tags:', error);
+      logger.error('Error fetching document tags:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch document tags',
@@ -307,7 +308,7 @@ class AdminKnowledgeController {
         data: { updatedCount }
       });
     } catch (error) {
-      console.error('Error bulk updating document status:', error);
+      logger.error('Error bulk updating document status:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to bulk update document status',
@@ -342,7 +343,7 @@ class AdminKnowledgeController {
         pagination: result.pagination
       });
     } catch (error) {
-      console.error('Error fetching training modules:', error);
+      logger.error('Error fetching training modules:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch training modules',
@@ -371,7 +372,7 @@ class AdminKnowledgeController {
         data: module
       });
     } catch (error) {
-      console.error('Error fetching training module:', error);
+      logger.error('Error fetching training module:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch training module',
@@ -405,7 +406,7 @@ class AdminKnowledgeController {
         message: 'Training module created successfully'
       });
     } catch (error) {
-      console.error('Error creating training module:', error);
+      logger.error('Error creating training module:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to create training module',
@@ -447,7 +448,7 @@ class AdminKnowledgeController {
         message: 'Training module updated successfully'
       });
     } catch (error) {
-      console.error('Error updating training module:', error);
+      logger.error('Error updating training module:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to update training module',
@@ -476,7 +477,7 @@ class AdminKnowledgeController {
         message: 'Training module deleted successfully'
       });
     } catch (error) {
-      console.error('Error deleting training module:', error);
+      logger.error('Error deleting training module:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to delete training module',
@@ -510,7 +511,7 @@ class AdminKnowledgeController {
         message: 'Successfully enrolled in training module'
       });
     } catch (error) {
-      console.error('Error enrolling in module:', error);
+      logger.error('Error enrolling in module:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to enroll in training module',
@@ -531,7 +532,7 @@ class AdminKnowledgeController {
         data: stats
       });
     } catch (error) {
-      console.error('Error fetching training statistics:', error);
+      logger.error('Error fetching training statistics:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch training statistics',
@@ -552,7 +553,7 @@ class AdminKnowledgeController {
         data: categories
       });
     } catch (error) {
-      console.error('Error fetching training categories:', error);
+      logger.error('Error fetching training categories:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch training categories',
@@ -573,7 +574,7 @@ class AdminKnowledgeController {
         data: tags
       });
     } catch (error) {
-      console.error('Error fetching training tags:', error);
+      logger.error('Error fetching training tags:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch training tags',
@@ -605,7 +606,7 @@ class AdminKnowledgeController {
         data: { updatedCount }
       });
     } catch (error) {
-      console.error('Error bulk updating module status:', error);
+      logger.error('Error bulk updating module status:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to bulk update module status',
@@ -627,7 +628,7 @@ class AdminKnowledgeController {
         data: documents
       });
     } catch (error) {
-      console.error('Error fetching popular documents:', error);
+      logger.error('Error fetching popular documents:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch popular documents',
@@ -649,7 +650,7 @@ class AdminKnowledgeController {
         data: documents
       });
     } catch (error) {
-      console.error('Error fetching recent documents:', error);
+      logger.error('Error fetching recent documents:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch recent documents',
@@ -671,7 +672,7 @@ class AdminKnowledgeController {
         data: modules
       });
     } catch (error) {
-      console.error('Error fetching popular modules:', error);
+      logger.error('Error fetching popular modules:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch popular modules',
@@ -693,7 +694,7 @@ class AdminKnowledgeController {
         data: modules
       });
     } catch (error) {
-      console.error('Error fetching recent modules:', error);
+      logger.error('Error fetching recent modules:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to fetch recent modules',
@@ -716,7 +717,7 @@ class AdminKnowledgeController {
         data: { archivedCount }
       });
     } catch (error) {
-      console.error('Error archiving old documents:', error);
+      logger.error('Error archiving old documents:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to archive old documents',
@@ -739,7 +740,7 @@ class AdminKnowledgeController {
         data: { archivedCount }
       });
     } catch (error) {
-      console.error('Error archiving old modules:', error);
+      logger.error('Error archiving old modules:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to archive old modules',

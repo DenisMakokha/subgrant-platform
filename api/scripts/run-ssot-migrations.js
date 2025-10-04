@@ -8,6 +8,7 @@ const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
+const logger = require('../utils/logger');
 
 // Load environment variables
 dotenv.config();
@@ -22,8 +23,8 @@ const dbConfig = {
 };
 
 async function runSSOTMigrations() {
-  console.log('🚀 Running SSOT Database Migrations...');
-  console.log('=' .repeat(60));
+  logger.info('🚀 Running SSOT Database Migrations...');
+  logger.info('=' .repeat(60));
   
   const pool = new Pool(dbConfig);
   
@@ -31,52 +32,52 @@ async function runSSOTMigrations() {
     const client = await pool.connect();
     
     // Run Phase A migration (schema bootstrap)
-    console.log('\n📦 Running Phase A: Schema Bootstrap...');
+    logger.info('\n📦 Running Phase A: Schema Bootstrap...');
     const phaseAPath = path.join(__dirname, 'migrations/2025Q1_ssot_cutover/phaseA.sql');
     if (fs.existsSync(phaseAPath)) {
       const phaseASQL = fs.readFileSync(phaseAPath, 'utf8');
-      console.log('📄 Phase A migration file loaded:', phaseAPath);
+      logger.info('📄 Phase A migration file loaded:', phaseAPath);
       
       // Execute Phase A migration
-      console.log('🔄 Executing Phase A migration...');
+      logger.info('🔄 Executing Phase A migration...');
       await client.query(phaseASQL);
-      console.log('✅ Phase A migration executed successfully');
+      logger.info('✅ Phase A migration executed successfully');
     } else {
-      console.log('⚠️  Phase A migration file not found, skipping...');
+      logger.info('⚠️  Phase A migration file not found, skipping...');
     }
     
     // Run notifications migration
-    console.log('\n📦 Running Notifications Schema Migration...');
+    logger.info('\n📦 Running Notifications Schema Migration...');
     const notificationsPath = path.join(__dirname, 'migrations/2025Q1_ssot_cutover/notifications.sql');
     if (fs.existsSync(notificationsPath)) {
       const notificationsSQL = fs.readFileSync(notificationsPath, 'utf8');
-      console.log('📄 Notifications migration file loaded:', notificationsPath);
+      logger.info('📄 Notifications migration file loaded:', notificationsPath);
       
       // Execute notifications migration
-      console.log('🔄 Executing Notifications migration...');
+      logger.info('🔄 Executing Notifications migration...');
       await client.query(notificationsSQL);
-      console.log('✅ Notifications migration executed successfully');
+      logger.info('✅ Notifications migration executed successfully');
     } else {
-      console.log('⚠️  Notifications migration file not found, skipping...');
+      logger.info('⚠️  Notifications migration file not found, skipping...');
     }
     
     // Run Phase B migration (backfill and compatibility)
-    console.log('\n📦 Running Phase B: Backfill and Compatibility...');
+    logger.info('\n📦 Running Phase B: Backfill and Compatibility...');
     const phaseBPath = path.join(__dirname, 'migrations/2025Q1_ssot_cutover/phaseB.sql');
     if (fs.existsSync(phaseBPath)) {
       const phaseBSQL = fs.readFileSync(phaseBPath, 'utf8');
-      console.log('📄 Phase B migration file loaded:', phaseBPath);
+      logger.info('📄 Phase B migration file loaded:', phaseBPath);
       
       // Execute Phase B migration
-      console.log('🔄 Executing Phase B migration...');
+      logger.info('🔄 Executing Phase B migration...');
       await client.query(phaseBSQL);
-      console.log('✅ Phase B migration executed successfully');
+      logger.info('✅ Phase B migration executed successfully');
     } else {
-      console.log('⚠️  Phase B migration file not found, skipping...');
+      logger.info('⚠️  Phase B migration file not found, skipping...');
     }
     
     // Verify fund_requests table exists
-    console.log('\n🔍 Verifying fund_requests table...');
+    logger.info('\n🔍 Verifying fund_requests table...');
     try {
       const result = await client.query(`
         SELECT EXISTS (
@@ -87,10 +88,10 @@ async function runSSOTMigrations() {
       `);
       
       if (result.rows[0].exists) {
-        console.log('✅ fund_requests table exists');
+        logger.info('✅ fund_requests table exists');
         
         // Show table structure
-        console.log('\n📋 fund_requests table structure:');
+        logger.info('\n📋 fund_requests table structure:');
         const structureResult = await client.query(`
           SELECT column_name, data_type, is_nullable, column_default
           FROM information_schema.columns
@@ -98,17 +99,17 @@ async function runSSOTMigrations() {
           ORDER BY ordinal_position
         `);
         structureResult.rows.forEach(row => {
-          console.log(`  ${row.column_name} (${row.data_type}) ${row.is_nullable === 'YES' ? 'NULL' : 'NOT NULL'} ${row.column_default ? `DEFAULT ${row.column_default}` : ''}`);
+          logger.info(`  ${row.column_name} (${row.data_type}) ${row.is_nullable === 'YES' ? 'NULL' : 'NOT NULL'} ${row.column_default ? `DEFAULT ${row.column_default}` : ''}`);
         });
       } else {
-        console.log('❌ fund_requests table does not exist');
+        logger.info('❌ fund_requests table does not exist');
       }
     } catch (error) {
-      console.log('❌ Error verifying fund_requests table:', error.message);
+      logger.info('❌ Error verifying fund_requests table:', error.message);
     }
     
     // Verify notif_inbox table exists
-    console.log('\n🔍 Verifying notif_inbox table...');
+    logger.info('\n🔍 Verifying notif_inbox table...');
     try {
       const result = await client.query(`
         SELECT EXISTS (
@@ -119,32 +120,32 @@ async function runSSOTMigrations() {
       `);
       
       if (result.rows[0].exists) {
-        console.log('✅ notif_inbox table exists');
+        logger.info('✅ notif_inbox table exists');
       } else {
-        console.log('❌ notif_inbox table does not exist');
+        logger.info('❌ notif_inbox table does not exist');
       }
     } catch (error) {
-      console.log('❌ Error verifying notif_inbox table:', error.message);
+      logger.info('❌ Error verifying notif_inbox table:', error.message);
     }
     
     client.release();
     
   } catch (error) {
-    console.error('❌ SSOT migrations failed:', error.message);
-    console.error('Stack trace:', error.stack);
+    logger.error('❌ SSOT migrations failed:', error.message);
+    logger.error('Stack trace:', error.stack);
     process.exit(1);
   } finally {
     await pool.end();
   }
   
-  console.log('\n' + '=' .repeat(60));
-  console.log('✅ SSOT Database Migrations completed successfully!');
-  console.log('\n📝 Summary:');
-  console.log('  - Phase A (Schema Bootstrap) executed');
-  console.log('  - Notifications Schema Migration executed');
-  console.log('  - Phase B (Backfill and Compatibility) executed');
-  console.log('  - fund_requests table verified');
-  console.log('  - notif_inbox table verified');
+  logger.info('\n' + '=' .repeat(60));
+  logger.info('✅ SSOT Database Migrations completed successfully!');
+  logger.info('\n📝 Summary:');
+  logger.info('  - Phase A (Schema Bootstrap) executed');
+  logger.info('  - Notifications Schema Migration executed');
+  logger.info('  - Phase B (Backfill and Compatibility) executed');
+  logger.info('  - fund_requests table verified');
+  logger.info('  - notif_inbox table verified');
 }
 
 // Run the migrations if this script is executed directly

@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const db = require('../config/database');
+const logger = require('../utils/logger');
 const { validateSchema } = require('../validators/onboarding');
 const { 
   RegisterSchema, 
@@ -108,7 +109,7 @@ router.post('/register',
       }
 
     } catch (error) {
-      console.error('Registration error:', error);
+      logger.error('Registration error:', error);
       res.status(500).json({ error: 'Registration failed' });
     }
   }
@@ -175,7 +176,7 @@ router.post('/login',
       });
 
     } catch (error) {
-      console.error('Login error:', error);
+      logger.error('Login error:', error);
       res.status(500).json({ error: 'Login failed' });
     }
   }
@@ -246,7 +247,7 @@ router.get('/verify',
       }
 
     } catch (error) {
-      console.error('Email verification error:', error);
+      logger.error('Email verification error:', error);
       res.status(500).json({ error: 'Email verification failed' });
     }
   }
@@ -308,7 +309,7 @@ router.post('/resend-verification',
       });
 
     } catch (error) {
-      console.error('Resend verification error:', error);
+      logger.error('Resend verification error:', error);
       res.status(500).json({ error: 'Failed to resend verification email' });
     }
   }

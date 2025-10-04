@@ -4,6 +4,7 @@ const OrganizationComplianceDocument = require('../models/organizationCompliance
 const Organization = require('../models/organization');
 const Document = require('../models/document');
 const auditLogger = require('../middleware/auditLogger');
+const logger = require('../utils/logger');
 
 class ComplianceDocumentationController {
   // Get compliance document types by organization type
@@ -33,7 +34,7 @@ class ComplianceDocumentationController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json(documentTypes);
@@ -81,7 +82,7 @@ class ComplianceDocumentationController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json(result);
@@ -167,7 +168,7 @@ class ComplianceDocumentationController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.status(201).json({
@@ -202,7 +203,7 @@ class ComplianceDocumentationController {
       if (documentType.required_fields && documentType.required_fields.length > 0) {
         // In a real implementation, you would check the document content for required fields
         // For now, we'll just log that this validation should be implemented
-        console.log('Document content validation for required fields should be implemented');
+        logger.info('Document content validation for required fields should be implemented');
       }
       
       // If we have compliance document templates, check against them
@@ -211,14 +212,14 @@ class ComplianceDocumentationController {
         if (templates.length > 0) {
           // In a real implementation, you would validate the document against the templates
           // For now, we'll just log that this validation should be implemented
-          console.log('Document template validation should be implemented');
+          logger.info('Document template validation should be implemented');
         }
       }
       
       // If all validations pass, return null (no error)
       return null;
     } catch (error) {
-      console.error('Error validating compliance document:', error);
+      logger.error('Error validating compliance document:', error);
       return 'Error validating document';
     }
   }
@@ -255,7 +256,7 @@ class ComplianceDocumentationController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json({
@@ -315,7 +316,7 @@ class ComplianceDocumentationController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json({
@@ -361,7 +362,7 @@ class ComplianceDocumentationController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json({
@@ -400,7 +401,7 @@ class ComplianceDocumentationController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json(templates);
@@ -436,7 +437,7 @@ class ComplianceDocumentationController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json(summary);
@@ -472,7 +473,7 @@ class ComplianceDocumentationController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json(overdueDocs);
@@ -508,7 +509,7 @@ class ComplianceDocumentationController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json(expiredDocs);
@@ -566,7 +567,7 @@ class ComplianceDocumentationController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json({
@@ -619,7 +620,7 @@ class ComplianceDocumentationController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.status(201).json(documentType);
@@ -659,7 +660,7 @@ class ComplianceDocumentationController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json(updatedDocumentType);
@@ -701,7 +702,7 @@ class ComplianceDocumentationController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json({ message: 'Document type deleted successfully' });

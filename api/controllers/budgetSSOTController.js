@@ -1,5 +1,6 @@
 const BudgetSSOTService = require('../services/budgets/budgetSSOTService');
 const approvalIntegrationService = require('../services/approvalIntegrationService');
+const logger = require('../utils/logger');
 
 class BudgetSSOTController {
   /**
@@ -234,7 +235,7 @@ class BudgetSSOTController {
             }
           }
         } catch (approvalError) {
-          console.error('Error creating approval request for budget:', approvalError);
+          logger.error('Error creating approval request for budget:', approvalError);
           // Continue without approval - don't fail the status transition
         }
       }
@@ -295,7 +296,7 @@ class BudgetSSOTController {
             result.approval_request_id = approvalRequest.id;
           }
         } catch (approvalError) {
-          console.error('Error creating approval request for budget:', approvalError);
+          logger.error('Error creating approval request for budget:', approvalError);
           // Continue without approval
         }
       }

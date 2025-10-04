@@ -12,6 +12,7 @@ const {
 
 // SSoT imports (JS versions)
 const OrganizationRepository = require('../repositories/OrganizationRepository.js');
+const logger = require('../utils/logger');
 const { createEnvelope, createApiError } = require('../core/FormRepository.js');
 
 const router = express.Router();
@@ -21,7 +22,7 @@ const orgRepo = new OrganizationRepository();
 router.post('/section-b',
   async (req, res) => {
     try {
-      console.log('📥 SSoT Section B - Received data:', req.body);
+      logger.info('📥 SSoT Section B - Received data:', req.body);
       
       // Extract user ID from JWT token
       const token = req.headers.authorization?.replace('Bearer ', '');
@@ -32,7 +33,7 @@ router.post('/section-b',
       const decoded = require('jsonwebtoken').verify(token, process.env.JWT_SECRET);
       const userId = decoded.sub;
       
-      console.log('👤 User ID from token:', userId);
+      logger.info('👤 User ID from token:', userId);
       
       // Get user's organization
       const existingOrg = await orgRepo.readByUserId(userId);
@@ -40,7 +41,7 @@ router.post('/section-b',
         return res.status(404).json(createApiError(404, { form: ['Organization not found'] }));
       }
       
-      console.log('🏢 Found organization:', existingOrg.id);
+      logger.info('🏢 Found organization:', existingOrg.id);
       
       // Immutability: block any writes when organization is finalized
       if (existingOrg.status === 'finalized') {
@@ -49,7 +50,7 @@ router.post('/section-b',
       
       // Extract data from SSoT envelope format
       const requestData = req.body.data || req.body;
-      console.log('📦 Extracted request data (Section B):', requestData);
+      logger.info('📦 Extracted request data (Section B):', requestData);
 
       // Minimal validation
       if (!requestData || typeof requestData !== 'object' || typeof requestData.financial_assessment !== 'object') {
@@ -57,7 +58,7 @@ router.post('/section-b',
       }
 
       const validatedData = requestData;
-      console.log('✅ Financial data validated successfully');
+      logger.info('✅ Financial data validated successfully');
       
       // Extract etag from request headers or body
       const etag = Number(req.header('If-Match') || req.body?.meta?.etag || existingOrg.version);
@@ -72,7 +73,7 @@ router.post('/section-b',
         idempotencyKey: req.header('Idempotency-Key')
       });
       
-      console.log('✅ Organization financial assessment updated via SSoT repository:', {
+      logger.info('✅ Organization financial assessment updated via SSoT repository:', {
         id: updatedOrg.id,
         version: updatedOrg.version,
         financial_assessment: updatedOrg.financial_assessment
@@ -85,7 +86,7 @@ router.post('/section-b',
       }));
       
     } catch (error) {
-      console.error('❌ SSoT Section B save error:', error);
+      logger.error('❌ SSoT Section B save error:', error);
       
       if (error.message === 'CONFLICT') {
         return res.status(409).json(createApiError(409, { 
@@ -178,7 +179,7 @@ router.get('/section-b',
       });
 
     } catch (error) {
-      console.error('Get Section B error:', error);
+      logger.error('Get Section B error:', error);
       res.status(500).json({ error: 'Failed to load financial assessment' });
     }
   }
@@ -264,7 +265,7 @@ router.post('/section-b/save',
       res.json({ ok: true, nextStep: 'section-c' });
 
     } catch (error) {
-      console.error('Save Section B error:', error);
+      logger.error('Save Section B error:', error);
       res.status(500).json({ error: 'Failed to save draft' });
     }
   }

@@ -102,7 +102,7 @@ export function useDashboard(): UseDashboardReturn {
     }
   };
 
-  const generateDefaultDashboard = (): DashboardConfig => {
+  const generateDefaultDashboard = async (): Promise<DashboardConfig> => {
     if (!user) {
       return {
         id: 'empty',
@@ -113,14 +113,75 @@ export function useDashboard(): UseDashboardReturn {
       };
     }
 
-    // Try to get role-specific template
+    try {
+      // Load template from backend based on role
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/dashboard/templates/role/${user.role}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        const template = result.data;
+        
+        if (template) {
+          // Load widgets for template
+          const widgetsResponse = await fetch('/api/dashboard/widgets', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          
+          if (widgetsResponse.ok) {
+            const widgetsResult = await widgetsResponse.json();
+            const allWidgets = widgetsResult.data;
+            
+            // Parse widget IDs from template
+            const widgetIds = typeof template.default_widgets === 'string' 
+              ? JSON.parse(template.default_widgets)
+              : template.default_widgets;
+            
+            // Map widget IDs to widget configs
+            const widgets = widgetIds.map((id: string, index: number) => {
+              const widget = allWidgets.find((w: any) => w.id === id);
+              if (!widget) return null;
+              
+              return {
+                id: widget.id,
+                type: widget.widget_type,
+                component: widget.id, // Use widget ID as component key
+                position: { 
+                  row: Math.floor(index / 3), 
+                  col: index % 3, 
+                  span: 1 
+                },
+                capability: widget.required_capability,
+                props: widget.default_config || {}
+              };
+            }).filter(Boolean);
+            
+            return {
+              id: template.id,
+              name: template.name,
+              description: template.description,
+              layout: 'grid',
+              columns: template.default_layout_columns || 3,
+              widgets,
+              isDefault: template.is_system_template,
+              isCustomizable: true
+            };
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading template from backend:', error);
+    }
+
+    // Fallback: Try frontend template
     const template = getDefaultDashboardForRole(user.role);
-    
     if (template) {
       return template.config;
     }
 
-    // Generate from capabilities
+    // Final fallback: Generate from capabilities
     return generateDashboardFromCapabilities(
       capabilities,
       user.id,

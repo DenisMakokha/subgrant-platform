@@ -1,4 +1,5 @@
 const User = require('../models/user');
+const logger = require('../utils/logger');
 
 // Middleware to check if user's email is verified
 const requireEmailVerification = async (req, res, next) => {
@@ -31,7 +32,7 @@ const requireEmailVerification = async (req, res, next) => {
     req.verifiedUser = user;
     next();
   } catch (error) {
-    console.error('Email verification middleware error:', error);
+    logger.error('Email verification middleware error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -58,7 +59,7 @@ const checkOnboardingStatus = async (req, res, next) => {
     
     next();
   } catch (error) {
-    console.error('Onboarding status middleware error:', error);
+    logger.error('Onboarding status middleware error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

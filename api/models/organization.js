@@ -159,6 +159,7 @@ class Organization {
       
       // Get existing compliance documents for this organization
       const OrganizationComplianceDocument = require('./organizationComplianceDocument');
+const logger = require('../utils/logger');
       const existingComplianceDocs = await OrganizationComplianceDocument.findByOrganization(organizationId);
       
       // Combine the required document types with existing compliance documents
@@ -172,7 +173,7 @@ class Organization {
       
       return result;
     } catch (error) {
-      console.error('Error getting required compliance documents:', error);
+      logger.error('Error getting required compliance documents:', error);
       throw error;
     }
   }
@@ -190,7 +191,7 @@ class Organization {
       
       return allSubmitted;
     } catch (error) {
-      console.error('Error checking compliance completion:', error);
+      logger.error('Error checking compliance completion:', error);
       throw error;
     }
   }

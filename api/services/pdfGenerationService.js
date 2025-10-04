@@ -1,6 +1,7 @@
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
+const logger = require('../utils/logger');
 
 class PDFGenerationService {
   constructor() {
@@ -330,7 +331,7 @@ class PDFGenerationService {
         fileSize: pdfBuffer.length
       };
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      logger.error('Error generating PDF:', error);
       throw new Error(`Failed to generate PDF: ${error.message}`);
     }
   }

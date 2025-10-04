@@ -6,6 +6,7 @@ const db = require('../config/database');
 const { ORG_STATUS } = require('../shared/constants/orgStatus');
 const { assertTransition } = require('../services/orgStateMachine');
 const EmailService = require('../services/emailService');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -44,7 +45,7 @@ router.get('/queue', guard, async (req, res) => {
 
     res.json({ items: items.rows });
   } catch (error) {
-    console.error('Error fetching COO queue:', error);
+    logger.error('Error fetching COO queue:', error);
     res.status(500).json({ error: 'Failed to fetch review queue' });
   }
 });
@@ -99,7 +100,7 @@ router.get('/organization/:orgId', guard, async (req, res) => {
       gm_approved_at: historyResult.rows[0]?.gm_approved_at || null
     });
   } catch (error) {
-    console.error('Error fetching organization details:', error);
+    logger.error('Error fetching organization details:', error);
     res.status(500).json({ error: 'Failed to fetch organization details' });
   }
 });
@@ -144,7 +145,7 @@ router.post('/:orgId/decision', guard, async (req, res) => {
           });
         }
       } catch (e) {
-        console.warn('COO approve: failed to send completion email:', e.message || e);
+        logger.warn('COO approve: failed to send completion email:', e.message || e);
       }
 
       return res.json({ 
@@ -176,7 +177,7 @@ router.post('/:orgId/decision', guard, async (req, res) => {
           });
         }
       } catch (e) {
-        console.warn('COO changes_requested: failed to send email:', e.message || e);
+        logger.warn('COO changes_requested: failed to send email:', e.message || e);
       }
 
       return res.json({ 
@@ -207,7 +208,7 @@ router.post('/:orgId/decision', guard, async (req, res) => {
           });
         }
       } catch (e) {
-        console.warn('COO reject: failed to send email:', e.message || e);
+        logger.warn('COO reject: failed to send email:', e.message || e);
       }
 
       return res.json({ 
@@ -218,7 +219,7 @@ router.post('/:orgId/decision', guard, async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Error processing COO decision:', error);
+    logger.error('Error processing COO decision:', error);
     res.status(500).json({ error: 'Failed to process decision' });
   }
 });

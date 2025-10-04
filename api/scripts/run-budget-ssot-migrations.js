@@ -4,17 +4,18 @@ const { execSync } = require('child_process');
 
 // Database connection
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 async function runBudgetSSOTMigrations(shouldClosePool = true) {
   try {
-    console.log('Running Budget SSOT migrations...');
+    logger.info('Running Budget SSOT migrations...');
     
     // Get the migration directory
     const migrationDir = path.join(__dirname, 'migrations', '2025Q4_budget_ssot');
     
     // Check if migration directory exists
     if (!fs.existsSync(migrationDir)) {
-      console.log('Migration directory does not exist:', migrationDir);
+      logger.info('Migration directory does not exist:', migrationDir);
       return;
     }
     
@@ -24,28 +25,28 @@ async function runBudgetSSOTMigrations(shouldClosePool = true) {
       .sort();
     
     if (files.length === 0) {
-      console.log('No migration files found');
+      logger.info('No migration files found');
       return;
     }
     
-    console.log(`Found ${files.length} migration files`);
+    logger.info(`Found ${files.length} migration files`);
     
     // Run each migration file
     for (const file of files) {
       const filePath = path.join(migrationDir, file);
-      console.log(`Running migration: ${file}`);
+      logger.info(`Running migration: ${file}`);
       
       // Read the SQL file
       const sql = fs.readFileSync(filePath, 'utf8');
       
       // Execute the SQL
       await db.pool.query(sql);
-      console.log(`Successfully ran migration: ${file}`);
+      logger.info(`Successfully ran migration: ${file}`);
     }
     
-    console.log('All Budget SSOT migrations completed successfully');
+    logger.info('All Budget SSOT migrations completed successfully');
   } catch (error) {
-    console.error('Error running Budget SSOT migrations:', error);
+    logger.error('Error running Budget SSOT migrations:', error);
     process.exit(1);
   } finally {
     // Close the database connection only if shouldClosePool is true

@@ -1,11 +1,12 @@
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 async function fixFinancialAssessmentsConstraint() {
   try {
-    console.log('Starting financial_assessments constraint fix...');
+    logger.info('Starting financial_assessments constraint fix...');
     
     // First, remove any duplicate records (keep the most recent one)
-    console.log('Removing duplicate records...');
+    logger.info('Removing duplicate records...');
     await db.pool.query(`
       DELETE FROM financial_assessments 
       WHERE id NOT IN (
@@ -16,14 +17,14 @@ async function fixFinancialAssessmentsConstraint() {
     `);
     
     // Add the unique constraint
-    console.log('Adding unique constraint...');
+    logger.info('Adding unique constraint...');
     await db.pool.query(`
       ALTER TABLE financial_assessments 
       ADD CONSTRAINT unique_financial_assessment_org_id UNIQUE (organization_id)
     `);
     
     // Verify the constraint was added
-    console.log('Verifying constraint...');
+    logger.info('Verifying constraint...');
     const result = await db.pool.query(`
       SELECT 
           tc.constraint_name,
@@ -36,14 +37,14 @@ async function fixFinancialAssessmentsConstraint() {
           AND tc.constraint_type = 'UNIQUE'
     `);
     
-    console.log('Unique constraints found:', result.rows);
-    console.log('✅ Financial assessments constraint fix completed successfully!');
+    logger.info('Unique constraints found:', result.rows);
+    logger.info('✅ Financial assessments constraint fix completed successfully!');
     
   } catch (error) {
     if (error.code === '23505' || error.message.includes('already exists')) {
-      console.log('✅ Constraint already exists, no action needed');
+      logger.info('✅ Constraint already exists, no action needed');
     } else {
-      console.error('❌ Error fixing financial assessments constraint:', error);
+      logger.error('❌ Error fixing financial assessments constraint:', error);
       throw error;
     }
   } finally {
@@ -54,10 +55,10 @@ async function fixFinancialAssessmentsConstraint() {
 // Run the migration
 fixFinancialAssessmentsConstraint()
   .then(() => {
-    console.log('Migration completed');
+    logger.info('Migration completed');
     process.exit(0);
   })
   .catch((error) => {
-    console.error('Migration failed:', error);
+    logger.error('Migration failed:', error);
     process.exit(1);
   });

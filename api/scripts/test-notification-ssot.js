@@ -4,6 +4,7 @@
 
 const axios = require('axios');
 const dotenv = require('dotenv');
+const logger = require('../utils/logger');
 
 dotenv.config();
 
@@ -43,37 +44,37 @@ async function makeRequest(method, endpoint, data = null, headers = {}) {
 }
 
 async function testNotificationListEndpoint() {
-  console.log('📋 Testing notification list endpoint...');
+  logger.info('📋 Testing notification list endpoint...');
   
   const result = await makeRequest('GET', `/ssot/data/notification.list?userId=${TEST_USER_ID}`);
   
   if (result.success) {
-    console.log('  ✅ Notification list endpoint working');
-    console.log(`  📋 Response: ${JSON.stringify(result.data)}`);
+    logger.info('  ✅ Notification list endpoint working');
+    logger.info(`  📋 Response: ${JSON.stringify(result.data)}`);
     return true;
   } else {
-    console.log('  ❌ Notification list endpoint failed:', result.error);
+    logger.info('  ❌ Notification list endpoint failed:', result.error);
     return false;
   }
 }
 
 async function testNotificationDetailEndpoint() {
-  console.log('📋 Testing notification detail endpoint...');
+  logger.info('📋 Testing notification detail endpoint...');
   
   const result = await makeRequest('GET', `/ssot/data/notification.detail?notificationId=test-notification-id&userId=${TEST_USER_ID}`);
   
   if (result.success) {
-    console.log('  ✅ Notification detail endpoint working');
-    console.log(`  📋 Response: ${JSON.stringify(result.data)}`);
+    logger.info('  ✅ Notification detail endpoint working');
+    logger.info(`  📋 Response: ${JSON.stringify(result.data)}`);
     return true;
   } else {
-    console.log('  ❌ Notification detail endpoint failed:', result.error);
+    logger.info('  ❌ Notification detail endpoint failed:', result.error);
     return false;
   }
 }
 
 async function testNotificationMarkAsReadAction() {
-  console.log('📋 Testing notification mark as read action...');
+  logger.info('📋 Testing notification mark as read action...');
   
   const result = await makeRequest('POST', '/ssot/action', {
     actionKey: 'notification.markAsRead',
@@ -83,17 +84,17 @@ async function testNotificationMarkAsReadAction() {
   });
   
   if (result.success) {
-    console.log('  ✅ Notification mark as read action working');
-    console.log(`  📋 Response: ${JSON.stringify(result.data)}`);
+    logger.info('  ✅ Notification mark as read action working');
+    logger.info(`  📋 Response: ${JSON.stringify(result.data)}`);
     return true;
   } else {
-    console.log('  ❌ Notification mark as read action failed:', result.error);
+    logger.info('  ❌ Notification mark as read action failed:', result.error);
     return false;
   }
 }
 
 async function testNotificationMarkAllAsReadAction() {
-  console.log('📋 Testing notification mark all as read action...');
+  logger.info('📋 Testing notification mark all as read action...');
   
   const result = await makeRequest('POST', '/ssot/action', {
     actionKey: 'notification.markAllAsRead',
@@ -101,20 +102,20 @@ async function testNotificationMarkAllAsReadAction() {
   });
   
   if (result.success) {
-    console.log('  ✅ Notification mark all as read action working');
-    console.log(`  📋 Response: ${JSON.stringify(result.data)}`);
+    logger.info('  ✅ Notification mark all as read action working');
+    logger.info(`  📋 Response: ${JSON.stringify(result.data)}`);
     return true;
   } else {
-    console.log('  ❌ Notification mark all as read action failed:', result.error);
+    logger.info('  ❌ Notification mark all as read action failed:', result.error);
     return false;
   }
 }
 
 async function runNotificationTests() {
-  console.log('🚀 Running Notification SSoT Tests');
-  console.log('=' .repeat(50));
-  console.log(`📡 API Base URL: ${API_BASE_URL}`);
-  console.log('');
+  logger.info('🚀 Running Notification SSoT Tests');
+  logger.info('=' .repeat(50));
+  logger.info(`📡 API Base URL: ${API_BASE_URL}`);
+  logger.info('');
   
   const tests = [
     { name: 'Notification List Endpoint', fn: testNotificationListEndpoint },
@@ -131,24 +132,24 @@ async function runNotificationTests() {
       const result = await test.fn();
       if (result) {
         passed++;
-        console.log(`✅ ${test.name} test passed\n`);
+        logger.info(`✅ ${test.name} test passed\n`);
       } else {
         failed++;
-        console.log(`❌ ${test.name} test failed\n`);
+        logger.info(`❌ ${test.name} test failed\n`);
       }
     } catch (error) {
       failed++;
-      console.log(`❌ ${test.name} test error: ${error.message}\n`);
+      logger.info(`❌ ${test.name} test error: ${error.message}\n`);
     }
   }
   
-  console.log('=' .repeat(50));
-  console.log(`📊 Test Results: ${passed} passed, ${failed} failed`);
+  logger.info('=' .repeat(50));
+  logger.info(`📊 Test Results: ${passed} passed, ${failed} failed`);
   
   if (failed === 0) {
-    console.log('🎉 All notification SSoT tests passed successfully!');
+    logger.info('🎉 All notification SSoT tests passed successfully!');
   } else {
-    console.log('⚠️  Some notification SSoT tests failed. Check the output above for details.');
+    logger.info('⚠️  Some notification SSoT tests failed. Check the output above for details.');
   }
   
   return failed === 0;

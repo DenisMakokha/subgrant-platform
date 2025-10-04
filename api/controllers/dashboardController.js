@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 /**
  * Dashboard Controller
@@ -33,7 +34,7 @@ const getPreferences = async (req, res) => {
       data: result.rows[0]
     });
   } catch (error) {
-    console.error('Error fetching dashboard preferences:', error);
+    logger.error('Error fetching dashboard preferences:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch dashboard preferences'
@@ -113,7 +114,7 @@ const updatePreferences = async (req, res) => {
       message: 'Dashboard preferences updated successfully'
     });
   } catch (error) {
-    console.error('Error updating dashboard preferences:', error);
+    logger.error('Error updating dashboard preferences:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to update dashboard preferences'
@@ -134,7 +135,7 @@ const resetPreferences = async (req, res) => {
       message: 'Dashboard preferences reset to default'
     });
   } catch (error) {
-    console.error('Error resetting dashboard preferences:', error);
+    logger.error('Error resetting dashboard preferences:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to reset dashboard preferences'
@@ -167,7 +168,7 @@ const getDashboardConfig = async (req, res) => {
       data: result.rows[0]
     });
   } catch (error) {
-    console.error('Error fetching dashboard config:', error);
+    logger.error('Error fetching dashboard config:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch dashboard configuration'
@@ -202,7 +203,7 @@ const getWidgetData = async (req, res) => {
         });
     }
   } catch (error) {
-    console.error('Error fetching widget data:', error);
+    logger.error('Error fetching widget data:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch widget data'

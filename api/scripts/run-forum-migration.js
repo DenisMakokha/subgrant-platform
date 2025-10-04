@@ -1,13 +1,14 @@
 const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
+const logger = require('../utils/logger');
 require('dotenv').config();
 
-console.log('Environment variables loaded:');
-console.log('DB_HOST:', process.env.DB_HOST);
-console.log('DB_PORT:', process.env.DB_PORT);
-console.log('DB_NAME:', process.env.DB_NAME);
-console.log('DB_USER:', process.env.DB_USER);
+logger.info('Environment variables loaded:');
+logger.info('DB_HOST:', process.env.DB_HOST);
+logger.info('DB_PORT:', process.env.DB_PORT);
+logger.info('DB_NAME:', process.env.DB_NAME);
+logger.info('DB_USER:', process.env.DB_USER);
 
 const pool = new Pool({
   user: process.env.DB_USER || 'postgres',
@@ -19,36 +20,36 @@ const pool = new Pool({
 
 async function runMigration() {
   try {
-    console.log('🔄 Starting Forum database migration...');
+    logger.info('🔄 Starting Forum database migration...');
     
     // Test database connection first
-    console.log('📡 Testing database connection...');
+    logger.info('📡 Testing database connection...');
     await pool.query('SELECT NOW()');
-    console.log('✅ Database connection successful');
+    logger.info('✅ Database connection successful');
     
     // Read the SQL file
     const sqlPath = path.join(__dirname, 'create_forum_tables.sql');
-    console.log('📄 Reading SQL file:', sqlPath);
+    logger.info('📄 Reading SQL file:', sqlPath);
     const sql = fs.readFileSync(sqlPath, 'utf8');
-    console.log('📝 SQL file loaded, length:', sql.length, 'characters');
+    logger.info('📝 SQL file loaded, length:', sql.length, 'characters');
     
     // Execute the migration
-    console.log('🚀 Executing migration...');
+    logger.info('🚀 Executing migration...');
     await pool.query(sql);
     
-    console.log('✅ Forum database migration completed successfully!');
-    console.log('📊 Created tables:');
-    console.log('   - forum_categories (6 categories)');
-    console.log('   - forum_tags (16 tags)');
-    console.log('   - forum_topics');
-    console.log('   - forum_posts');
-    console.log('   - forum_attachments');
-    console.log('   - forum_votes');
-    console.log('   - forum_subscriptions');
-    console.log('   - forum_reports');
+    logger.info('✅ Forum database migration completed successfully!');
+    logger.info('📊 Created tables:');
+    logger.info('   - forum_categories (6 categories)');
+    logger.info('   - forum_tags (16 tags)');
+    logger.info('   - forum_topics');
+    logger.info('   - forum_posts');
+    logger.info('   - forum_attachments');
+    logger.info('   - forum_votes');
+    logger.info('   - forum_subscriptions');
+    logger.info('   - forum_reports');
     
   } catch (error) {
-    console.error('❌ Migration failed:', error.message);
+    logger.error('❌ Migration failed:', error.message);
     process.exit(1);
   } finally {
     await pool.end();

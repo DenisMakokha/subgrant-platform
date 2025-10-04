@@ -1,0 +1,95 @@
+# Gitleaks configuration for secret scanning
+# https://github.com/gitleaks/gitleaks
+
+title = "Gitleaks Configuration for Sub-Grant Management Platform"
+
+[extend]
+# useDefault will extend the base configuration with the default gitleaks config:
+# https://github.com/gitleaks/gitleaks/blob/master/config/gitleaks.toml
+useDefault = true
+
+[allowlist]
+description = "Global allowlist for false positives"
+paths = [
+  '''package-lock\.json''',
+  '''yarn\.lock''',
+  '''pnpm-lock\.yaml''',
+  '''\.min\.js''',
+  '''\.map''',
+  '''\.md$''',  # Documentation files
+]
+
+# Specific patterns to ignore (false positives)
+regexes = [
+  '''example\.com''',
+  '''localhost''',
+  '''127\.0\.0\.1''',
+  '''test_api_key''',
+  '''YOUR_API_KEY_HERE''',
+  '''REPLACE_WITH_YOUR''',
+]
+
+[[rules]]
+id = "generic-api-key"
+description = "Detected a Generic API Key"
+regex = '''(?i)(?:key|api|token|secret|password|pwd)['"]?\s*[:=]\s*['"]?[a-z0-9_\-]{20,}'''
+keywords = [
+  "api",
+  "key",
+  "token",
+  "secret",
+]
+
+[[rules]]
+id = "jwt-token"
+description = "Detected a JWT token"
+regex = '''eyJ[A-Za-z0-9-_=]+\.eyJ[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*'''
+keywords = [
+  "eyJ",
+]
+
+[[rules]]
+id = "aws-access-key"
+description = "Detected an AWS Access Key"
+regex = '''AKIA[0-9A-Z]{16}'''
+keywords = [
+  "AKIA",
+]
+
+[[rules]]
+id = "postgres-connection-string"
+description = "Detected a Postgres connection string"
+regex = '''postgres:\/\/[a-zA-Z0-9_-]+:[a-zA-Z0-9_-]+@[a-zA-Z0-9.-]+:\d+\/[a-zA-Z0-9_-]+'''
+keywords = [
+  "postgres://",
+]
+
+[[rules]]
+id = "private-key"
+description = "Detected a private key"
+regex = '''-----BEGIN (?:RSA|DSA|EC|OPENSSH|PGP) PRIVATE KEY-----'''
+keywords = [
+  "BEGIN",
+  "PRIVATE",
+  "KEY",
+]
+
+[[rules]]
+id = "npm-token"
+description = "Detected an NPM access token"
+regex = '''npm_[a-zA-Z0-9]{36}'''
+keywords = [
+  "npm_",
+]
+
+[[rules]]
+id = "github-token"
+description = "Detected a GitHub token"
+regex = '''gh[pousr]_[0-9a-zA-Z]{36}'''
+keywords = [
+  "ghp_",
+  "gho_",
+  "ghu_",
+  "ghs_",
+  "ghr_",
+]

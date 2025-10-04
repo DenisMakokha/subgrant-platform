@@ -1,5 +1,6 @@
 const db = require('../config/database');
 const bcrypt = require('bcryptjs');
+const logger = require('../utils/logger');
 
 class User {
   constructor(data) {
@@ -133,8 +134,8 @@ class User {
     values.push(id);
     const query = `UPDATE users SET ${fields.join(', ')}, updated_at = NOW() WHERE id = $${index} RETURNING *`;
     
-    console.log('🔍 User.update query:', query);
-    console.log('🔍 User.update values:', values);
+    logger.info('🔍 User.update query:', query);
+    logger.info('🔍 User.update values:', values);
     
     const result = await db.pool.query(query, values);
     return result.rows.length ? new User(result.rows[0]) : null;

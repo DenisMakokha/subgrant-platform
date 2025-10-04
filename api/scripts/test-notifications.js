@@ -1,5 +1,6 @@
 const db = require('../config/database');
 const notificationService = require('../services/notificationService');
+const logger = require('../utils/logger');
 
 async function testNotifications() {
   try {
@@ -7,12 +8,12 @@ async function testNotifications() {
     const result = await db.pool.query('SELECT id FROM users WHERE role = $1 LIMIT 1', ['partner_user']);
     
     if (result.rows.length === 0) {
-      console.log('No partner users found');
+      logger.info('No partner users found');
       return;
     }
 
     const userId = result.rows[0].id;
-    console.log('Creating test notifications for user:', userId);
+    logger.info('Creating test notifications for user:', userId);
 
     // Create some test notifications
     await notificationService.createNotification({
@@ -48,19 +49,19 @@ async function testNotifications() {
       action_text: 'View Budget'
     });
 
-    console.log('Test notifications created successfully');
+    logger.info('Test notifications created successfully');
 
     // Test fetching notifications
     const notifications = await notificationService.getUserNotifications(userId);
-    console.log('Fetched notifications:', notifications.length);
+    logger.info('Fetched notifications:', notifications.length);
 
     // Test unread count
     const unreadCount = await notificationService.getUnreadCount(userId);
-    console.log('Unread count:', unreadCount);
+    logger.info('Unread count:', unreadCount);
 
     process.exit(0);
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Error:', error);
     process.exit(1);
   }
 }

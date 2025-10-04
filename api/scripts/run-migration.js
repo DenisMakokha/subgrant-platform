@@ -6,6 +6,7 @@ const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
+const logger = require('../utils/logger');
 
 // Load environment variables
 dotenv.config();
@@ -20,8 +21,8 @@ const dbConfig = {
 };
 
 async function runMigration() {
-  console.log('🚀 Running Linear Onboarding Flow Migration...');
-  console.log('=' .repeat(60));
+  logger.info('🚀 Running Linear Onboarding Flow Migration...');
+  logger.info('=' .repeat(60));
   
   const pool = new Pool(dbConfig);
   
@@ -32,10 +33,10 @@ async function runMigration() {
     const migrationPath = path.join(__dirname, 'migrate-linear-onboarding-flow-v2.sql');
     const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
     
-    console.log('📄 Migration file loaded:', migrationPath);
+    logger.info('📄 Migration file loaded:', migrationPath);
     
     // Check current organization statuses before migration
-    console.log('\n📊 Current organization statuses (before migration):');
+    logger.info('\n📊 Current organization statuses (before migration):');
     const beforeResult = await client.query(`
       SELECT status, COUNT(*) as count 
       FROM organizations 
@@ -43,16 +44,16 @@ async function runMigration() {
       ORDER BY count DESC
     `);
     beforeResult.rows.forEach(row => {
-      console.log(`  ${row.status}: ${row.count} organizations`);
+      logger.info(`  ${row.status}: ${row.count} organizations`);
     });
     
     // Execute the migration
-    console.log('\n🔄 Executing migration...');
+    logger.info('\n🔄 Executing migration...');
     await client.query(migrationSQL);
-    console.log('✅ Migration executed successfully');
+    logger.info('✅ Migration executed successfully');
     
     // Check organization statuses after migration
-    console.log('\n📊 Organization statuses (after migration):');
+    logger.info('\n📊 Organization statuses (after migration):');
     const afterResult = await client.query(`
       SELECT 
         status, 
@@ -74,11 +75,11 @@ async function runMigration() {
         END
     `);
     afterResult.rows.forEach(row => {
-      console.log(`  ${row.status}: ${row.count} organizations (${row.earliest?.toISOString().split('T')[0]} - ${row.latest?.toISOString().split('T')[0]})`);
+      logger.info(`  ${row.status}: ${row.count} organizations (${row.earliest?.toISOString().split('T')[0]} - ${row.latest?.toISOString().split('T')[0]})`);
     });
     
     // Verify enum values
-    console.log('\n🔍 Verifying organization_status enum values:');
+    logger.info('\n🔍 Verifying organization_status enum values:');
     const enumResult = await client.query(`
       SELECT enumlabel 
       FROM pg_enum 
@@ -90,11 +91,11 @@ async function runMigration() {
       ORDER BY enumsortorder
     `);
     enumResult.rows.forEach(row => {
-      console.log(`  ✓ ${row.enumlabel}`);
+      logger.info(`  ✓ ${row.enumlabel}`);
     });
     
     // Test state transitions
-    console.log('\n🧪 Testing sample state transitions:');
+    logger.info('\n🧪 Testing sample state transitions:');
     const testTransitions = [
       { from: 'email_pending', to: 'a_pending' },
       { from: 'a_pending', to: 'b_pending' },
@@ -114,29 +115,29 @@ async function runMigration() {
             LIMIT 1
           )
         `, [to, from]);
-        console.log(`  ✅ ${from} → ${to}: Valid transition`);
+        logger.info(`  ✅ ${from} → ${to}: Valid transition`);
       } catch (error) {
-        console.log(`  ❌ ${from} → ${to}: ${error.message}`);
+        logger.info(`  ❌ ${from} → ${to}: ${error.message}`);
       }
     }
     
     client.release();
     
   } catch (error) {
-    console.error('❌ Migration failed:', error.message);
-    console.error('Stack trace:', error.stack);
+    logger.error('❌ Migration failed:', error.message);
+    logger.error('Stack trace:', error.stack);
     process.exit(1);
   } finally {
     await pool.end();
   }
   
-  console.log('\n' + '=' .repeat(60));
-  console.log('✅ Linear Onboarding Flow Migration completed successfully!');
-  console.log('\n📝 Summary:');
-  console.log('  - Organization status enum updated');
-  console.log('  - Existing organizations migrated to new statuses');
-  console.log('  - Database schema validated');
-  console.log('  - State transitions tested');
+  logger.info('\n' + '=' .repeat(60));
+  logger.info('✅ Linear Onboarding Flow Migration completed successfully!');
+  logger.info('\n📝 Summary:');
+  logger.info('  - Organization status enum updated');
+  logger.info('  - Existing organizations migrated to new statuses');
+  logger.info('  - Database schema validated');
+  logger.info('  - State transitions tested');
 }
 
 // Run the migration if this script is executed directly

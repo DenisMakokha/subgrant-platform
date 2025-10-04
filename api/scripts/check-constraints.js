@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 async function checkConstraints() {
   try {
@@ -11,9 +12,9 @@ async function checkConstraints() {
       WHERE tc.table_name = 'notifications'
     `);
     
-    console.log('Notifications table constraints:');
+    logger.info('Notifications table constraints:');
     constraintsResult.rows.forEach(row => {
-      console.log(`- ${row.constraint_name}: ${row.constraint_type} (${row.column_name})`);
+      logger.info(`- ${row.constraint_name}: ${row.constraint_type} (${row.column_name})`);
     });
 
     // Check column details
@@ -24,23 +25,23 @@ async function checkConstraints() {
       ORDER BY ordinal_position
     `);
     
-    console.log('\nColumn details:');
+    logger.info('\nColumn details:');
     columnsResult.rows.forEach(row => {
-      console.log(`- ${row.column_name}: ${row.data_type} (nullable: ${row.is_nullable}, default: ${row.column_default})`);
+      logger.info(`- ${row.column_name}: ${row.data_type} (nullable: ${row.is_nullable}, default: ${row.column_default})`);
     });
 
     // Try a simple insert to see what fails
-    console.log('\nTesting simple insert...');
+    logger.info('\nTesting simple insert...');
     
     // First get a user
     const userResult = await db.pool.query('SELECT id FROM users LIMIT 1');
     if (userResult.rows.length === 0) {
-      console.log('No users found');
+      logger.info('No users found');
       return;
     }
     
     const userId = userResult.rows[0].id;
-    console.log('Using user ID:', userId);
+    logger.info('Using user ID:', userId);
     
     // Try the insert
     const insertResult = await db.pool.query(`
@@ -49,11 +50,11 @@ async function checkConstraints() {
       RETURNING id
     `, [userId, 'in_app', 'test', JSON.stringify({title: 'Test'})]);
     
-    console.log('Insert successful! ID:', insertResult.rows[0].id);
+    logger.info('Insert successful! ID:', insertResult.rows[0].id);
 
     process.exit(0);
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Error:', error);
     process.exit(1);
   }
 }

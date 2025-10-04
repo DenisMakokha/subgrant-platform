@@ -1,3 +1,5 @@
+const logger = require('../../utils/logger');
+
 const { v4: uuidv4 } = require('uuid');
 
 class SecurityRLSService {
@@ -35,7 +37,7 @@ USING (
       try {
         await this.db.query(p.sql);
       } catch (err) {
-        console.error('Error creating RLS policy', p.name, err);
+        logger.error('Error creating RLS policy', p.name, err);
       }
     }
 
@@ -48,7 +50,7 @@ USING (
       try {
         await this.db.query(`ALTER TABLE ${t} ENABLE ROW LEVEL SECURITY;`);
       } catch (err) {
-        console.error('Error enabling RLS on', t, err);
+        logger.error('Error enabling RLS on', t, err);
       }
     }
     return { success: true };
@@ -64,7 +66,7 @@ USING (
           [r]
         );
       } catch (err) {
-        console.error('Error creating role', r, err);
+        logger.error('Error creating role', r, err);
       }
     }
     return { success: true, rolesCreated: roles.length };
@@ -107,7 +109,7 @@ RETURNING *;`;
       if (r.rows.length === 0) return { allowed: false, reason: 'not_found' };
       return { allowed: r.rows[0].created_by === userId, reason: 'owner_check' };
     } catch (err) {
-      console.error('canUserPerformAction error', err);
+      logger.error('canUserPerformAction error', err);
       return { allowed: false, reason: 'error' };
     }
   }

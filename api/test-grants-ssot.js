@@ -6,6 +6,7 @@ const GrantSSOTRepository = require('./repositories/grantSSOTRepository');
 const GrantEventHooksService = require('./services/grants/grantEventHooksService');
 const { validateCreateGrant, validateUpdateGrant } = require('./schemas/grantSchemas');
 const db = require('./config/database');
+const logger = require('utils/logger');
 
 describe('Grants SSOT Implementation', () => {
   let mockClient;
@@ -661,8 +662,8 @@ describe('Grants SSOT Implementation', () => {
 
 // Test runner helper
 if (require.main === module) {
-  console.log('Running Grants SSOT Tests...');
-  console.log('Use: npm test or mocha api/test-grants-ssot.js');
+  logger.info('Running Grants SSOT Tests...');
+  logger.info('Use: npm test or mocha api/test-grants-ssot.js');
 }
 
 module.exports = {

@@ -1,10 +1,11 @@
 const MeReport = require('./models/meReport');
 const FinancialReport = require('./models/financialReport');
 const Receipt = require('./models/receipt');
+const logger = require('utils/logger');
 
 async function testReportingFunctionality() {
   try {
-    console.log('Testing ME Report functionality...');
+    logger.info('Testing ME Report functionality...');
     
     // Create a new ME report
     const meReportData = {
@@ -22,16 +23,16 @@ async function testReportingFunctionality() {
     };
     
     const meReport = await MeReport.create(meReportData);
-    console.log('Created ME report:', meReport);
+    logger.info('Created ME report:', meReport);
     
     // Update the ME report
     const updatedMeReport = await meReport.update({
       status: 'submitted',
       submitted_at: new Date()
     });
-    console.log('Updated ME report:', updatedMeReport);
+    logger.info('Updated ME report:', updatedMeReport);
     
-    console.log('\nTesting Financial Report functionality...');
+    logger.info('\nTesting Financial Report functionality...');
     
     // Create a new financial report
     const financialReportData = {
@@ -47,16 +48,16 @@ async function testReportingFunctionality() {
     };
     
     const financialReport = await FinancialReport.create(financialReportData);
-    console.log('Created financial report:', financialReport);
+    logger.info('Created financial report:', financialReport);
     
     // Update the financial report
     const updatedFinancialReport = await financialReport.update({
       status: 'submitted',
       submitted_at: new Date()
     });
-    console.log('Updated financial report:', updatedFinancialReport);
+    logger.info('Updated financial report:', updatedFinancialReport);
     
-    console.log('\nTesting Receipt functionality...');
+    logger.info('\nTesting Receipt functionality...');
     
     // Create a new receipt
     const receiptData = {
@@ -72,15 +73,15 @@ async function testReportingFunctionality() {
     };
     
     const receipt = await Receipt.create(receiptData);
-    console.log('Created receipt:', receipt);
+    logger.info('Created receipt:', receipt);
     
     // Get receipts for the financial report
     const receipts = await Receipt.findByFinancialReportId(financialReport.id);
-    console.log('Receipts for financial report:', receipts);
+    logger.info('Receipts for financial report:', receipts);
     
-    console.log('\nAll tests passed!');
+    logger.info('\nAll tests passed!');
   } catch (error) {
-    console.error('Test failed:', error);
+    logger.error('Test failed:', error);
   }
 }
 

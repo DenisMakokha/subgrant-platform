@@ -16,15 +16,16 @@ const router = express.Router();
 
 // SSoT Organization endpoint using repository pattern
 const OrganizationRepository = require('../repositories/OrganizationRepository.js');
+const logger = require('../utils/logger');
 const { createEnvelope, createApiError } = require('../core/FormRepository.js');
 
 const orgRepo = new OrganizationRepository();
 
 router.post('/section-a',
   async (req, res) => {
-    console.log('🔥 SECTION A ENDPOINT HIT!');
+    logger.info('🔥 SECTION A ENDPOINT HIT!');
     try {
-      console.log('📥 SSoT Section A - Received data:', req.body);
+      logger.info('📥 SSoT Section A - Received data:', req.body);
       
       // Extract user ID from JWT token
       const token = req.headers.authorization?.replace('Bearer ', '');
@@ -35,14 +36,14 @@ router.post('/section-a',
       const decoded = require('jsonwebtoken').verify(token, process.env.JWT_SECRET);
       const userId = decoded.sub;
       
-      console.log('👤 User ID from token:', userId);
+      logger.info('👤 User ID from token:', userId);
       
       // Get user's organization (with safe fallback if repo still references deleted_at)
       let existingOrg;
       try {
         existingOrg = await orgRepo.readByUserId(userId);
       } catch (readErr) {
-        console.warn('⚠️ Repo.readByUserId failed, attempting direct DB read:', readErr.message || readErr);
+        logger.warn('⚠️ Repo.readByUserId failed, attempting direct DB read:', readErr.message || readErr);
         if (readErr.code === '42703' || String(readErr.message || '').includes('deleted_at')) {
           const direct = await db.pool.query('SELECT * FROM organizations WHERE owner_user_id = $1', [userId]);
           existingOrg = direct.rows[0] || null;
@@ -54,8 +55,8 @@ router.post('/section-a',
         return res.status(404).json(createApiError(404, { form: ['Organization not found'] }));
       }
       
-      console.log('🏢 Found organization:', existingOrg.id);
-      console.log('🧾 Existing org snapshot:', {
+      logger.info('🏢 Found organization:', existingOrg.id);
+      logger.info('🧾 Existing org snapshot:', {
         id: existingOrg.id,
         version: existingOrg.version,
         name: existingOrg.name,
@@ -71,7 +72,7 @@ router.post('/section-a',
       
       // Extract data from SSoT envelope format
       const requestData = req.body.data || req.body;
-      console.log('📦 Extracted request data:', requestData);
+      logger.info('📦 Extracted request data:', requestData);
 
       // Merge non-nullable fields from existing organization when absent
       const nonNullable = ['name', 'legal_name', 'email'];
@@ -89,14 +90,14 @@ router.post('/section-a',
         return v === undefined || v === null || (typeof v === 'string' && v.trim().length === 0);
       });
       if (missingAfterMerge.length > 0) {
-        console.log('❌ Missing required fields after merge:', missingAfterMerge);
+        logger.info('❌ Missing required fields after merge:', missingAfterMerge);
         const errors = {};
         for (const k of missingAfterMerge) errors[k] = [`${k} is required`];
         return res.status(400).json(createApiError(400, errors));
       }
 
       const validatedData = mergedData;
-      console.log('✅ Data validated (post-merge):', validatedData);
+      logger.info('✅ Data validated (post-merge):', validatedData);
       
       // Extract etag from request headers or body
       const etag = Number(req.header('If-Match') || req.body?.meta?.etag || existingOrg.version);
@@ -107,8 +108,8 @@ router.post('/section-a',
         status: 'b_pending' // Progress to next section
       };
       
-      console.log('🔄 Updating organization with data:', updateData);
-      console.log('📊 Update options:', {
+      logger.info('🔄 Updating organization with data:', updateData);
+      logger.info('📊 Update options:', {
         etag,
         userId,
         idempotencyKey: req.header('Idempotency-Key')
@@ -123,7 +124,7 @@ router.post('/section-a',
           idempotencyKey: req.header('Idempotency-Key')
         });
       } catch (updErr) {
-        console.warn('⚠️ Repo.update failed, attempting direct DB update:', updErr.message || updErr);
+        logger.warn('⚠️ Repo.update failed, attempting direct DB update:', updErr.message || updErr);
         if (updErr.code === '42703' || String(updErr.message || '').includes('deleted_at')) {
           // Build dynamic update query
           const allowed = [
@@ -143,7 +144,7 @@ router.post('/section-a',
           sets.push(`updated_at = NOW()`);
           const q = `UPDATE organizations SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`;
           vals.push(existingOrg.id);
-          console.log('🛠️ Direct UPDATE SQL:', q, 'params:', vals);
+          logger.info('🛠️ Direct UPDATE SQL:', q, 'params:', vals);
           const directUpd = await db.pool.query(q, vals);
           updatedOrg = directUpd.rows[0];
         } else {
@@ -151,7 +152,7 @@ router.post('/section-a',
         }
       }
       
-      console.log('✅ Organization updated via SSoT repository:', {
+      logger.info('✅ Organization updated via SSoT repository:', {
         id: updatedOrg.id,
         version: updatedOrg.version,
         bank_name: updatedOrg.bank_name,
@@ -165,7 +166,7 @@ router.post('/section-a',
       }));
       
     } catch (error) {
-      console.error('❌ SSoT Section A save error:', error);
+      logger.error('❌ SSoT Section A save error:', error);
 
       if (error.message === 'CONFLICT') {
         return res.status(409).json(createApiError(409, { 
@@ -266,7 +267,7 @@ router.get('/section-a',
       });
 
     } catch (error) {
-      console.error('Get Section A error:', error);
+      logger.error('Get Section A error:', error);
       res.status(500).json({ error: 'Failed to load organization profile' });
     }
   }
@@ -338,7 +339,7 @@ router.post('/section-a/save',
       res.json({ ok: true, nextStep: 'section-b' });
 
     } catch (error) {
-      console.error('Save Section A error:', error);
+      logger.error('Save Section A error:', error);
       res.status(500).json({ error: 'Failed to save draft' });
     }
   }

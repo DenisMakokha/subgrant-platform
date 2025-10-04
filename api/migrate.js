@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 const fs = require('fs');
+const logger = require('utils/logger');
 
 const pool = new Pool({
   user: 'subgrant_user',
@@ -11,44 +12,44 @@ const pool = new Pool({
 
 (async () => {
   try {
-    console.log('Connecting to database...');
+    logger.info('Connecting to database...');
     const client = await pool.connect();
     
-    console.log('Testing connection...');
+    logger.info('Testing connection...');
     await client.query('SELECT 1');
-    console.log('Database connected successfully');
+    logger.info('Database connected successfully');
     
-    console.log('Reading SQL file...');
+    logger.info('Reading SQL file...');
     const sqlPath = 'scripts/create_forum_tables.sql';
-    console.log('SQL path:', sqlPath);
+    logger.info('SQL path:', sqlPath);
     const sql = fs.readFileSync(sqlPath, 'utf8');
-    console.log(`SQL file loaded (${sql.length} characters)`);
+    logger.info(`SQL file loaded (${sql.length} characters)`);
     
-    console.log('Executing migration...');
+    logger.info('Executing migration...');
     await client.query(sql);
     
-    console.log('✅ Forum migration completed successfully!');
-    console.log('Created:');
-    console.log('- 6 Forum categories');
-    console.log('- 16 Forum tags');
-    console.log('- All Forum database tables');
+    logger.info('✅ Forum migration completed successfully!');
+    logger.info('Created:');
+    logger.info('- 6 Forum categories');
+    logger.info('- 16 Forum tags');
+    logger.info('- All Forum database tables');
     
     client.release();
     
   } catch (error) {
-    console.error('❌ Migration failed:');
-    console.error('Error:', error.message);
-    console.error('Code:', error.code);
+    logger.error('❌ Migration failed:');
+    logger.error('Error:', error.message);
+    logger.error('Code:', error.code);
     
     if (error.code === 'ECONNREFUSED') {
-      console.error('PostgreSQL server is not running');
+      logger.error('PostgreSQL server is not running');
     } else if (error.code === '28P01') {
-      console.error('Authentication failed - check username/password');
+      logger.error('Authentication failed - check username/password');
     } else if (error.code === '3D000') {
-      console.error('Database does not exist');
+      logger.error('Database does not exist');
     }
   } finally {
     await pool.end();
-    console.log('Database connection closed');
+    logger.info('Database connection closed');
   }
 })();

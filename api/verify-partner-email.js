@@ -1,3 +1,5 @@
+const logger = require('utils/logger');
+
 const { Pool } = require('pg');
 
 const pool = new Pool({
@@ -19,12 +21,12 @@ async function verifyPartnerEmail() {
     );
     
     if (updateResult.rows.length > 0) {
-      console.log('Partner email verified successfully:', updateResult.rows[0]);
+      logger.info('Partner email verified successfully:', updateResult.rows[0]);
     } else {
-      console.log('Partner user not found with email: partner@test.com');
+      logger.info('Partner user not found with email: partner@test.com');
     }
   } catch (error) {
-    console.error('Error verifying partner email:', error);
+    logger.error('Error verifying partner email:', error);
   } finally {
     await pool.end();
   }

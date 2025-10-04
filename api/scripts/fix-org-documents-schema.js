@@ -1,11 +1,12 @@
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 async function fixOrgDocumentsSchema() {
   try {
-    console.log('Starting org_documents schema fix...');
+    logger.info('Starting org_documents schema fix...');
     
     // Add missing columns to org_documents table
-    console.log('Adding missing columns to org_documents...');
+    logger.info('Adding missing columns to org_documents...');
     await db.pool.query(`
       ALTER TABLE org_documents 
       ADD COLUMN IF NOT EXISTS requirement_code VARCHAR(100),
@@ -17,7 +18,7 @@ async function fixOrgDocumentsSchema() {
     `);
     
     // Update existing rows to have proper values
-    console.log('Updating existing rows with default values...');
+    logger.info('Updating existing rows with default values...');
     await db.pool.query(`
       UPDATE org_documents 
       SET 
@@ -31,14 +32,14 @@ async function fixOrgDocumentsSchema() {
     `);
     
     // Create index on requirement_code for better performance
-    console.log('Creating index on requirement_code...');
+    logger.info('Creating index on requirement_code...');
     await db.pool.query(`
       CREATE INDEX IF NOT EXISTS idx_org_documents_requirement_code 
       ON org_documents(requirement_code)
     `);
     
     // Verify the schema
-    console.log('Verifying org_documents schema...');
+    logger.info('Verifying org_documents schema...');
     const schemaCheck = await db.pool.query(`
       SELECT column_name, data_type, is_nullable 
       FROM information_schema.columns 
@@ -46,18 +47,18 @@ async function fixOrgDocumentsSchema() {
       ORDER BY ordinal_position
     `);
     
-    console.log('Org_documents table schema:');
+    logger.info('Org_documents table schema:');
     schemaCheck.rows.forEach(row => {
-      console.log(`  ${row.column_name}: ${row.data_type} (nullable: ${row.is_nullable})`);
+      logger.info(`  ${row.column_name}: ${row.data_type} (nullable: ${row.is_nullable})`);
     });
     
     const documentCount = await db.pool.query('SELECT COUNT(*) FROM org_documents');
-    console.log(`Total org documents: ${documentCount.rows[0].count}`);
+    logger.info(`Total org documents: ${documentCount.rows[0].count}`);
     
-    console.log('✅ Org_documents schema fix completed successfully!');
+    logger.info('✅ Org_documents schema fix completed successfully!');
     
   } catch (error) {
-    console.error('❌ Error fixing org_documents schema:', error);
+    logger.error('❌ Error fixing org_documents schema:', error);
     throw error;
   } finally {
     await db.pool.end();
@@ -67,10 +68,10 @@ async function fixOrgDocumentsSchema() {
 // Run the migration
 fixOrgDocumentsSchema()
   .then(() => {
-    console.log('Migration completed');
+    logger.info('Migration completed');
     process.exit(0);
   })
   .catch((error) => {
-    console.error('Migration failed:', error);
+    logger.error('Migration failed:', error);
     process.exit(1);
   });

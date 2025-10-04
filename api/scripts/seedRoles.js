@@ -3,6 +3,7 @@
 const { CAPABILITIES } = require('../registry/capabilities');
 const { DATA_KEYS } = require('../registry/dataKeys');
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 // Initial role definitions
 const initialRoles = [
@@ -229,7 +230,7 @@ async function seedRoles() {
       ];
       
       await client.query(query, values);
-      console.log(`Seeded role: ${role.id}`);
+      logger.info(`Seeded role: ${role.id}`);
     }
     
     // Insert dashboards
@@ -253,14 +254,14 @@ async function seedRoles() {
       ];
       
       await client.query(query, values);
-      console.log(`Seeded dashboard for role: ${dashboard.role_id}`);
+      logger.info(`Seeded dashboard for role: ${dashboard.role_id}`);
     }
     
     await client.query('COMMIT');
-    console.log('Role seeding completed successfully');
+    logger.info('Role seeding completed successfully');
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error seeding roles:', error);
+    logger.error('Error seeding roles:', error);
     throw error;
   } finally {
     client.release();
@@ -271,11 +272,11 @@ async function seedRoles() {
 if (require.main === module) {
   seedRoles()
     .then(() => {
-      console.log('Role seeding script completed');
+      logger.info('Role seeding script completed');
       process.exit(0);
     })
     .catch((error) => {
-      console.error('Role seeding script failed:', error);
+      logger.error('Role seeding script failed:', error);
       process.exit(1);
     });
 }

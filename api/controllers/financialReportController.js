@@ -2,6 +2,7 @@ const FinancialReport = require('../models/financialReport');
 const Receipt = require('../models/receipt');
 const { validateFinancialReport } = require('../middleware/validation');
 const auditLogger = require('../middleware/auditLogger');
+const logger = require('../utils/logger');
 
 class FinancialReportController {
   // Create a new financial report
@@ -34,7 +35,7 @@ class FinancialReportController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.status(201).json(financialReport);
@@ -138,7 +139,7 @@ class FinancialReportController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json(updatedFinancialReport);
@@ -172,7 +173,7 @@ class FinancialReportController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
 
       res.json({ message: 'Financial report deleted successfully' });
@@ -209,7 +210,7 @@ class FinancialReportController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json(updatedFinancialReport);
@@ -247,7 +248,7 @@ class FinancialReportController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json(updatedFinancialReport);
@@ -290,7 +291,7 @@ class FinancialReportController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       // In a real implementation, you would generate a PDF file here
@@ -330,7 +331,7 @@ class FinancialReportController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       // In a real implementation, you would generate an Excel file here

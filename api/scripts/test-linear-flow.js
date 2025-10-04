@@ -1,5 +1,6 @@
 // Test script for linear onboarding flow validation
 const path = require('path');
+const logger = require('../utils/logger');
 
 // Import the state machine and constants
 let orgStateMachine, ORG_STATUS, ROLES;
@@ -9,9 +10,9 @@ try {
     ORG_STATUS = require('../../shared/constants/orgStatus').ORG_STATUS;
     ROLES = require('../../shared/constants/roles').ROLES;
 } catch (error) {
-    console.error('❌ Failed to import modules:', error.message);
-    console.log('📁 Current working directory:', process.cwd());
-    console.log('📁 Script location:', __dirname);
+    logger.error('❌ Failed to import modules:', error.message);
+    logger.info('📁 Current working directory:', process.cwd());
+    logger.info('📁 Script location:', __dirname);
     
     // Fallback: define constants locally for testing
     ORG_STATUS = {
@@ -58,7 +59,7 @@ try {
 
 // Test the state machine transitions
 function testStateMachine() {
-    console.log('Testing Linear Onboarding Flow State Machine...\n');
+    logger.info('Testing Linear Onboarding Flow State Machine...\n');
     
     // Test valid transitions
     const validTransitions = [
@@ -73,10 +74,10 @@ function testStateMachine() {
         { from: ORG_STATUS.CHANGES_REQUESTED, to: ORG_STATUS.C_PENDING, action: 'admin flags section C' }
     ];
     
-    console.log('✅ Valid Transitions:');
+    logger.info('✅ Valid Transitions:');
     validTransitions.forEach(({ from, to, action }) => {
         const isValid = orgStateMachine.canTransition(from, to);
-        console.log(`  ${from} → ${to} (${action}): ${isValid ? '✅ VALID' : '❌ INVALID'}`);
+        logger.info(`  ${from} → ${to} (${action}): ${isValid ? '✅ VALID' : '❌ INVALID'}`);
     });
     
     // Test invalid transitions
@@ -88,23 +89,23 @@ function testStateMachine() {
         { from: ORG_STATUS.C_PENDING, to: ORG_STATUS.A_PENDING, reason: 'going backwards in linear flow' }
     ];
     
-    console.log('\n❌ Invalid Transitions (should be blocked):');
+    logger.info('\n❌ Invalid Transitions (should be blocked):');
     invalidTransitions.forEach(({ from, to, reason }) => {
         const isValid = orgStateMachine.canTransition(from, to);
-        console.log(`  ${from} → ${to} (${reason}): ${isValid ? '❌ INCORRECTLY ALLOWED' : '✅ CORRECTLY BLOCKED'}`);
+        logger.info(`  ${from} → ${to} (${reason}): ${isValid ? '❌ INCORRECTLY ALLOWED' : '✅ CORRECTLY BLOCKED'}`);
     });
     
     // Test next step determination
-    console.log('\n🎯 Next Step Routing:');
+    logger.info('\n🎯 Next Step Routing:');
     Object.values(ORG_STATUS).forEach(status => {
         const nextStep = orgStateMachine.nextStepFrom(status);
-        console.log(`  ${status} → /onboarding/${nextStep}`);
+        logger.info(`  ${status} → /onboarding/${nextStep}`);
     });
 }
 
 // Test role normalization
 function testRoleNormalization() {
-    console.log('\n\nTesting Role Normalization...\n');
+    logger.info('\n\nTesting Role Normalization...\n');
     
     const testCases = [
         { input: 'admin', expected: ROLES.ADMIN },
@@ -114,21 +115,21 @@ function testRoleNormalization() {
         { input: 'invalid_role', expected: null }
     ];
     
-    console.log('🔐 Role Mapping Tests:');
+    logger.info('🔐 Role Mapping Tests:');
     testCases.forEach(({ input, expected }) => {
         // This would test the role normalization function if implemented
-        console.log(`  Role "${input}" → "${expected || 'null'}"`);
+        logger.info(`  Role "${input}" → "${expected || 'null'}"`);
     });
     
-    console.log('\n📋 Defined Roles:');
+    logger.info('\n📋 Defined Roles:');
     Object.entries(ROLES).forEach(([key, value]) => {
-        console.log(`  ${key} = "${value}"`);
+        logger.info(`  ${key} = "${value}"`);
     });
 }
 
 // Test organization status validation
 function testStatusValidation() {
-    console.log('\n\nTesting Organization Status Values...\n');
+    logger.info('\n\nTesting Organization Status Values...\n');
     
     const expectedStatuses = [
         'email_pending',
@@ -140,39 +141,39 @@ function testStatusValidation() {
         'finalized'
     ];
     
-    console.log('📋 Expected Status Values:');
+    logger.info('📋 Expected Status Values:');
     expectedStatuses.forEach(status => {
         const isValid = Object.values(ORG_STATUS).includes(status);
-        console.log(`  ${status}: ${isValid ? '✅ DEFINED' : '❌ MISSING'}`);
+        logger.info(`  ${status}: ${isValid ? '✅ DEFINED' : '❌ MISSING'}`);
     });
     
-    console.log('\n📋 All Defined Statuses:');
+    logger.info('\n📋 All Defined Statuses:');
     Object.entries(ORG_STATUS).forEach(([key, value]) => {
-        console.log(`  ${key} = "${value}"`);
+        logger.info(`  ${key} = "${value}"`);
     });
 }
 
 // Main test runner
 function runTests() {
-    console.log('🚀 Linear Onboarding Flow Validation Tests\n');
-    console.log('=' .repeat(60));
+    logger.info('🚀 Linear Onboarding Flow Validation Tests\n');
+    logger.info('=' .repeat(60));
     
     try {
         testStateMachine();
         testRoleNormalization();
         testStatusValidation();
         
-        console.log('\n' + '=' .repeat(60));
-        console.log('✅ All tests completed successfully!');
-        console.log('\n📝 Summary:');
-        console.log('  - State machine transitions validated');
-        console.log('  - Role normalization checked');
-        console.log('  - Organization status values verified');
-        console.log('  - Next step routing confirmed');
+        logger.info('\n' + '=' .repeat(60));
+        logger.info('✅ All tests completed successfully!');
+        logger.info('\n📝 Summary:');
+        logger.info('  - State machine transitions validated');
+        logger.info('  - Role normalization checked');
+        logger.info('  - Organization status values verified');
+        logger.info('  - Next step routing confirmed');
         
     } catch (error) {
-        console.error('\n❌ Test execution failed:', error.message);
-        console.error('Stack trace:', error.stack);
+        logger.error('\n❌ Test execution failed:', error.message);
+        logger.error('Stack trace:', error.stack);
         process.exit(1);
     }
 }

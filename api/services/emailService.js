@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
+const logger = require('../utils/logger');
 
 // Load environment variables
 dotenv.config();
@@ -28,16 +29,16 @@ const sendEmail = async (to, subject, html, text) => {
     // Send email
     const info = await transporter.sendMail(mailOptions);
     
-    console.log('Email sent: %s', info.messageId);
+    logger.info('Email sent: %s', info.messageId);
     
     // Preview only available when sending through Ethereal
     if (process.env.NODE_ENV === 'development') {
-      console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+      logger.info('Preview URL: %s', nodemailer.getTestMessageUrl(info));
     }
     
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error('Error sending email:', error);
+    logger.error('Error sending email:', error);
     return { success: false, error: error.message };
   }
 };

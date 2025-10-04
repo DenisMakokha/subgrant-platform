@@ -1,5 +1,6 @@
 const db = require('../config/database');
 const capabilitiesCatalog = require('../config/capabilitiesCatalog');
+const logger = require('../utils/logger');
 
 /**
  * Universal Role-Based Access Control Middleware
@@ -43,7 +44,7 @@ async function getUserCapabilities(userId, userRole) {
     return builtInCapabilities;
     
   } catch (error) {
-    console.error('Error fetching user capabilities:', error);
+    logger.error('Error fetching user capabilities:', error);
     return [];
   }
 }
@@ -256,7 +257,7 @@ function requireCapability(capability) {
 
       // Check if user has the required capability
       if (!userCapabilities.includes(capability)) {
-        console.warn(`⚠️ Access denied: User ${userId} (role: ${userRole}) attempted to access ${capability}`);
+        logger.warn(`⚠️ Access denied: User ${userId} (role: ${userRole}) attempted to access ${capability}`);
         return res.status(403).json({ 
           success: false,
           error: `Access denied: ${capability} capability required`,
@@ -273,7 +274,7 @@ function requireCapability(capability) {
 
       next();
     } catch (error) {
-      console.error('Error checking capability:', error);
+      logger.error('Error checking capability:', error);
       res.status(500).json({ 
         success: false,
         error: 'Internal server error',
@@ -308,7 +309,7 @@ function requireAnyCapability(capabilities) {
       const hasAnyCapability = capabilities.some(cap => userCapabilities.includes(cap));
 
       if (!hasAnyCapability) {
-        console.warn(`⚠️ Access denied: User ${userId} (role: ${userRole}) attempted to access one of ${capabilities.join(', ')}`);
+        logger.warn(`⚠️ Access denied: User ${userId} (role: ${userRole}) attempted to access one of ${capabilities.join(', ')}`);
         return res.status(403).json({ 
           success: false,
           error: `Access denied: One of these capabilities required: ${capabilities.join(', ')}`,
@@ -325,7 +326,7 @@ function requireAnyCapability(capabilities) {
 
       next();
     } catch (error) {
-      console.error('Error checking capabilities:', error);
+      logger.error('Error checking capabilities:', error);
       res.status(500).json({ 
         success: false,
         error: 'Internal server error',
@@ -361,7 +362,7 @@ function requireAllCapabilities(capabilities) {
 
       if (!hasAllCapabilities) {
         const missingCapabilities = capabilities.filter(cap => !userCapabilities.includes(cap));
-        console.warn(`⚠️ Access denied: User ${userId} (role: ${userRole}) missing capabilities: ${missingCapabilities.join(', ')}`);
+        logger.warn(`⚠️ Access denied: User ${userId} (role: ${userRole}) missing capabilities: ${missingCapabilities.join(', ')}`);
         return res.status(403).json({ 
           success: false,
           error: `Access denied: All of these capabilities required: ${capabilities.join(', ')}`,
@@ -379,7 +380,7 @@ function requireAllCapabilities(capabilities) {
 
       next();
     } catch (error) {
-      console.error('Error checking capabilities:', error);
+      logger.error('Error checking capabilities:', error);
       res.status(500).json({ 
         success: false,
         error: 'Internal server error',
@@ -407,7 +408,7 @@ async function attachCapabilities(req, res, next) {
 
     next();
   } catch (error) {
-    console.error('Error attaching capabilities:', error);
+    logger.error('Error attaching capabilities:', error);
     next(); // Continue even if error - don't block request
   }
 }

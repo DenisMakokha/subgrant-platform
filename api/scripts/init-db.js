@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 // Database initialization script for Sub-Grant Management Platform
 // This script creates the necessary tables for the application
 
@@ -437,9 +439,9 @@ CREATE INDEX IF NOT EXISTS idx_review_comments_parent ON review_comments(parent_
 async function executeQuery(query, description) {
   try {
     await client.query(query);
-    console.log(`✓ ${description}`);
+    logger.info(`✓ ${description}`);
   } catch (err) {
-    console.error(`✗ Error creating ${description}:`, err);
+    logger.error(`✗ Error creating ${description}:`, err);
     throw err;
   }
 }
@@ -449,7 +451,7 @@ async function initializeDatabase() {
   try {
     // Connect to the database
     await client.connect();
-    console.log('Connected to the database');
+    logger.info('Connected to the database');
 
     // Create tables
     await executeQuery(createOrganizationsTable, 'organizations table');
@@ -470,9 +472,9 @@ async function initializeDatabase() {
     await executeQuery(createAuditLogsTable, 'audit_logs table');
     await executeQuery(createReviewCommentsTable, 'review_comments table');
 
-    console.log('Database initialization completed successfully');
+    logger.info('Database initialization completed successfully');
   } catch (err) {
-    console.error('Error initializing database:', err);
+    logger.error('Error initializing database:', err);
   } finally {
     await client.end();
   }

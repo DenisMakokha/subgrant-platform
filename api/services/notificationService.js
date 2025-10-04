@@ -6,6 +6,7 @@ const NotificationOutboxRepository = require('../repositories/notificationOutbox
 const NotificationJobsRepository = require('../repositories/notificationJobsRepository');
 const NotificationInboxRepository = require('../repositories/notificationInboxRepository');
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 class NotificationService {
   /**
@@ -92,7 +93,7 @@ class NotificationService {
           
           processedCount++;
         } catch (error) {
-          console.error(`Error processing outbox item ${item.id}:`, error);
+          logger.error(`Error processing outbox item ${item.id}:`, error);
           await NotificationOutboxRepository.update(item.id, { 
             status: 'FAILED', 
             lastError: error.message,

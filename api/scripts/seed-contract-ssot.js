@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 const dotenv = require('dotenv');
+const logger = require('../utils/logger');
 
 // Load environment variables
 dotenv.config();
@@ -86,14 +87,14 @@ async function seedContractSSOT() {
         template.active
       ]);
       
-      console.log(`Inserted/Updated contract template: ${template.name}`);
+      logger.info(`Inserted/Updated contract template: ${template.name}`);
     }
     
     await client.query('COMMIT');
-    console.log('Contract SSOT seed data inserted successfully');
+    logger.info('Contract SSOT seed data inserted successfully');
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error seeding contract SSOT data:', error);
+    logger.error('Error seeding contract SSOT data:', error);
     throw error;
   } finally {
     client.release();
@@ -103,10 +104,10 @@ async function seedContractSSOT() {
 // Run the seed function
 seedContractSSOT()
   .then(() => {
-    console.log('Contract SSOT seeding completed');
+    logger.info('Contract SSOT seeding completed');
     process.exit(0);
   })
   .catch((error) => {
-    console.error('Contract SSOT seeding failed:', error);
+    logger.error('Contract SSOT seeding failed:', error);
     process.exit(1);
   });

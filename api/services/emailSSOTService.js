@@ -10,6 +10,7 @@ const EmailSuppressionRepository = require('../repositories/emailSuppressionRepo
 const EmailPreferenceRepository = require('../repositories/emailPreferenceRepository');
 const EmailDigestRepository = require('../repositories/emailDigestRepository');
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 class EmailSSOTService {
   /**
@@ -84,7 +85,7 @@ class EmailSSOTService {
           
           processedCount++;
         } catch (error) {
-          console.error(`Error processing outbox item ${item.id}:`, error);
+          logger.error(`Error processing outbox item ${item.id}:`, error);
           await EmailOutboxRepository.update(item.id, { 
             status: 'FAILED', 
             lastError: error.message,
@@ -413,7 +414,7 @@ class EmailSSOTService {
           
           processedCount++;
         } catch (error) {
-          console.error(`Error processing digest ${digest.id}:`, error);
+          logger.error(`Error processing digest ${digest.id}:`, error);
           // Continue with other digests
         }
       }

@@ -6,6 +6,7 @@ const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
+const logger = require('../utils/logger');
 
 // Load environment variables
 dotenv.config();
@@ -20,8 +21,8 @@ const dbConfig = {
 };
 
 async function runBaseMigration() {
-  console.log('🚀 Running Base Tables Migration for Admin Dashboard...');
-  console.log('=' .repeat(60));
+  logger.info('🚀 Running Base Tables Migration for Admin Dashboard...');
+  logger.info('=' .repeat(60));
 
   const pool = new Pool(dbConfig);
 
@@ -32,16 +33,16 @@ async function runBaseMigration() {
     const migrationPath = path.join(__dirname, 'migrations', '00_base_tables.sql');
     const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
 
-    console.log('📄 Migration file loaded:', migrationPath);
-    console.log('📏 Script length:', migrationSQL.length, 'characters');
+    logger.info('📄 Migration file loaded:', migrationPath);
+    logger.info('📏 Script length:', migrationSQL.length, 'characters');
 
     // Execute the migration
-    console.log('\n🔄 Executing migration...');
+    logger.info('\n🔄 Executing migration...');
     await client.query(migrationSQL);
-    console.log('✅ Migration executed successfully');
+    logger.info('✅ Migration executed successfully');
 
     // Verify tables were created
-    console.log('\n🔍 Verifying created tables:');
+    logger.info('\n🔍 Verifying created tables:');
 
     const tables = ['users', 'organizations', 'projects', 'approvals', 'audit_log', 'financial_assessments'];
     for (const table of tables) {
@@ -49,34 +50,34 @@ async function runBaseMigration() {
         const result = await client.query(`
           SELECT COUNT(*) as count FROM ${table}
         `);
-        console.log(`  ✅ ${table}: ${result.rows[0].count} rows`);
+        logger.info(`  ✅ ${table}: ${result.rows[0].count} rows`);
       } catch (error) {
-        console.log(`  ❌ ${table}: ${error.message}`);
+        logger.info(`  ❌ ${table}: ${error.message}`);
       }
     }
 
     client.release();
 
   } catch (error) {
-    console.error('❌ Migration failed:', error.message);
-    console.error('Stack trace:', error.stack);
+    logger.error('❌ Migration failed:', error.message);
+    logger.error('Stack trace:', error.stack);
     process.exit(1);
   } finally {
     await pool.end();
   }
 
-  console.log('\n' + '=' .repeat(60));
-  console.log('✅ Base Tables Migration completed successfully!');
-  console.log('\n📝 Summary:');
-  console.log('  - Users table created');
-  console.log('  - Organizations table created');
-  console.log('  - Projects table created');
-  console.log('  - Approvals table created');
-  console.log('  - Audit log table created');
-  console.log('  - Financial assessments table created');
-  console.log('  - Indexes created for performance');
-  console.log('  - Triggers created for updated_at columns');
-  console.log('  - Sample data inserted for testing');
+  logger.info('\n' + '=' .repeat(60));
+  logger.info('✅ Base Tables Migration completed successfully!');
+  logger.info('\n📝 Summary:');
+  logger.info('  - Users table created');
+  logger.info('  - Organizations table created');
+  logger.info('  - Projects table created');
+  logger.info('  - Approvals table created');
+  logger.info('  - Audit log table created');
+  logger.info('  - Financial assessments table created');
+  logger.info('  - Indexes created for performance');
+  logger.info('  - Triggers created for updated_at columns');
+  logger.info('  - Sample data inserted for testing');
 }
 
 // Run the migration if this script is executed directly

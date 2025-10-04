@@ -5,6 +5,9 @@ import { adminApi } from '../../services/adminApi';
 import CapabilitySelector from '../../components/admin/CapabilitySelector';
 import MenuBuilder from '../../components/admin/MenuBuilder';
 import ScopeSelector from '../../components/admin/ScopeSelector';
+import WidgetSelector from '../../components/admin/WidgetSelector';
+import DashboardPreview from '../../components/admin/DashboardPreview';
+import PageTemplateBuilder from '../../components/admin/PageTemplateBuilder';
 import { toast } from 'react-toastify';
 
 const AdminWizard: React.FC = () => {
@@ -29,7 +32,15 @@ const AdminWizard: React.FC = () => {
   });
   const [availableCapabilities, setAvailableCapabilities] = useState<any[]>([]);
   const [availableScopes, setAvailableScopes] = useState<any>({});
+  const [availableWidgets, setAvailableWidgets] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [saveAsTemplate, setSaveAsTemplate] = useState(false);
+  const [templateName, setTemplateName] = useState('');
+  const [roleIdValidation, setRoleIdValidation] = useState<{ checking: boolean; available: boolean; message: string }>({
+    checking: false,
+    available: true,
+    message: ''
+  });
 
   useEffect(() => {
     fetchCatalogs();
@@ -37,12 +48,16 @@ const AdminWizard: React.FC = () => {
 
   const fetchCatalogs = async () => {
     try {
-      const [capabilities, scopes] = await Promise.all([
+      const [capabilities, scopes, widgets] = await Promise.all([
         adminApi.roles.getCapabilitiesCatalog(),
-        adminApi.roles.getScopesCatalog()
+        adminApi.roles.getScopesCatalog(),
+        fetch('/api/dashboard/widgets', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        }).then(res => res.json()).then(data => data.data || [])
       ]);
       setAvailableCapabilities(capabilities);
       setAvailableScopes(scopes);
+      setAvailableWidgets(widgets);
     } catch (error) {
       console.error('Error fetching catalogs:', error);
       toast.error('Failed to load capabilities and scopes catalog');
@@ -82,21 +97,73 @@ const AdminWizard: React.FC = () => {
     }
   };
 
-  const handleDashboardSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleDashboardSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    
+    // Comprehensive validation
     if (!dashboardDef.role_id) {
       toast.error('Please select a role for this dashboard');
       return;
     }
 
+    if (!dashboardDef.menus_json || dashboardDef.menus_json.length === 0) {
+      toast.warning('No menu items selected. Dashboard will have minimal navigation.');
+    }
+
+    if (!dashboardDef.pages_json || dashboardDef.pages_json.length === 0) {
+      toast.warning('No pages configured. Dashboard will have basic pages only.');
+    }
+
+    if (!dashboardDef.widgets || dashboardDef.widgets.length === 0) {
+      toast.error('Please select at least one widget');
+      return;
+    }
+
     setLoading(true);
     try {
-      await adminApi.roles.createOrUpdateDashboard(dashboardDef as DashboardDefinition);
-      toast.success('Dashboard created successfully');
-      navigate('/admin/dashboard');
+      // Use complete wizard endpoint for atomic operation
+      const response = await fetch('/api/admin/wizard/complete', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          role: roleDef,
+          dashboard: {
+            role_id: roleDef.id,
+            menus_json: dashboardDef.menus_json,
+            pages_json: dashboardDef.pages_json,
+            widgets: dashboardDef.widgets,
+            active: true
+          },
+          saveAsTemplate,
+          templateName: saveAsTemplate ? templateName : null
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create role and dashboard');
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        if (saveAsTemplate && templateName) {
+          toast.success('🎉 Role, dashboard, and template created successfully!');
+        } else {
+          toast.success('🎉 Role and dashboard created successfully!');
+        }
+        
+        // Navigate to role management after short delay
+        setTimeout(() => {
+          navigate('/admin/roles');
+        }, 2000);
+      }
     } catch (error) {
-      console.error('Error creating dashboard:', error);
-      toast.error('Failed to create dashboard');
+      console.error('Error completing wizard:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to create role and dashboard');
     } finally {
       setLoading(false);
     }
@@ -111,9 +178,55 @@ const AdminWizard: React.FC = () => {
     }));
   };
 
+  // Real-time role ID validation
+  const validateRoleId = async (roleId: string) => {
+    if (!roleId || roleId.length < 3) {
+      setRoleIdValidation({ checking: false, available: false, message: 'Role ID must be at least 3 characters' });
+      return;
+    }
+
+    // Check format
+    if (!/^[a-z][a-z0-9_]*$/.test(roleId)) {
+      setRoleIdValidation({ checking: false, available: false, message: 'Role ID must start with a letter and contain only lowercase letters, numbers, and underscores' });
+      return;
+    }
+
+    setRoleIdValidation({ checking: true, available: false, message: 'Checking availability...' });
+
+    try {
+      const response = await fetch(`/api/admin/wizard/validate-role-id/${roleId}`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+
+      const result = await response.json();
+
+      if (result.success && result.data.available) {
+        setRoleIdValidation({ checking: false, available: true, message: '✓ Role ID is available' });
+      } else {
+        setRoleIdValidation({ checking: false, available: false, message: '✗ Role ID already exists' });
+      }
+    } catch (error) {
+      console.error('Error validating role ID:', error);
+      setRoleIdValidation({ checking: false, available: false, message: 'Unable to validate' });
+    }
+  };
+
+  // Debounced role ID validation
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (roleDef.id) {
+        validateRoleId(roleDef.id);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [roleDef.id]);
+
   const steps = [
     { id: 1, title: 'Role Definition', description: 'Define role capabilities and permissions' },
-    { id: 2, title: 'Dashboard Configuration', description: 'Configure dashboard layout and menus' },
+    { id: 2, title: 'Menu & Pages', description: 'Configure menu structure and page templates' },
+    { id: 3, title: 'Dashboard Widgets', description: 'Select and arrange dashboard widgets' },
+    { id: 4, title: 'Preview & Publish', description: 'Review and publish your dashboard' },
   ];
 
   return (
@@ -254,14 +367,40 @@ const AdminWizard: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Role ID <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    value={roleDef.id}
-                    onChange={(e) => setRoleDef(prev => ({ ...prev, id: e.target.value }))}
-                    className="w-full px-3 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500"
-                    placeholder="e.g., project_manager"
-                    required
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={roleDef.id}
+                      onChange={(e) => setRoleDef(prev => ({ ...prev, id: e.target.value.toLowerCase() }))}
+                      className={`w-full px-3 py-2 border-2 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 ${
+                        roleDef.id && !roleIdValidation.checking
+                          ? roleIdValidation.available
+                            ? 'border-green-500 dark:border-green-600'
+                            : 'border-red-500 dark:border-red-600'
+                          : 'border-gray-300 dark:border-gray-600 focus:border-indigo-500'
+                      }`}
+                      placeholder="e.g., project_manager"
+                      required
+                    />
+                    {roleIdValidation.checking && (
+                      <div className="absolute right-3 top-3">
+                        <svg className="animate-spin h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  {roleDef.id && roleIdValidation.message && (
+                    <p className={`text-xs mt-1 ${
+                      roleIdValidation.available ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                    }`}>
+                      {roleIdValidation.message}
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Lowercase letters, numbers, and underscores only
+                  </p>
                 </div>
 
                 <div>
@@ -362,7 +501,7 @@ const AdminWizard: React.FC = () => {
                     </>
                   ) : (
                     <>
-                      <span>Next: Configure Dashboard</span>
+                      <span>Next: Menu & Pages</span>
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
@@ -375,100 +514,39 @@ const AdminWizard: React.FC = () => {
         )}
 
         {currentStep === 2 && (
-          <div className="dashboard-definition-step">
+          <div className="menu-pages-step">
             <div className="flex items-center space-x-3 mb-6">
               <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
                 <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                 </svg>
               </div>
               <div>
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  Configure Dashboard
+                  Configure Menu & Pages
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Build custom dashboard layout and menu structure
+                  Build menu structure and configure page templates
                 </p>
               </div>
             </div>
 
-            <form onSubmit={handleDashboardSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Role *
-                  </label>
-                  <select
-                    value={dashboardDef.role_id}
-                    onChange={(e) => setDashboardDef(prev => ({ ...prev, role_id: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    required
-                  >
-                    <option value="">Select Role</option>
-                    <option value={roleDef.id}>{roleDef.label} ({roleDef.id})</option>
-                  </select>
-                </div>
+            <div className="space-y-6">
+              {/* Menu Builder */}
+              <MenuBuilder
+                selectedMenus={dashboardDef.menus_json || []}
+                onMenuChange={(menus) => setDashboardDef(prev => ({ ...prev, menus_json: menus }))}
+                roleType={roleDef.id?.includes('admin') ? 'admin' : roleDef.id?.includes('partner') ? 'partner' : roleDef.id?.includes('finance') ? 'finance' : roleDef.id?.includes('grants') ? 'grants' : 'all'}
+              />
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Version
-                  </label>
-                  <input
-                    type="number"
-                    value={dashboardDef.version}
-                    onChange={(e) => setDashboardDef(prev => ({ ...prev, version: parseInt(e.target.value) }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    min="1"
-                  />
-                </div>
-              </div>
+              {/* Page Template Builder */}
+              <PageTemplateBuilder
+                selectedPages={dashboardDef.pages_json || []}
+                onPagesChange={(pages) => setDashboardDef(prev => ({ ...prev, pages_json: pages }))}
+                availableCapabilities={roleDef.capabilities || []}
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                  Dashboard Menu Builder
-                </label>
-                <MenuBuilder
-                  selectedMenus={dashboardDef.menus_json || []}
-                  onMenuChange={(menus) => setDashboardDef(prev => ({ ...prev, menus_json: menus }))}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Pages Configuration (JSON)
-                </label>
-                <textarea
-                  value={JSON.stringify(dashboardDef.pages_json, null, 2)}
-                  onChange={(e) => {
-                    try {
-                      const pages = JSON.parse(e.target.value);
-                      setDashboardDef(prev => ({ ...prev, pages_json: pages }));
-                    } catch (error) {
-                      // Invalid JSON, ignore
-                    }
-                  }}
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono text-sm"
-                  placeholder="[]"
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Advanced users can customize page layouts here
-                </p>
-              </div>
-
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="dashboardActive"
-                  checked={dashboardDef.active}
-                  onChange={(e) => setDashboardDef(prev => ({ ...prev, active: e.target.checked }))}
-                  className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
-                />
-                <label htmlFor="dashboardActive" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                  Active Dashboard
-                </label>
-              </div>
-
+              {/* Navigation Buttons */}
               <div className="flex justify-between pt-6 border-t border-gray-200 dark:border-gray-700">
                 <button
                   type="button"
@@ -481,29 +559,210 @@ const AdminWizard: React.FC = () => {
                   <span>Back to Role</span>
                 </button>
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={() => setCurrentStep(3)}
+                  className="px-6 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
+                >
+                  <span>Next: Select Widgets</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {currentStep === 3 && (
+          <div className="widget-selection-step">
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Select Dashboard Widgets
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Choose widgets that will appear on the dashboard
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              {/* Widget Selector */}
+              <WidgetSelector
+                availableWidgets={availableWidgets}
+                selectedCapabilities={roleDef.capabilities || []}
+                selectedWidgets={dashboardDef.widgets || []}
+                onWidgetChange={(widgets) => setDashboardDef(prev => ({ ...prev, widgets }))}
+              />
+
+              {/* Navigation Buttons */}
+              <div className="flex justify-between pt-6 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(2)}
+                  className="px-6 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  <span>Back to Menu & Pages</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!dashboardDef.widgets || dashboardDef.widgets.length === 0) {
+                      toast.warning('Please select at least one widget');
+                      return;
+                    }
+                    setDashboardDef(prev => ({ ...prev, role_id: roleDef.id }));
+                    setCurrentStep(4);
+                  }}
+                  className="px-6 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
+                >
+                  <span>Next: Preview & Publish</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {currentStep === 4 && (
+          <div className="preview-publish-step">
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Preview & Publish Dashboard
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Review your dashboard and publish when ready
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              {/* Dashboard Preview */}
+              <DashboardPreview
+                widgets={dashboardDef.widgets || []}
+                availableWidgets={availableWidgets}
+                columns={3}
+                roleName={roleDef.label}
+              />
+
+              {/* Save as Template Option */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                <div className="flex items-start gap-4">
+                  <input
+                    type="checkbox"
+                    id="saveAsTemplate"
+                    checked={saveAsTemplate}
+                    onChange={(e) => setSaveAsTemplate(e.target.checked)}
+                    className="mt-1 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <div className="flex-1">
+                    <label htmlFor="saveAsTemplate" className="text-sm font-medium text-gray-900 dark:text-white cursor-pointer">
+                      Save as Template
+                    </label>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                      Save this dashboard configuration as a reusable template for future roles
+                    </p>
+                    {saveAsTemplate && (
+                      <input
+                        type="text"
+                        value={templateName}
+                        onChange={(e) => setTemplateName(e.target.value)}
+                        placeholder="Enter template name..."
+                        className="mt-3 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Publish Options */}
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg border border-green-200 dark:border-green-800 p-6">
+                <div className="flex items-start gap-3">
+                  <svg className="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="flex-1">
+                    <h4 className="text-sm font-semibold text-green-900 dark:text-green-100 mb-2">
+                      Ready to Publish?
+                    </h4>
+                    <ul className="space-y-1 text-xs text-green-700 dark:text-green-300">
+                      <li className="flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        Role: {roleDef.label} ({roleDef.capabilities?.length} capabilities)
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        Dashboard: {dashboardDef.widgets?.length} widgets configured
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        {saveAsTemplate ? `Template: ${templateName || 'Unnamed'}` : 'No template'}
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Navigation Buttons */}
+              <div className="flex justify-between pt-6 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(3)}
+                  className="px-6 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  <span>Back to Widgets</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDashboardSubmit}
                   disabled={loading}
-                  className="px-6 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
+                  className="px-8 py-3 text-sm font-bold text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
                 >
                   {loading ? (
                     <>
-                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      <span>Creating...</span>
+                      <span>Publishing...</span>
                     </>
                   ) : (
                     <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-                      <span>Create Dashboard</span>
+                      <span>Publish Dashboard</span>
                     </>
                   )}
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         )}
       </div>

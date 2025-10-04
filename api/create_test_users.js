@@ -1,12 +1,13 @@
 const bcrypt = require('bcryptjs');
 const db = require('./config/database');
+const logger = require('utils/logger');
 
 async function createTestUsers() {
   try {
     // Generate password hash
     const passwordHash = await bcrypt.hash('password', 10);
-    console.log('Generated hash:', passwordHash);
-    console.log('Hash length:', passwordHash.length);
+    logger.info('Generated hash:', passwordHash);
+    logger.info('Hash length:', passwordHash.length);
 
     // Clear existing users and create test users
     await db.pool.query('DELETE FROM users');
@@ -24,8 +25,8 @@ async function createTestUsers() {
         'INSERT INTO users (first_name, last_name, email, role, password_hash, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
         [user.first_name, user.last_name, user.email, user.role, passwordHash, 'active']
       );
-      console.log(`Created user: ${result.rows[0].email} (${result.rows[0].role})`);
-      console.log(`Stored hash length: ${result.rows[0].password_hash.length}`);
+      logger.info(`Created user: ${result.rows[0].email} (${result.rows[0].role})`);
+      logger.info(`Stored hash length: ${result.rows[0].password_hash.length}`);
     }
 
     // Test password validation
@@ -33,13 +34,13 @@ async function createTestUsers() {
     if (testUser.rows.length > 0) {
       const user = testUser.rows[0];
       const isValid = await bcrypt.compare('password', user.password_hash);
-      console.log('Password validation test:', isValid);
+      logger.info('Password validation test:', isValid);
     }
 
-    console.log('Test users created successfully!');
+    logger.info('Test users created successfully!');
     process.exit(0);
   } catch (error) {
-    console.error('Error creating test users:', error);
+    logger.error('Error creating test users:', error);
     process.exit(1);
   }
 }

@@ -244,6 +244,65 @@ export const dashboardTemplates: DashboardTemplate[] = [
     }
   },
 
+  // Grants Manager Dashboard
+  {
+    id: 'grants',
+    name: 'Grants Manager Dashboard',
+    description: 'Grants management and approval workflows',
+    category: 'operations',
+    requiredCapabilities: ['projects.view', 'applications.view', 'approvals.view'],
+    config: {
+      id: 'grants-dashboard',
+      name: 'Grants Manager Dashboard',
+      layout: 'grid',
+      columns: 3,
+      isDefault: true,
+      isCustomizable: true,
+      widgets: [
+        {
+          id: 'grants-applications-pending',
+          type: 'kpi',
+          component: 'GrantsApplicationsPendingWidget',
+          position: { row: 0, col: 0, span: 1 },
+          capability: 'applications.view',
+          props: {}
+        },
+        {
+          id: 'grants-projects-active',
+          type: 'kpi',
+          component: 'GrantsProjectsActiveWidget',
+          position: { row: 0, col: 1, span: 1 },
+          capability: 'projects.view',
+          props: {}
+        },
+        {
+          id: 'grants-compliance-rate',
+          type: 'kpi',
+          component: 'GrantsComplianceRateWidget',
+          position: { row: 0, col: 2, span: 1 },
+          capability: 'compliance.view',
+          props: {}
+        },
+        {
+          id: 'grants-approval-queue',
+          type: 'list',
+          component: 'GrantsApprovalQueueWidget',
+          position: { row: 1, col: 0, span: 2 },
+          capability: 'approvals.approve',
+          props: {}
+        },
+        {
+          id: 'grants-partner-performance',
+          type: 'chart',
+          component: 'GrantsPartnerPerformanceWidget',
+          position: { row: 1, col: 2, span: 1 },
+          capability: 'organizations.view',
+          props: {}
+        }
+      ]
+    }
+  },
+
   // Admin Dashboard
   {
     id: 'admin',
@@ -331,7 +390,8 @@ export function getDefaultDashboardForRole(role: string): DashboardTemplate | un
   const roleTemplateMap: Record<string, string> = {
     admin: 'admin',
     partner: 'partner',
-    grants_manager: 'operations',
+    partner_user: 'partner',
+    grants_manager: 'grants',  // Fixed: was 'operations', now 'grants'
     coo: 'executive',
     finance_manager: 'finance',
     accountant: 'finance'

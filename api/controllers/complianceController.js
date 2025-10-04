@@ -3,6 +3,7 @@ const AuditLog = require('../models/auditLog');
 const Document = require('../models/document');
 const ComplianceAlertService = require('../services/complianceAlertService');
 const auditLogger = require('../middleware/auditLogger');
+const logger = require('../utils/logger');
 
 class ComplianceController {
   // Get compliance dashboard data
@@ -34,7 +35,7 @@ class ComplianceController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json({
@@ -85,7 +86,7 @@ class ComplianceController {
         }
       };
     } catch (error) {
-      console.error('Error getting compliance stats:', error);
+      logger.error('Error getting compliance stats:', error);
       return {
         totalAuditLogs: 0,
         budgetActions: {
@@ -137,7 +138,7 @@ class ComplianceController {
         status: row.status
       }));
     } catch (error) {
-      console.error('Error getting upcoming deadlines:', error);
+      logger.error('Error getting upcoming deadlines:', error);
       return [];
     }
   }
@@ -160,7 +161,7 @@ class ComplianceController {
       const result = await db.pool.query(query);
       return result.rows;
     } catch (error) {
-      console.error('Error getting audit log trends:', error);
+      logger.error('Error getting audit log trends:', error);
       return [];
     }
   }
@@ -181,7 +182,7 @@ class ComplianceController {
       const result = await db.pool.query(query, values);
       return result.rows;
     } catch (error) {
-      console.error('Error getting document version history:', error);
+      logger.error('Error getting document version history:', error);
       return [];
     }
   }
@@ -222,7 +223,7 @@ class ComplianceController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json({
@@ -267,7 +268,7 @@ class ComplianceController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json({
@@ -302,7 +303,7 @@ class ComplianceController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json(alerts);
@@ -330,7 +331,7 @@ class ComplianceController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json(alerts);
@@ -359,7 +360,7 @@ class ComplianceController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json({ message: 'Alert resolved successfully' });
@@ -388,7 +389,7 @@ class ComplianceController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json(trends);
@@ -417,7 +418,7 @@ class ComplianceController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json(versions);
@@ -455,7 +456,7 @@ class ComplianceController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json(result.rows);
@@ -494,7 +495,7 @@ class ComplianceController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json(result.rows);
@@ -533,7 +534,7 @@ class ComplianceController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json(result.rows);
@@ -600,7 +601,7 @@ class ComplianceController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
     } catch (err) {
       next(err);

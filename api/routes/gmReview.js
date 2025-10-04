@@ -8,6 +8,7 @@ const { normalizeRole } = require('../shared/constants/roles');
 const { assertTransition } = require('../services/orgStateMachine');
 const EmailService = require('../services/emailService');
 const NotificationService = require('../services/notificationService');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -55,7 +56,7 @@ router.get('/queue', guard, async (req, res) => {
 
     res.json({ items: items.rows });
   } catch (error) {
-    console.error('Error fetching GM queue:', error);
+    logger.error('Error fetching GM queue:', error);
     res.status(500).json({ error: 'Failed to fetch review queue' });
   }
 });
@@ -151,7 +152,7 @@ router.get('/organization/:orgId', guard, async (req, res) => {
         };
       }
     } catch (e) {
-      console.warn('GM org financial load failed:', e.message || e);
+      logger.warn('GM org financial load failed:', e.message || e);
     }
 
     // Document summary for required items
@@ -172,7 +173,7 @@ router.get('/organization/:orgId', guard, async (req, res) => {
       document_summary: { required_total, required_complete, required_missing }
     });
   } catch (error) {
-    console.error('Error fetching organization details:', error);
+    logger.error('Error fetching organization details:', error);
     res.status(500).json({ error: 'Failed to fetch organization details' });
   }
 });
@@ -206,7 +207,7 @@ router.post('/:orgId/decision', guard, async (req, res) => {
       const ownerRes = await db.pool.query('SELECT email, first_name FROM users WHERE id = $1', [organization.owner_user_id]);
       owner = ownerRes.rows[0] || null;
     } catch (e) {
-      console.warn('GM decision: failed to load owner user for email:', e.message || e);
+      logger.warn('GM decision: failed to load owner user for email:', e.message || e);
     }
     const fromStatusForSM = currentStatus === 'under_review' ? ORG_STATUS.UNDER_REVIEW_GM : currentStatus;
 
@@ -251,7 +252,7 @@ router.post('/:orgId/decision', guard, async (req, res) => {
           reason: reason || 'Please review and update the requested sections'
         });
       } catch (e) {
-        console.warn('GM changes_requested: failed to send email:', e.message || e);
+        logger.warn('GM changes_requested: failed to send email:', e.message || e);
       }
 
       return res.json({ 
@@ -278,7 +279,7 @@ router.post('/:orgId/decision', guard, async (req, res) => {
           reason: reason || 'Application does not meet requirements'
         });
       } catch (e) {
-        console.warn('GM reject: failed to send rejection email:', e.message || e);
+        logger.warn('GM reject: failed to send rejection email:', e.message || e);
       }
 
       return res.json({ 
@@ -289,7 +290,7 @@ router.post('/:orgId/decision', guard, async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Error processing GM decision:', error);
+    logger.error('Error processing GM decision:', error);
     res.status(500).json({ error: 'Failed to process decision' });
   }
 });

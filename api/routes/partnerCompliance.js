@@ -20,7 +20,7 @@ router.get('/requirements', ...guard, async (req, res) => {
     
     res.json({ requirements: result.rows });
   } catch (error) {
-    console.error('Error fetching compliance requirements:', error);
+    logger.error('Error fetching compliance requirements:', error);
     res.status(500).json({ error: 'Failed to fetch requirements' });
   }
 });
@@ -41,7 +41,7 @@ router.get('/documents', ...guard, async (req, res) => {
     
     res.json({ documents: result.rows });
   } catch (error) {
-    console.error('Error fetching compliance documents:', error);
+    logger.error('Error fetching compliance documents:', error);
     res.status(500).json({ error: 'Failed to fetch documents' });
   }
 });
@@ -63,6 +63,7 @@ router.post('/documents/presign', ...guard, async (req, res) => {
     
     // Generate upload target using storage service
     const storage = require('../services/storage');
+const logger = require('../utils/logger');
     const uploadTarget = await storage.generateUploadTarget({
       filename,
       content_type,
@@ -72,7 +73,7 @@ router.post('/documents/presign', ...guard, async (req, res) => {
     
     res.json(uploadTarget);
   } catch (error) {
-    console.error('Error generating presigned URL:', error);
+    logger.error('Error generating presigned URL:', error);
     res.status(500).json({ error: 'Failed to generate upload URL' });
   }
 });
@@ -103,7 +104,7 @@ router.post('/documents/complete', ...guard, async (req, res) => {
       file_id: fileResult.rows[0].id
     });
   } catch (error) {
-    console.error('Error completing document upload:', error);
+    logger.error('Error completing document upload:', error);
     res.status(500).json({ error: 'Failed to complete upload' });
   }
 });

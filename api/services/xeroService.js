@@ -1,5 +1,6 @@
 const axios = require('axios');
 const crypto = require('crypto');
+const logger = require('../utils/logger');
 
 class XeroService {
   constructor() {
@@ -28,7 +29,7 @@ class XeroService {
       });
       return response.data;
     } catch (error) {
-      console.error('Xero API request failed:', error.response?.data || error.message);
+      logger.error('Xero API request failed:', error.response?.data || error.message);
       throw new Error(`Xero API request failed: ${error.response?.data?.Message || error.message}`);
     }
   }
@@ -91,7 +92,7 @@ class XeroService {
         return newContact;
       }
     } catch (error) {
-      console.error('Failed to sync partner contact:', error);
+      logger.error('Failed to sync partner contact:', error);
       throw error;
     }
   }
@@ -103,7 +104,7 @@ class XeroService {
       const response = await this.makeRequest('GET', '/Contacts', null, params);
       return response;
     } catch (error) {
-      console.error('Failed to search contacts:', error);
+      logger.error('Failed to search contacts:', error);
       throw error;
     }
   }
@@ -146,7 +147,7 @@ class XeroService {
       
       return response;
     } catch (error) {
-      console.error('Failed to create disbursement invoice:', error);
+      logger.error('Failed to create disbursement invoice:', error);
       throw error;
     }
   }
@@ -173,7 +174,7 @@ class XeroService {
         invoice
       };
     } catch (error) {
-      console.error('Failed to reconcile payment:', error);
+      logger.error('Failed to reconcile payment:', error);
       throw error;
     }
   }
@@ -188,11 +189,11 @@ class XeroService {
           // Handle contact update if needed
           return { message: 'Contact updated' };
         default:
-          console.warn(`Unhandled event type: ${event.eventType}`);
+          logger.warn(`Unhandled event type: ${event.eventType}`);
           return { message: 'Event not handled' };
       }
     } catch (error) {
-      console.error('Failed to process webhook event:', error);
+      logger.error('Failed to process webhook event:', error);
       throw error;
     }
   }

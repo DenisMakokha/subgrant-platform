@@ -1,4 +1,5 @@
 const Organization = require('../models/organization');
+const logger = require('../utils/logger');
 const { Op } = require('sequelize');
 
 class OrganizationRepository {
@@ -15,7 +16,7 @@ class OrganizationRepository {
       // Default count all
       return await this.countAll();
     } catch (error) {
-      console.error('Error counting organizations:', error);
+      logger.error('Error counting organizations:', error);
       return 0;
     }
   }
@@ -28,7 +29,7 @@ class OrganizationRepository {
       const organizations = await Organization.findAll();
       return organizations.length;
     } catch (error) {
-      console.error('Error counting all organizations:', error);
+      logger.error('Error counting all organizations:', error);
       return 0;
     }
   }
@@ -43,7 +44,7 @@ class OrganizationRepository {
       const organizations = await Organization.findAll();
       return organizations.filter(org => org.status === status).length;
     } catch (error) {
-      console.error('Error counting organizations by status:', error);
+      logger.error('Error counting organizations by status:', error);
       return 0;
     }
   }
@@ -62,7 +63,7 @@ class OrganizationRepository {
       // Default find all
       return await Organization.findAll();
     } catch (error) {
-      console.error('Error finding organizations:', error);
+      logger.error('Error finding organizations:', error);
       return [];
     }
   }
@@ -74,7 +75,7 @@ class OrganizationRepository {
     try {
       return await Organization.findById(id);
     } catch (error) {
-      console.error('Error finding organization by ID:', error);
+      logger.error('Error finding organization by ID:', error);
       return null;
     }
   }
@@ -86,7 +87,7 @@ class OrganizationRepository {
     try {
       return await Organization.findByEmail(email);
     } catch (error) {
-      console.error('Error finding organization by email:', error);
+      logger.error('Error finding organization by email:', error);
       return null;
     }
   }
@@ -98,7 +99,7 @@ class OrganizationRepository {
     try {
       return await Organization.create(organizationData);
     } catch (error) {
-      console.error('Error creating organization:', error);
+      logger.error('Error creating organization:', error);
       throw error;
     }
   }
@@ -110,7 +111,7 @@ class OrganizationRepository {
     try {
       return await Organization.update(id, organizationData);
     } catch (error) {
-      console.error('Error updating organization:', error);
+      logger.error('Error updating organization:', error);
       throw error;
     }
   }
@@ -122,7 +123,7 @@ class OrganizationRepository {
     try {
       return await Organization.delete(id);
     } catch (error) {
-      console.error('Error deleting organization:', error);
+      logger.error('Error deleting organization:', error);
       throw error;
     }
   }
@@ -134,7 +135,7 @@ class OrganizationRepository {
     try {
       return await Organization.findByOwnerId(userId);
     } catch (error) {
-      console.error('Error finding organization by owner ID:', error);
+      logger.error('Error finding organization by owner ID:', error);
       return null;
     }
   }
@@ -146,7 +147,7 @@ class OrganizationRepository {
     try {
       return await Organization.hasCompletedCompliance(organizationId);
     } catch (error) {
-      console.error('Error checking compliance completion:', error);
+      logger.error('Error checking compliance completion:', error);
       return false;
     }
   }
@@ -158,7 +159,7 @@ class OrganizationRepository {
     try {
       return await Organization.getRequiredComplianceDocuments(organizationId);
     } catch (error) {
-      console.error('Error getting required compliance documents:', error);
+      logger.error('Error getting required compliance documents:', error);
       return [];
     }
   }
@@ -170,7 +171,7 @@ class OrganizationRepository {
     try {
       return await Organization.findByOwnerId(userId);
     } catch (error) {
-      console.error('Error finding organization by user ID:', error);
+      logger.error('Error finding organization by user ID:', error);
       return null;
     }
   }
@@ -191,7 +192,7 @@ class OrganizationRepository {
 
       return updatedOrg;
     } catch (error) {
-      console.error('Error updating organization:', error);
+      logger.error('Error updating organization:', error);
       throw error;
     }
   }

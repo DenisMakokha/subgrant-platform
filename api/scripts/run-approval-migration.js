@@ -2,6 +2,7 @@ const { Pool } = require('pg');
 const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
+const logger = require('../utils/logger');
 
 // Load environment variables from api/.env
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
@@ -18,20 +19,20 @@ async function runMigration() {
   const client = await pool.connect();
   
   try {
-    console.log('🚀 Starting Approval System Migration...\n');
+    logger.info('🚀 Starting Approval System Migration...\n');
     
     // Read the SQL migration file
     const sqlPath = path.join(__dirname, 'migrations', 'create-approval-tables.sql');
     const sql = fs.readFileSync(sqlPath, 'utf8');
     
     // Execute the migration
-    console.log('📝 Creating approval system tables...');
+    logger.info('📝 Creating approval system tables...');
     await client.query(sql);
     
-    console.log('✅ Migration completed successfully!\n');
+    logger.info('✅ Migration completed successfully!\n');
     
     // Verify the migration
-    console.log('🔍 Verifying tables created...');
+    logger.info('🔍 Verifying tables created...');
     const tablesResult = await client.query(`
       SELECT 
         table_name,
@@ -42,9 +43,9 @@ async function runMigration() {
       ORDER BY table_name
     `);
     
-    console.log('\n📊 Tables Created:');
+    logger.info('\n📊 Tables Created:');
     tablesResult.rows.forEach(row => {
-      console.log(`   ✓ ${row.table_name} (${row.column_count} columns)`);
+      logger.info(`   ✓ ${row.table_name} (${row.column_count} columns)`);
     });
     
     // Verify workflows
@@ -59,16 +60,16 @@ async function runMigration() {
       ORDER BY w.name
     `);
     
-    console.log('\n📋 Workflows Created:');
+    logger.info('\n📋 Workflows Created:');
     workflowsResult.rows.forEach(row => {
-      console.log(`   ✓ ${row.name} (${row.entity_type}) - ${row.step_count} steps`);
+      logger.info(`   ✓ ${row.name} (${row.entity_type}) - ${row.step_count} steps`);
     });
     
-    console.log('\n🎉 Approval System is ready to use!');
+    logger.info('\n🎉 Approval System is ready to use!');
     
   } catch (error) {
-    console.error('❌ Migration failed:', error.message);
-    console.error('\nFull error:', error);
+    logger.error('❌ Migration failed:', error.message);
+    logger.error('\nFull error:', error);
     process.exit(1);
   } finally {
     client.release();

@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const ApprovalRepository = require('../repositories/approvalRepository');
 const ApprovalPolicyRepository = require('../repositories/approvalPolicyRepository');
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 class InternalApprovalProvider extends ApprovalProviderI {
   /**
@@ -106,7 +107,7 @@ class InternalApprovalProvider extends ApprovalProviderI {
    */
   async cancel(approvalRef) {
     // In a real implementation, this would cancel the approval
-    console.log(`Canceling approval: ${approvalRef}`);
+    logger.info(`Canceling approval: ${approvalRef}`);
   }
 
   /**
@@ -237,7 +238,7 @@ class InternalApprovalProvider extends ApprovalProviderI {
     // - pb.approved()
     // - fundrequest.approved()
     // - etc.
-    console.log(`Applying domain action for ${approval.entityType} ${approval.entityId}`);
+    logger.info(`Applying domain action for ${approval.entityType} ${approval.entityId}`);
   }
 
   /**
@@ -249,7 +250,7 @@ class InternalApprovalProvider extends ApprovalProviderI {
   async domainReject(approval, client) {
     // In a real implementation, this would call the appropriate domain action
     // for rejected items
-    console.log(`Rejecting ${approval.entityType} ${approval.entityId}`);
+    logger.info(`Rejecting ${approval.entityType} ${approval.entityId}`);
   }
 }
 

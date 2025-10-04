@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const GrantRepository = require('../../repositories/grantRepository');
 const GrantSSOTRepository = require('../../repositories/grantSSOTRepository');
 const GrantEventHooksService = require('./grantEventHooksService');
+const logger = require('../../utils/logger');
 
 /**
  * Comprehensive Grant Creation Service with full SSOT implementation
@@ -158,7 +159,7 @@ class CreateGrantService {
           }, actorId);
         }
       } catch (eventError) {
-        console.error('Event hooks failed (grant created successfully):', eventError);
+        logger.error('Event hooks failed (grant created successfully):', eventError);
         // Don't fail the main operation if events fail
       }
 
@@ -220,14 +221,14 @@ class CreateGrantService {
       try {
         await GrantEventHooksService.logEvent(null, 'grant.deleted', 'grant', id, {}, actorId);
       } catch (eventError) {
-        console.error('Event logging failed (grant deleted successfully):', eventError);
+        logger.error('Event logging failed (grant deleted successfully):', eventError);
       }
 
       // Emit update event (outside transaction)
       try {
         await GrantEventHooksService.onGrantUpdated(id, updates, actorId);
       } catch (eventError) {
-        console.error('Event hooks failed (grant updated successfully):', eventError);
+        logger.error('Event hooks failed (grant updated successfully):', eventError);
       }
 
       return updatedGrant;

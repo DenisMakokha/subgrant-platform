@@ -10,12 +10,20 @@ const adminReportingController = require('../controllers/adminReportingControlle
 const adminExecutiveController = require('../controllers/adminExecutiveController');
 const adminKnowledgeController = require('../controllers/adminKnowledgeController');
 const adminOrganizationController = require('../controllers/adminOrganizationController');
+const roleWizardRoutes = require('./roleWizard');
+const adminActivityRoutes = require('./adminActivity');
 const authMiddleware = require('../middleware/auth');
 const rbacMiddleware = require('../middleware/rbac');
 
 // All admin routes require authentication AND admin role
 router.use(authMiddleware);
 router.use(rbacMiddleware.requireAdmin);
+
+// Role & Dashboard Wizard Routes
+router.use('/wizard', roleWizardRoutes);
+
+// Admin Activity Log Routes
+router.use('/activity', adminActivityRoutes);
 
 // Registry Management (Admin-only)
 router.get('/catalog/caps', adminController.getCatalogCaps);

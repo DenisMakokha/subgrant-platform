@@ -1,15 +1,16 @@
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 async function seedSectionCDocuments() {
   try {
-    console.log('Starting Section C document requirements seeding...');
+    logger.info('Starting Section C document requirements seeding...');
     
     // Clear existing document requirements
-    console.log('Clearing existing document requirements...');
+    logger.info('Clearing existing document requirements...');
     await db.pool.query('DELETE FROM document_requirements');
     
     // Insert the complete document requirements list
-    console.log('Inserting complete document requirements...');
+    logger.info('Inserting complete document requirements...');
     
     const documents = [
       // LEGAL DOCUMENTS
@@ -240,7 +241,7 @@ async function seedSectionCDocuments() {
     
     // Verify the results
     const countResult = await db.pool.query('SELECT COUNT(*) FROM document_requirements');
-    console.log(`✅ Successfully inserted ${countResult.rows[0].count} document requirements`);
+    logger.info(`✅ Successfully inserted ${countResult.rows[0].count} document requirements`);
     
     // Show breakdown by category
     const categoryBreakdown = await db.pool.query(`
@@ -250,15 +251,15 @@ async function seedSectionCDocuments() {
       ORDER BY category
     `);
     
-    console.log('\nDocument requirements by category:');
+    logger.info('\nDocument requirements by category:');
     categoryBreakdown.rows.forEach(row => {
-      console.log(`  ${row.category}: ${row.count} documents`);
+      logger.info(`  ${row.category}: ${row.count} documents`);
     });
     
-    console.log('\n✅ Section C document requirements seeding completed successfully!');
+    logger.info('\n✅ Section C document requirements seeding completed successfully!');
     
   } catch (error) {
-    console.error('❌ Error seeding Section C documents:', error);
+    logger.error('❌ Error seeding Section C documents:', error);
     throw error;
   } finally {
     await db.pool.end();
@@ -268,10 +269,10 @@ async function seedSectionCDocuments() {
 // Run the seeding
 seedSectionCDocuments()
   .then(() => {
-    console.log('Seeding completed');
+    logger.info('Seeding completed');
     process.exit(0);
   })
   .catch((error) => {
-    console.error('Seeding failed:', error);
+    logger.error('Seeding failed:', error);
     process.exit(1);
   });

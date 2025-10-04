@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 // Security middleware for RLS and other security checks
 
 /**
@@ -45,7 +47,7 @@ function checkSecurity(resource, action) {
       
       // In a real implementation, this would check against the security policies
       // For now, we'll just log the check
-      console.log(`Security check: ${user.id} attempting ${action} on ${resource}`);
+      logger.info(`Security check: ${user.id} attempting ${action} on ${resource}`);
       
       // Add security context to request
       req.security = {

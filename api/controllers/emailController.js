@@ -6,6 +6,7 @@ const EmailOutboxRepository = require('../repositories/emailOutboxRepository');
 const EmailDeliveryRepository = require('../repositories/emailDeliveryRepository');
 const EmailSuppressionRepository = require('../repositories/emailSuppressionRepository');
 const EmailPreferenceRepository = require('../repositories/emailPreferenceRepository');
+const logger = require('../utils/logger');
 
 class EmailController {
   /**
@@ -35,7 +36,7 @@ class EmailController {
       const result = await EmailSSOTService.sendEmail(emailData, context);
       res.status(201).json({ success: true, data: result });
     } catch (error) {
-      console.error('Error sending email:', error);
+      logger.error('Error sending email:', error);
       res.status(500).json({ error: error.message });
     }
   }
@@ -50,7 +51,7 @@ class EmailController {
       const templates = await EmailTemplateRepository.findActive();
       res.json({ success: true, data: templates });
     } catch (error) {
-      console.error('Error getting templates:', error);
+      logger.error('Error getting templates:', error);
       res.status(500).json({ error: error.message });
     }
   }
@@ -71,7 +72,7 @@ class EmailController {
       
       res.json({ success: true, data: template });
     } catch (error) {
-      console.error('Error getting template:', error);
+      logger.error('Error getting template:', error);
       res.status(500).json({ error: error.message });
     }
   }
@@ -91,7 +92,7 @@ class EmailController {
       
       res.status(201).json({ success: true, data: template });
     } catch (error) {
-      console.error('Error creating template:', error);
+      logger.error('Error creating template:', error);
       res.status(500).json({ error: error.message });
     }
   }
@@ -114,7 +115,7 @@ class EmailController {
       
       res.json({ success: true, data: template });
     } catch (error) {
-      console.error('Error updating template:', error);
+      logger.error('Error updating template:', error);
       res.status(500).json({ error: error.message });
     }
   }
@@ -136,7 +137,7 @@ class EmailController {
       await EmailTemplateRepository.delete(id);
       res.json({ success: true, message: 'Template deleted successfully' });
     } catch (error) {
-      console.error('Error deleting template:', error);
+      logger.error('Error deleting template:', error);
       res.status(500).json({ error: error.message });
     }
   }
@@ -151,7 +152,7 @@ class EmailController {
       const senders = await EmailSenderRepository.findActive();
       res.json({ success: true, data: senders });
     } catch (error) {
-      console.error('Error getting senders:', error);
+      logger.error('Error getting senders:', error);
       res.status(500).json({ error: error.message });
     }
   }
@@ -171,7 +172,7 @@ class EmailController {
       
       res.status(201).json({ success: true, data: sender });
     } catch (error) {
-      console.error('Error creating sender:', error);
+      logger.error('Error creating sender:', error);
       res.status(500).json({ error: error.message });
     }
   }
@@ -186,7 +187,7 @@ class EmailController {
       const providers = await EmailProviderRepository.findActive();
       res.json({ success: true, data: providers });
     } catch (error) {
-      console.error('Error getting providers:', error);
+      logger.error('Error getting providers:', error);
       res.status(500).json({ error: error.message });
     }
   }
@@ -206,7 +207,7 @@ class EmailController {
       
       res.status(201).json({ success: true, data: provider });
     } catch (error) {
-      console.error('Error creating provider:', error);
+      logger.error('Error creating provider:', error);
       res.status(500).json({ error: error.message });
     }
   }
@@ -222,7 +223,7 @@ class EmailController {
       const outboxItems = await EmailOutboxRepository.findAll(parseInt(limit));
       res.json({ success: true, data: outboxItems });
     } catch (error) {
-      console.error('Error getting outbox:', error);
+      logger.error('Error getting outbox:', error);
       res.status(500).json({ error: error.message });
     }
   }
@@ -238,7 +239,7 @@ class EmailController {
       const deliveries = await EmailDeliveryRepository.findByOutboxId(id);
       res.json({ success: true, data: deliveries });
     } catch (error) {
-      console.error('Error getting deliveries:', error);
+      logger.error('Error getting deliveries:', error);
       res.status(500).json({ error: error.message });
     }
   }
@@ -253,7 +254,7 @@ class EmailController {
       const suppressions = await EmailSuppressionRepository.findActive();
       res.json({ success: true, data: suppressions });
     } catch (error) {
-      console.error('Error getting suppressions:', error);
+      logger.error('Error getting suppressions:', error);
       res.status(500).json({ error: error.message });
     }
   }
@@ -274,7 +275,7 @@ class EmailController {
       const suppression = await EmailSSOTService.suppressEmail(email, reason, context);
       res.status(201).json({ success: true, data: suppression });
     } catch (error) {
-      console.error('Error suppressing email:', error);
+      logger.error('Error suppressing email:', error);
       res.status(500).json({ error: error.message });
     }
   }
@@ -294,7 +295,7 @@ class EmailController {
       await EmailSSOTService.unsuppressEmail(email, context);
       res.json({ success: true, message: 'Email unsuppressed successfully' });
     } catch (error) {
-      console.error('Error unsuppressing email:', error);
+      logger.error('Error unsuppressing email:', error);
       res.status(500).json({ error: error.message });
     }
   }
@@ -315,7 +316,7 @@ class EmailController {
       
       res.json({ success: true, data: preferences });
     } catch (error) {
-      console.error('Error getting email preferences:', error);
+      logger.error('Error getting email preferences:', error);
       res.status(500).json({ error: error.message });
     }
   }
@@ -333,7 +334,7 @@ class EmailController {
       const updated = await EmailSSOTService.updateEmailPreferences(userId, emailType, preferences);
       res.json({ success: true, data: updated });
     } catch (error) {
-      console.error('Error updating email preferences:', error);
+      logger.error('Error updating email preferences:', error);
       res.status(500).json({ error: error.message });
     }
   }

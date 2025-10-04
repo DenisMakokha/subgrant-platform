@@ -2,21 +2,22 @@ const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../middleware/onboarding');
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 // Test endpoint to verify authentication and user data
 router.get('/user/profile/test', requireAuth, async (req, res) => {
   try {
     const userId = req.auth.sub || req.auth.user_id;
-    console.log('Profile test endpoint - User ID:', userId);
-    console.log('Profile test endpoint - Auth object:', req.auth);
-    console.log('Profile test endpoint - User object:', req.user);
+    logger.info('Profile test endpoint - User ID:', userId);
+    logger.info('Profile test endpoint - Auth object:', req.auth);
+    logger.info('Profile test endpoint - User object:', req.user);
     
     const result = await db.pool.query(
       'SELECT id, email, first_name, last_name, phone, role FROM users WHERE id = $1',
       [userId]
     );
     
-    console.log('Profile test endpoint - Query result:', result.rows);
+    logger.info('Profile test endpoint - Query result:', result.rows);
     
     res.json({
       message: 'Profile test successful',
@@ -26,7 +27,7 @@ router.get('/user/profile/test', requireAuth, async (req, res) => {
       dbUser: result.rows[0] || null
     });
   } catch (error) {
-    console.error('Profile test endpoint error:', error);
+    logger.error('Profile test endpoint error:', error);
     res.status(500).json({ error: 'Test failed', details: error.message });
   }
 });
@@ -37,11 +38,11 @@ router.put('/user/profile', requireAuth, async (req, res) => {
     const userId = req.auth.sub || req.auth.user_id;
     const { first_name, last_name, email, phone } = req.body;
 
-    console.log('User profile update request:', { userId, first_name, last_name, email, phone });
+    logger.info('User profile update request:', { userId, first_name, last_name, email, phone });
 
     // Validate user ID
     if (!userId) {
-      console.log('No user ID found in auth token');
+      logger.info('No user ID found in auth token');
       return res.status(401).json({ error: 'User ID not found in authentication token' });
     }
 
@@ -51,9 +52,9 @@ router.put('/user/profile', requireAuth, async (req, res) => {
         ALTER TABLE users 
         ADD COLUMN IF NOT EXISTS phone VARCHAR(20)
       `);
-      console.log('Phone column ensured for user profile update');
+      logger.info('Phone column ensured for user profile update');
     } catch (error) {
-      console.log('Phone column might already exist:', error.message);
+      logger.info('Phone column might already exist:', error.message);
     }
 
     // Validate required fields
@@ -74,7 +75,7 @@ router.put('/user/profile', requireAuth, async (req, res) => {
     }
 
     // Update user profile
-    console.log('Executing user update query with params:', [first_name, last_name, email, phone, userId]);
+    logger.info('Executing user update query with params:', [first_name, last_name, email, phone, userId]);
     
     const result = await db.pool.query(
       `UPDATE users 
@@ -84,15 +85,15 @@ router.put('/user/profile', requireAuth, async (req, res) => {
       [first_name, last_name, email, phone, userId]
     );
 
-    console.log('User update query result:', result.rows);
+    logger.info('User update query result:', result.rows);
 
     if (result.rows.length === 0) {
-      console.log('No user found with ID:', userId);
+      logger.info('No user found with ID:', userId);
       return res.status(404).json({ error: 'User not found' });
     }
 
     const user = result.rows[0];
-    console.log('User profile updated successfully:', user);
+    logger.info('User profile updated successfully:', user);
 
     res.json({
       message: 'Profile updated successfully',
@@ -111,7 +112,7 @@ router.put('/user/profile', requireAuth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error updating user profile:', error);
+    logger.error('Error updating user profile:', error);
     res.status(500).json({ error: 'Failed to update profile' });
   }
 });
@@ -190,9 +191,9 @@ router.put('/organization/profile', requireAuth, async (req, res) => {
         ADD COLUMN IF NOT EXISTS primary_contact_email TEXT,
         ADD COLUMN IF NOT EXISTS primary_contact_phone TEXT
       `);
-      console.log('Organization columns ensured for profile update');
+      logger.info('Organization columns ensured for profile update');
     } catch (error) {
-      console.log('Organization columns might already exist:', error.message);
+      logger.info('Organization columns might already exist:', error.message);
     }
 
     // Update organization
@@ -250,7 +251,7 @@ router.put('/organization/profile', requireAuth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error updating organization profile:', error);
+    logger.error('Error updating organization profile:', error);
     res.status(500).json({ error: 'Failed to update organization profile' });
   }
 });

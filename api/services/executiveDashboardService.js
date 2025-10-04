@@ -140,6 +140,7 @@ class ExecutiveDashboardService {
   async getProjectSpending(projectId) {
     try {
       const db = require('../config/database');
+const logger = require('../utils/logger');
       const query = `
         SELECT COALESCE(SUM(d.amount), 0) as total
         FROM disbursements d
@@ -149,7 +150,7 @@ class ExecutiveDashboardService {
       const result = await db.pool.query(query, [projectId]);
       return parseFloat(result.rows[0]?.total || 0);
     } catch (error) {
-      console.error('Error getting project spending:', error);
+      logger.error('Error getting project spending:', error);
       return 0;
     }
   }

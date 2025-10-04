@@ -1,5 +1,6 @@
 const db = require('../config/database');
 const { logApiCall, logError } = require('../services/observabilityService');
+const adminActivityLogService = require('../services/adminActivityLogService');
 
 /**
  * Get users with filtering and pagination
@@ -171,9 +172,41 @@ exports.createUser = async (req, res) => {
       updatedAt: user.updated_at,
     };
 
+    // Log admin activity
+    await adminActivityLogService.logActivity({
+      adminId: req.user?.id,
+      action: 'create_user',
+      entityType: 'user',
+      entityId: user.id,
+      changes: {
+        before: null,
+        after: {
+          email: user.email,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          role: user.role,
+          isActive: user.is_active,
+          organizationId: user.organization_id
+        }
+      },
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
     logApiCall('POST', '/admin/users', 201, Date.now() - startTime, req.user?.id);
     res.status(201).json(transformedUser);
   } catch (error) {
+    // Log failed attempt
+    await adminActivityLogService.logActivity({
+      adminId: req.user?.id,
+      action: 'create_user',
+      entityType: 'user',
+      result: 'error',
+      errorMessage: error.message,
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
     logError(error, 'createUser', { userId: req.user?.id });
     logApiCall('POST', '/admin/users', 500, Date.now() - startTime, req.user?.id);
     res.status(500).json({ error: error.message });
@@ -189,13 +222,17 @@ exports.updateUser = async (req, res) => {
     const { userId } = req.params;
     const { email, firstName, lastName, role, isActive, organizationId } = req.body;
 
-    console.log('📝 Update user request:', { userId, email, firstName, lastName, role, isActive, organizationId });
+    logger.info('📝 Update user request:', { userId, email, firstName, lastName, role, isActive, organizationId });
 
-    // Check if user exists
-    const existingUser = await db.pool.query('SELECT id FROM users WHERE id = $1', [userId]);
+    // Check if user exists and get current state
+    const existingUser = await db.pool.query(
+      'SELECT id, email, first_name, last_name, role, is_active, organization_id FROM users WHERE id = $1',
+      [userId]
+    );
     if (existingUser.rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
+    const beforeState = existingUser.rows[0];
 
     // Build dynamic update query based on provided fields
     const updates = [];
@@ -237,8 +274,8 @@ exports.updateUser = async (req, res) => {
       RETURNING id, email, first_name, last_name, role, is_active, last_login, created_at, updated_at, organization_id
     `;
 
-    console.log('🔍 Update query:', query);
-    console.log('🔍 Update values:', values);
+    logger.info('🔍 Update query:', query);
+    logger.info('🔍 Update values:', values);
 
     const result = await db.pool.query(query, values);
 
@@ -247,7 +284,7 @@ exports.updateUser = async (req, res) => {
     }
 
     const user = result.rows[0];
-    console.log('✅ Updated user from DB:', user);
+    logger.info('✅ Updated user from DB:', user);
     const transformedUser = {
       id: user.id,
       email: user.email,
@@ -261,9 +298,49 @@ exports.updateUser = async (req, res) => {
       updatedAt: user.updated_at,
     };
 
+    // Log admin activity
+    await adminActivityLogService.logActivity({
+      adminId: req.user?.id,
+      action: 'update_user',
+      entityType: 'user',
+      entityId: parseInt(userId),
+      changes: {
+        before: {
+          email: beforeState.email,
+          firstName: beforeState.first_name,
+          lastName: beforeState.last_name,
+          role: beforeState.role,
+          isActive: beforeState.is_active,
+          organizationId: beforeState.organization_id
+        },
+        after: {
+          email: user.email,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          role: user.role,
+          isActive: user.is_active,
+          organizationId: user.organization_id
+        }
+      },
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
     logApiCall('PUT', `/admin/users/${userId}`, 200, Date.now() - startTime, req.user?.id);
     res.json(transformedUser);
   } catch (error) {
+    // Log failed attempt
+    await adminActivityLogService.logActivity({
+      adminId: req.user?.id,
+      action: 'update_user',
+      entityType: 'user',
+      entityId: parseInt(req.params.userId),
+      result: 'error',
+      errorMessage: error.message,
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
     logError(error, 'updateUser', { userId: req.params.userId });
     logApiCall('PUT', `/admin/users/${req.params.userId}`, 500, Date.now() - startTime, req.user?.id);
     res.status(500).json({ error: error.message });
@@ -291,6 +368,7 @@ exports.resetPassword = async (req, res) => {
 
     // Hash the new password
     const bcrypt = require('bcryptjs');
+const logger = require('../utils/logger');
     const saltRounds = 10;
     const password_hash = await bcrypt.hash(newPassword, saltRounds);
 
@@ -300,11 +378,37 @@ exports.resetPassword = async (req, res) => {
       [password_hash, userId]
     );
 
-    console.log(`✅ Password reset for user: ${existingUser.rows[0].email} by admin: ${req.user?.email || req.user?.id}`);
+    logger.info(`✅ Password reset for user: ${existingUser.rows[0].email} by admin: ${req.user?.email || req.user?.id}`);
+
+    // Log admin activity
+    await adminActivityLogService.logActivity({
+      adminId: req.user?.id,
+      action: 'reset_password',
+      entityType: 'user',
+      entityId: parseInt(userId),
+      changes: {
+        before: { hasPassword: true },
+        after: { passwordReset: true }
+      },
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent')
+    });
 
     logApiCall('POST', `/admin/users/${userId}/reset-password`, 200, Date.now() - startTime, req.user?.id);
     res.json({ message: 'Password reset successfully' });
   } catch (error) {
+    // Log failed attempt
+    await adminActivityLogService.logActivity({
+      adminId: req.user?.id,
+      action: 'reset_password',
+      entityType: 'user',
+      entityId: parseInt(req.params.userId),
+      result: 'error',
+      errorMessage: error.message,
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
     logError(error, 'resetPassword', { userId: req.params.userId });
     logApiCall('POST', `/admin/users/${req.params.userId}/reset-password`, 500, Date.now() - startTime, req.user?.id);
     res.status(500).json({ error: error.message });
@@ -319,14 +423,18 @@ exports.deleteUser = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // Check if user exists
-    const existingUser = await db.pool.query('SELECT id, role FROM users WHERE id = $1', [userId]);
+    // Check if user exists and get data for logging
+    const existingUser = await db.pool.query(
+      'SELECT id, email, first_name, last_name, role, is_active, organization_id FROM users WHERE id = $1',
+      [userId]
+    );
     if (existingUser.rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
+    const userToDelete = existingUser.rows[0];
 
     // If trying to delete an admin, check if it's the last one
-    if (existingUser.rows[0].role === 'admin') {
+    if (userToDelete.role === 'admin') {
       const adminCount = await db.pool.query(
         'SELECT COUNT(*) as count FROM users WHERE role = $1 AND is_active = true',
         ['admin']
@@ -342,9 +450,42 @@ exports.deleteUser = async (req, res) => {
     // Delete user
     await db.pool.query('DELETE FROM users WHERE id = $1', [userId]);
 
+    // Log admin activity
+    await adminActivityLogService.logActivity({
+      adminId: req.user?.id,
+      action: 'delete_user',
+      entityType: 'user',
+      entityId: parseInt(userId),
+      changes: {
+        before: {
+          email: userToDelete.email,
+          firstName: userToDelete.first_name,
+          lastName: userToDelete.last_name,
+          role: userToDelete.role,
+          isActive: userToDelete.is_active,
+          organizationId: userToDelete.organization_id
+        },
+        after: null
+      },
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
     logApiCall('DELETE', `/admin/users/${userId}`, 200, Date.now() - startTime, req.user?.id);
     res.json({ message: 'User deleted successfully' });
   } catch (error) {
+    // Log failed attempt
+    await adminActivityLogService.logActivity({
+      adminId: req.user?.id,
+      action: 'delete_user',
+      entityType: 'user',
+      entityId: parseInt(req.params.userId),
+      result: 'error',
+      errorMessage: error.message,
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
     logError(error, 'deleteUser', { userId: req.params.userId });
     logApiCall('DELETE', `/admin/users/${req.params.userId}`, 500, Date.now() - startTime, req.user?.id);
     res.status(500).json({ error: error.message });
@@ -411,12 +552,41 @@ exports.bulkAssignRoles = async (req, res) => {
       RETURNING id
     `, [roleId, userIds]);
 
+    // Log admin activity
+    await adminActivityLogService.logActivity({
+      adminId: req.user?.id,
+      action: 'bulk_assign_roles',
+      entityType: 'user',
+      entityId: null,
+      changes: {
+        before: null,
+        after: {
+          userIds: result.rows.map(r => r.id),
+          roleId: roleId,
+          count: result.rows.length
+        }
+      },
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
     logApiCall('POST', '/admin/users/bulk-assign-roles', 200, Date.now() - startTime, req.user?.id);
     res.json({
       message: `Role assigned to ${result.rows.length} users`,
       updatedCount: result.rows.length,
     });
   } catch (error) {
+    // Log failed attempt
+    await adminActivityLogService.logActivity({
+      adminId: req.user?.id,
+      action: 'bulk_assign_roles',
+      entityType: 'user',
+      result: 'error',
+      errorMessage: error.message,
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
     logError(error, 'bulkAssignRoles', { userId: req.user?.id });
     logApiCall('POST', '/admin/users/bulk-assign-roles', 500, Date.now() - startTime, req.user?.id);
     res.status(500).json({ error: error.message });

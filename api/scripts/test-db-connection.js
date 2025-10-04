@@ -4,6 +4,7 @@
 
 const { Pool } = require('pg');
 const dotenv = require('dotenv');
+const logger = require('../utils/logger');
 
 // Load environment variables
 dotenv.config();
@@ -18,30 +19,30 @@ const dbConfig = {
 };
 
 async function testConnection() {
-  console.log('Testing database connection...');
-  console.log('Database configuration:');
-  console.log(`  Host: ${dbConfig.host}`);
-  console.log(`  Port: ${dbConfig.port}`);
-  console.log(`  Database: ${dbConfig.database}`);
-  console.log(`  User: ${dbConfig.user}`);
-  console.log('---------------------------');
+  logger.info('Testing database connection...');
+  logger.info('Database configuration:');
+  logger.info(`  Host: ${dbConfig.host}`);
+  logger.info(`  Port: ${dbConfig.port}`);
+  logger.info(`  Database: ${dbConfig.database}`);
+  logger.info(`  User: ${dbConfig.user}`);
+  logger.info('---------------------------');
 
   const pool = new Pool(dbConfig);
 
   try {
     // Test connection
     const client = await pool.connect();
-    console.log('✓ Database connection successful');
+    logger.info('✓ Database connection successful');
     
     // Test basic query
     const result = await client.query('SELECT version()');
-    console.log('✓ Basic query executed successfully');
-    console.log(`  PostgreSQL version: ${result.rows[0].version}`);
+    logger.info('✓ Basic query executed successfully');
+    logger.info(`  PostgreSQL version: ${result.rows[0].version}`);
     
     // Test UUID extension
     const uuidResult = await client.query('SELECT gen_random_uuid()');
-    console.log('✓ UUID extension is working');
-    console.log(`  Sample UUID: ${uuidResult.rows[0].gen_random_uuid}`);
+    logger.info('✓ UUID extension is working');
+    logger.info(`  Sample UUID: ${uuidResult.rows[0].gen_random_uuid}`);
     
     // Test table existence
     const tableResult = await client.query(`
@@ -50,24 +51,24 @@ async function testConnection() {
       WHERE table_schema = 'public'
       ORDER BY table_name
     `);
-    console.log(`✓ Found ${tableResult.rows.length} tables in the database`);
+    logger.info(`✓ Found ${tableResult.rows.length} tables in the database`);
     if (tableResult.rows.length > 0) {
-      console.log('  Tables:');
+      logger.info('  Tables:');
       tableResult.rows.forEach(row => {
-        console.log(`    - ${row.table_name}`);
+        logger.info(`    - ${row.table_name}`);
       });
     }
     
     client.release();
   } catch (err) {
-    console.error('✗ Database connection failed:', err.message);
+    logger.error('✗ Database connection failed:', err.message);
     process.exit(1);
   } finally {
     await pool.end();
   }
   
-  console.log('---------------------------');
-  console.log('Database connection test completed successfully!');
+  logger.info('---------------------------');
+  logger.info('Database connection test completed successfully!');
 }
 
 // Run the test if this script is executed directly

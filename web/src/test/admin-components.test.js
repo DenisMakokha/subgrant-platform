@@ -5,6 +5,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const logger = require('../../utils/logger');
 
 // Test configuration
 const TEST_CONFIG = {
@@ -39,7 +40,7 @@ class FrontendTester {
   }
 
   async runAllTests() {
-    console.log('🧪 Starting Frontend Admin Dashboard Tests...\n');
+    logger.info('🧪 Starting Frontend Admin Dashboard Tests...\n');
 
     try {
       // Test 1: File Structure Validation
@@ -62,12 +63,12 @@ class FrontendTester {
 
       this.printSummary();
     } catch (error) {
-      console.error('❌ Frontend test suite failed:', error);
+      logger.error('❌ Frontend test suite failed:', error);
     }
   }
 
   async testFileStructure() {
-    console.log('🔍 Testing File Structure...');
+    logger.info('🔍 Testing File Structure...');
 
     const tests = [
       {
@@ -116,7 +117,7 @@ class FrontendTester {
   }
 
   async testTypeScriptInterfaces() {
-    console.log('🔍 Testing TypeScript Interfaces...');
+    logger.info('🔍 Testing TypeScript Interfaces...');
 
     const tests = [
       {
@@ -149,7 +150,7 @@ class FrontendTester {
   }
 
   async testComponentStructure() {
-    console.log('🔍 Testing Component Structure...');
+    logger.info('🔍 Testing Component Structure...');
 
     const tests = [
       {
@@ -186,7 +187,7 @@ class FrontendTester {
   }
 
   async testImportExport() {
-    console.log('🔍 Testing Import/Export Structure...');
+    logger.info('🔍 Testing Import/Export Structure...');
 
     const tests = [
       {
@@ -236,7 +237,7 @@ class FrontendTester {
   }
 
   async testApiIntegration() {
-    console.log('🔍 Testing API Integration...');
+    logger.info('🔍 Testing API Integration...');
 
     const tests = [
       {
@@ -274,7 +275,7 @@ class FrontendTester {
   }
 
   async testUIUX() {
-    console.log('🔍 Testing UI/UX Elements...');
+    logger.info('🔍 Testing UI/UX Elements...');
 
     const tests = [
       {
@@ -291,7 +292,7 @@ class FrontendTester {
             const hasTailwindClasses = /\bclass(Name)?\s*=\s*["'][^"']*\b(bg-|text-|border-|rounded-|shadow-|flex|grid|hidden|block|inline)/.test(content);
 
             if (!hasTailwindClasses) {
-              console.log(`    ⚠️  ${component} may not use Tailwind classes`);
+              logger.info(`    ⚠️  ${component} may not use Tailwind classes`);
             }
           }
 
@@ -309,7 +310,7 @@ class FrontendTester {
             if (this.fileExists(filePath)) {
               const hasLoading = this.fileContains(filePath, 'loading') || this.fileContains(filePath, 'Loading');
               if (!hasLoading) {
-                console.log(`    ⚠️  ${component} may not handle loading states`);
+                logger.info(`    ⚠️  ${component} may not handle loading states`);
               }
             }
           }
@@ -328,7 +329,7 @@ class FrontendTester {
             if (this.fileExists(filePath)) {
               const hasErrorHandling = this.fileContains(filePath, 'catch') || this.fileContains(filePath, 'error');
               if (!hasErrorHandling) {
-                console.log(`    ⚠️  ${component} may not have error handling`);
+                logger.info(`    ⚠️  ${component} may not have error handling`);
               }
             }
           }
@@ -359,7 +360,7 @@ class FrontendTester {
   }
 
   async runTests(tests, category) {
-    console.log(`\n📂 ${category} Tests:`);
+    logger.info(`\n📂 ${category} Tests:`);
 
     for (const test of tests) {
       try {
@@ -386,33 +387,33 @@ class FrontendTester {
     });
 
     const status = passed ? '✅' : '❌';
-    console.log(`  ${status} ${name}: ${message}`);
+    logger.info(`  ${status} ${name}: ${message}`);
   }
 
   printSummary() {
-    console.log('\n📊 Frontend Test Summary:');
-    console.log(`Total Tests: ${this.testResults.total}`);
-    console.log(`Passed: ${this.testResults.passed}`);
-    console.log(`Failed: ${this.testResults.failed}`);
-    console.log(`Success Rate: ${((this.testResults.passed / this.testResults.total) * 100).toFixed(1)}%`);
+    logger.info('\n📊 Frontend Test Summary:');
+    logger.info(`Total Tests: ${this.testResults.total}`);
+    logger.info(`Passed: ${this.testResults.passed}`);
+    logger.info(`Failed: ${this.testResults.failed}`);
+    logger.info(`Success Rate: ${((this.testResults.passed / this.testResults.total) * 100).toFixed(1)}%`);
 
     if (this.testResults.failed > 0) {
-      console.log('\n❌ Failed Tests:');
+      logger.info('\n❌ Failed Tests:');
       this.testResults.tests
         .filter(test => !test.passed)
         .forEach(test => {
-          console.log(`  • ${test.name}: ${test.message}`);
+          logger.info(`  • ${test.name}: ${test.message}`);
         });
     }
 
-    console.log('\n🎉 Frontend Testing Complete!');
+    logger.info('\n🎉 Frontend Testing Complete!');
   }
 }
 
 // Main test execution
 async function runFrontendTests() {
-  console.log('🧪 Frontend Admin Dashboard Testing Suite\n');
-  console.log('=' * 50);
+  logger.info('🧪 Frontend Admin Dashboard Testing Suite\n');
+  logger.info('=' * 50);
 
   const tester = new FrontendTester();
   await tester.runAllTests();

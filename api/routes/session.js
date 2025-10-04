@@ -6,6 +6,7 @@ const { getPartnerSummaries } = require('../services/partnerSummaries');
 const { getReviewerSummaries } = require('../services/reviewerSummaries');
 const { normalizeRole } = require('../shared/constants/roles');
 const db = require('../config/database');
+const logger = require('../utils/logger');
 const { ORG_STATUS } = require('../shared/constants/orgStatus');
 
 const router = express.Router();
@@ -19,7 +20,7 @@ router.get('/session', requireAuth, async (req, res) => {
         ADD COLUMN IF NOT EXISTS phone VARCHAR(20)
       `);
     } catch (error) {
-      console.log('Phone column might already exist:', error.message);
+      logger.info('Phone column might already exist:', error.message);
     }
 
     // Get user with organization info
@@ -57,9 +58,9 @@ router.get('/session', requireAuth, async (req, res) => {
           ADD COLUMN IF NOT EXISTS swift_code TEXT,
           ADD COLUMN IF NOT EXISTS version INTEGER DEFAULT 0
         `);
-        console.log('Missing organization columns created/verified');
+        logger.info('Missing organization columns created/verified');
       } catch (error) {
-        console.log('Organization columns might already exist:', error.message);
+        logger.info('Organization columns might already exist:', error.message);
       }
 
       const orgResult = await db.pool.query(
@@ -82,9 +83,9 @@ router.get('/session', requireAuth, async (req, res) => {
             [user.id, org.id]
           );
           org.owner_user_id = user.id;
-          console.log('Updated organization owner_user_id');
+          logger.info('Updated organization owner_user_id');
         } catch (error) {
-          console.error('Failed to update organization owner_user_id:', error);
+          logger.error('Failed to update organization owner_user_id:', error);
         }
       }
 
@@ -118,9 +119,9 @@ router.get('/session', requireAuth, async (req, res) => {
             CREATE UNIQUE INDEX IF NOT EXISTS idx_financial_assessments_org_id 
             ON financial_assessments(organization_id)
           `);
-          console.log('Financial assessments table created/verified');
+          logger.info('Financial assessments table created/verified');
         } catch (error) {
-          console.log('Financial assessments table might already exist:', error.message);
+          logger.info('Financial assessments table might already exist:', error.message);
         }
 
         // Now safely query the financial assessment data
@@ -162,7 +163,7 @@ router.get('/session', requireAuth, async (req, res) => {
             };
           }
         } catch (error) {
-          console.error('Error querying financial assessments:', error);
+          logger.error('Error querying financial assessments:', error);
         }
 
         // Create Section C document tables
@@ -233,9 +234,9 @@ router.get('/session', requireAuth, async (req, res) => {
             )
           `);
 
-          console.log('Section C document tables created/verified');
+          logger.info('Section C document tables created/verified');
         } catch (error) {
-          console.error('Error creating Section C tables:', error);
+          logger.error('Error creating Section C tables:', error);
         }
       }
     }
@@ -284,7 +285,7 @@ router.get('/session', requireAuth, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Session error:', error);
+    logger.error('Session error:', error);
     res.status(500).json({ error: 'Failed to get session' });
   }
 });

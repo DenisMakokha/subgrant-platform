@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const logger = require('../utils/logger');
 const { logApiCall, logError } = require('../services/observabilityService');
 
 /**
@@ -463,7 +464,7 @@ async function getFilteredAuditData(filters) {
       userAgent: null,
     }));
   } catch (error) {
-    console.error('Error getting filtered audit data:', error);
+    logger.error('Error getting filtered audit data:', error);
     // Return mock data if database query fails
     return Array.from({ length: 50 }, (_, i) => ({
       id: `audit-${i + 1}`,

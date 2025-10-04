@@ -4,6 +4,7 @@ const { requireAuth } = require('../middleware/onboarding');
 const { normalizeRole } = require('../shared/constants/roles');
 const { getReviewerSummaries } = require('../services/reviewerSummaries');
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -26,7 +27,7 @@ router.get('/', requireAuth, async (req, res) => {
     const summary = await getReviewerSummaries(normalized);
     return res.json({ reviewer: summary });
   } catch (error) {
-    console.error('Error in reviewer summaries endpoint:', error);
+    logger.error('Error in reviewer summaries endpoint:', error);
     return res.status(500).json({ error: 'Failed to fetch reviewer summaries' });
   }
 });

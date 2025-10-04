@@ -2,6 +2,7 @@ const { Pool } = require('pg');
 const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
+const logger = require('../utils/logger');
 
 // Load environment variables from api/.env
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
@@ -18,20 +19,20 @@ async function runMigration() {
   const client = await pool.connect();
   
   try {
-    console.log('🚀 Starting Approval Integration Migration...\n');
+    logger.info('🚀 Starting Approval Integration Migration...\n');
     
     // Read the SQL migration file
     const sqlPath = path.join(__dirname, 'migrations', 'add-approval-integration-columns.sql');
     const sql = fs.readFileSync(sqlPath, 'utf8');
     
     // Execute the migration
-    console.log('📝 Adding approval_request_id columns to tables...');
+    logger.info('📝 Adding approval_request_id columns to tables...');
     await client.query(sql);
     
-    console.log('✅ Migration completed successfully!\n');
+    logger.info('✅ Migration completed successfully!\n');
     
     // Verify the migration
-    console.log('🔍 Verifying columns added...');
+    logger.info('🔍 Verifying columns added...');
     const columnsResult = await client.query(`
       SELECT 
         table_name,
@@ -44,9 +45,9 @@ async function runMigration() {
       ORDER BY table_name
     `);
     
-    console.log('\n📊 Columns Added:');
+    logger.info('\n📊 Columns Added:');
     columnsResult.rows.forEach(row => {
-      console.log(`   ✓ ${row.table_name}.${row.column_name} (${row.data_type})`);
+      logger.info(`   ✓ ${row.table_name}.${row.column_name} (${row.data_type})`);
     });
     
     // Verify indexes
@@ -59,9 +60,9 @@ async function runMigration() {
       ORDER BY tablename
     `);
     
-    console.log('\n📑 Indexes Created:');
+    logger.info('\n📑 Indexes Created:');
     indexesResult.rows.forEach(row => {
-      console.log(`   ✓ ${row.indexname} on ${row.tablename}`);
+      logger.info(`   ✓ ${row.indexname} on ${row.tablename}`);
     });
     
     // Verify workflows
@@ -77,21 +78,21 @@ async function runMigration() {
       ORDER BY w.entity_type
     `);
     
-    console.log('\n📋 Approval Workflows:');
+    logger.info('\n📋 Approval Workflows:');
     workflowsResult.rows.forEach(row => {
       const status = row.is_active ? '✅' : '⏸️';
-      console.log(`   ${status} ${row.name} (${row.entity_type}) - ${row.step_count} steps`);
+      logger.info(`   ${status} ${row.name} (${row.entity_type}) - ${row.step_count} steps`);
     });
     
-    console.log('\n🎉 Approval Integration is ready!');
-    console.log('\n📌 Next Steps:');
-    console.log('   1. Update backend controllers to create approval requests');
-    console.log('   2. Update frontend components to display approval status');
-    console.log('   3. Test approval workflows for each module');
+    logger.info('\n🎉 Approval Integration is ready!');
+    logger.info('\n📌 Next Steps:');
+    logger.info('   1. Update backend controllers to create approval requests');
+    logger.info('   2. Update frontend components to display approval status');
+    logger.info('   3. Test approval workflows for each module');
     
   } catch (error) {
-    console.error('❌ Migration failed:', error.message);
-    console.error('\nFull error:', error);
+    logger.error('❌ Migration failed:', error.message);
+    logger.error('\nFull error:', error);
     process.exit(1);
   } finally {
     client.release();

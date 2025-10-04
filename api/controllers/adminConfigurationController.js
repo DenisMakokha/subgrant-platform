@@ -1,5 +1,7 @@
 const db = require('../config/database');
+const logger = require('../utils/logger');
 const { logApiCall, logError } = require('../services/observabilityService');
+const adminActivityLogService = require('../services/adminActivityLogService');
 
 /**
  * Get feature flags
@@ -66,8 +68,11 @@ exports.updateFeatureFlag = async (req, res) => {
     const { flagKey } = req.params;
     const { enabled } = req.body;
 
+    // Get current state (mock - would fetch from DB in real impl)
+    const beforeState = { enabled: !enabled };
+
     // In a real implementation, this would update the feature flag in the database
-    console.log(`Feature flag ${flagKey} ${enabled ? 'enabled' : 'disabled'}`);
+    logger.info(`Feature flag ${flagKey} ${enabled ? 'enabled' : 'disabled'}`);
 
     // Return updated flag
     const updatedFlag = {
@@ -80,9 +85,35 @@ exports.updateFeatureFlag = async (req, res) => {
       percentage: enabled ? 100 : 0,
     };
 
+    // Log admin activity
+    await adminActivityLogService.logActivity({
+      adminId: req.user?.id,
+      action: 'update_feature_flag',
+      entityType: 'feature_flag',
+      entityId: flagKey,
+      changes: {
+        before: beforeState,
+        after: { enabled }
+      },
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
     logApiCall('PUT', `/admin/config/feature-flags/${flagKey}`, 200, Date.now() - startTime, req.user?.id);
     res.json(updatedFlag);
   } catch (error) {
+    // Log failed activity
+    await adminActivityLogService.logActivity({
+      adminId: req.user?.id,
+      action: 'update_feature_flag',
+      entityType: 'feature_flag',
+      entityId: req.params.flagKey,
+      result: 'error',
+      errorMessage: error.message,
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
     logError(error, 'updateFeatureFlag', { userId: req.user?.id, flagKey: req.params.flagKey });
     logApiCall('PUT', `/admin/config/feature-flags/${req.params.flagKey}`, 500, Date.now() - startTime, req.user?.id);
     res.status(500).json({ error: error.message });
@@ -176,7 +207,7 @@ exports.updateSystemSetting = async (req, res) => {
     const { value } = req.body;
 
     // In a real implementation, this would update the system setting in the database
-    console.log(`System setting ${settingKey} updated to:`, value);
+    logger.info(`System setting ${settingKey} updated to:`, value);
 
     // Return updated setting
     const updatedSetting = {
@@ -189,9 +220,35 @@ exports.updateSystemSetting = async (req, res) => {
       updatedAt: new Date(),
     };
 
+    // Log admin activity
+    await adminActivityLogService.logActivity({
+      adminId: req.user?.id,
+      action: 'update_system_setting',
+      entityType: 'system_setting',
+      entityId: settingKey,
+      changes: {
+        before: null, // Would fetch current value in real impl
+        after: { key: settingKey, value, type: typeof value }
+      },
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
     logApiCall('PUT', `/admin/config/system-settings/${settingKey}`, 200, Date.now() - startTime, req.user?.id);
     res.json(updatedSetting);
   } catch (error) {
+    // Log failed activity
+    await adminActivityLogService.logActivity({
+      adminId: req.user?.id,
+      action: 'update_system_setting',
+      entityType: 'system_setting',
+      entityId: req.params.settingKey,
+      result: 'error',
+      errorMessage: error.message,
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
     logError(error, 'updateSystemSetting', { userId: req.user?.id, settingKey: req.params.settingKey });
     logApiCall('PUT', `/admin/config/system-settings/${req.params.settingKey}`, 500, Date.now() - startTime, req.user?.id);
     res.status(500).json({ error: error.message });
@@ -262,7 +319,7 @@ exports.updateIntegrationSetting = async (req, res) => {
     const settings = req.body;
 
     // In a real implementation, this would update the integration settings in the database
-    console.log(`Integration ${integrationKey} updated:`, settings);
+    logger.info(`Integration ${integrationKey} updated:`, settings);
 
     // Return updated integration
     const updatedIntegration = {
@@ -274,9 +331,35 @@ exports.updateIntegrationSetting = async (req, res) => {
       updatedBy: req.user?.email || 'admin@subgrant.com',
     };
 
+    // Log admin activity
+    await adminActivityLogService.logActivity({
+      adminId: req.user?.id,
+      action: 'update_integration_setting',
+      entityType: 'integration',
+      entityId: integrationKey,
+      changes: {
+        before: null, // Would fetch current settings in real impl
+        after: { integrationKey, ...settings }
+      },
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
     logApiCall('PUT', `/admin/config/integrations/${integrationKey}`, 200, Date.now() - startTime, req.user?.id);
     res.json(updatedIntegration);
   } catch (error) {
+    // Log failed activity
+    await adminActivityLogService.logActivity({
+      adminId: req.user?.id,
+      action: 'update_integration_setting',
+      entityType: 'integration',
+      entityId: req.params.integrationKey,
+      result: 'error',
+      errorMessage: error.message,
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+
     logError(error, 'updateIntegrationSetting', { userId: req.user?.id, integrationKey: req.params.integrationKey });
     logApiCall('PUT', `/admin/config/integrations/${req.params.integrationKey}`, 500, Date.now() - startTime, req.user?.id);
     res.status(500).json({ error: error.message });

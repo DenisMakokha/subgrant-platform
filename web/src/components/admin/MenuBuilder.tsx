@@ -12,24 +12,60 @@ interface MenuBuilderProps {
   selectedMenus: MenuItem[];
   onMenuChange: (menus: MenuItem[]) => void;
   className?: string;
+  roleType?: 'admin' | 'partner' | 'finance' | 'grants' | 'executive' | 'all';
 }
 
 const MenuBuilder: React.FC<MenuBuilderProps> = ({
   selectedMenus,
   onMenuChange,
   className = '',
+  roleType = 'all',
 }) => {
-  const [availableItems, setAvailableItems] = useState<MenuItem[]>([
-    { key: 'dashboard', label: 'Dashboard', icon: '📊', route: '/admin/dashboard' },
+  // Comprehensive menu items for all roles
+  const [availableItems] = useState<MenuItem[]>([
+    // Admin Menu Items
+    { key: 'admin_dashboard', label: 'Admin Dashboard', icon: '🏠', route: '/admin/dashboard' },
     { key: 'users', label: 'User Management', icon: '👥', route: '/admin/users' },
+    { key: 'organizations', label: 'Organizations', icon: '🏢', route: '/admin/organizations' },
     { key: 'audit', label: 'Audit Center', icon: '📋', route: '/admin/audit' },
-    { key: 'wizard', label: 'Role Wizard', icon: '🔧', route: '/admin/wizard' },
+    { key: 'wizard', label: 'Role Wizard', icon: '🧙', route: '/admin/wizard' },
     { key: 'config', label: 'Configuration', icon: '⚙️', route: '/admin/config' },
-    { key: 'projects', label: 'Projects', icon: '📁', route: '/projects' },
-    { key: 'contracts', label: 'Contracts', icon: '📄', route: '/contracts' },
-    { key: 'budgets', label: 'Budgets', icon: '💰', route: '/budgets' },
-    { key: 'reports', label: 'Reports', icon: '📊', route: '/reports' },
-    { key: 'documents', label: 'Documents', icon: '📋', route: '/documents' },
+    { key: 'security', label: 'Security Center', icon: '🔒', route: '/admin/security' },
+    { key: 'system', label: 'System Admin', icon: '🖥️', route: '/admin/system' },
+    
+    // Partner Menu Items
+    { key: 'partner_dashboard', label: 'Dashboard', icon: '🏠', route: '/partner/dashboard' },
+    { key: 'onboarding', label: 'Onboarding', icon: '🚀', route: '/partner/onboarding' },
+    { key: 'profile', label: 'Profile', icon: '👤', route: '/partner/profile' },
+    { key: 'projects', label: 'Projects', icon: '📁', route: '/partner/projects' },
+    { key: 'budgets', label: 'Budget', icon: '💰', route: '/partner/budget' },
+    { key: 'fund_request', label: 'Fund Request', icon: '💵', route: '/partner/fund-request' },
+    { key: 'reconciliation', label: 'Reconciliation', icon: '🔄', route: '/partner/reconciliation' },
+    { key: 'reports', label: 'M&E Reports', icon: '📊', route: '/partner/reports' },
+    { key: 'contracts', label: 'Contracts', icon: '📄', route: '/partner/contracts' },
+    { key: 'documents', label: 'Documents', icon: '📋', route: '/partner/documents' },
+    { key: 'forum', label: 'Forum', icon: '💬', route: '/partner/forum' },
+    { key: 'help', label: 'Help Center', icon: '❓', route: '/partner/help' },
+    
+    // Finance Menu Items
+    { key: 'finance_dashboard', label: 'Finance Dashboard', icon: '💼', route: '/finance/dashboard' },
+    { key: 'disbursements', label: 'Disbursements', icon: '💸', route: '/finance/disbursements' },
+    { key: 'payments', label: 'Payments', icon: '💳', route: '/finance/payments' },
+    { key: 'budget_review', label: 'Budget Review', icon: '📊', route: '/finance/budgets' },
+    { key: 'reconciliation_review', label: 'Reconciliation', icon: '🔍', route: '/finance/reconciliation' },
+    
+    // Grants Manager Menu Items
+    { key: 'gm_dashboard', label: 'GM Dashboard', icon: '🎯', route: '/gm/dashboard' },
+    { key: 'applications', label: 'Applications', icon: '📝', route: '/gm/applications' },
+    { key: 'approvals', label: 'Approvals', icon: '✅', route: '/gm/approvals' },
+    { key: 'compliance', label: 'Compliance', icon: '📋', route: '/gm/compliance' },
+    { key: 'partner_performance', label: 'Partner Performance', icon: '📈', route: '/gm/performance' },
+    
+    // Executive Menu Items
+    { key: 'executive_dashboard', label: 'Executive Dashboard', icon: '👔', route: '/executive/dashboard' },
+    { key: 'portfolio', label: 'Portfolio Overview', icon: '📊', route: '/executive/portfolio' },
+    { key: 'analytics', label: 'Analytics', icon: '📈', route: '/executive/analytics' },
+    { key: 'strategic_reports', label: 'Strategic Reports', icon: '📑', route: '/executive/reports' },
   ]);
 
   const [draggedItem, setDraggedItem] = useState<MenuItem | null>(null);
@@ -108,16 +144,27 @@ const MenuBuilder: React.FC<MenuBuilderProps> = ({
             <h4 className="text-md font-medium text-gray-900 dark:text-white mb-3">
               Available Menu Items
             </h4>
-            <div className="space-y-2">
-              {availableItems.map(item => {
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {availableItems
+                .filter(item => {
+                  if (roleType === 'all') return true;
+                  const itemKey = item.key.toLowerCase();
+                  if (roleType === 'admin') return itemKey.startsWith('admin_') || ['users', 'organizations', 'audit', 'wizard', 'config', 'security', 'system'].includes(item.key);
+                  if (roleType === 'partner') return itemKey.startsWith('partner_') || ['onboarding', 'profile', 'projects', 'budgets', 'fund_request', 'reconciliation', 'reports', 'contracts', 'documents', 'forum', 'help'].includes(item.key);
+                  if (roleType === 'finance') return itemKey.startsWith('finance_') || ['disbursements', 'payments', 'budget_review', 'reconciliation_review'].includes(item.key);
+                  if (roleType === 'grants') return itemKey.startsWith('gm_') || ['applications', 'approvals', 'compliance', 'partner_performance'].includes(item.key);
+                  if (roleType === 'executive') return itemKey.startsWith('executive_') || ['portfolio', 'analytics', 'strategic_reports'].includes(item.key);
+                  return true;
+                })
+                .map(item => {
                 const isSelected = selectedMenus.some(menu => menu.key === item.key);
                 return (
                   <div
                     key={item.key}
-                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                    className={`p-3 border rounded-lg transition-colors ${
                       isSelected
-                        ? 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'
-                        : 'border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        ? 'border-indigo-300 dark:border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20'
+                        : 'border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer'
                     }`}
                     onClick={() => !isSelected && addMenuItem(item)}
                   >
@@ -128,7 +175,7 @@ const MenuBuilder: React.FC<MenuBuilderProps> = ({
                           {item.label}
                         </div>
                         <div className="text-xs text-gray-500 dark:text-gray-400">
-                          {item.key}
+                          {item.route}
                         </div>
                       </div>
                     </div>

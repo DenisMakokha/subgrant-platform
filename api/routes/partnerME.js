@@ -1,6 +1,7 @@
 const express = require('express');
 const { requireAuth, requireEmailVerified, getUserOrganization, requireOrgOwnership } = require('../middleware/onboarding');
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -32,7 +33,7 @@ router.get('/due', ...guard, async (req, res) => {
     
     res.json({ reports: result.rows });
   } catch (error) {
-    console.error('Error fetching due reports:', error);
+    logger.error('Error fetching due reports:', error);
     res.status(500).json({ error: 'Failed to fetch due reports' });
   }
 });
@@ -86,7 +87,7 @@ router.get('/', ...guard, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching M&E reports:', error);
+    logger.error('Error fetching M&E reports:', error);
     res.status(500).json({ error: 'Failed to fetch reports' });
   }
 });
@@ -125,7 +126,7 @@ router.get('/:id', ...guard, async (req, res) => {
     
     res.json({ report: result.rows[0] });
   } catch (error) {
-    console.error('Error fetching M&E report:', error);
+    logger.error('Error fetching M&E report:', error);
     res.status(500).json({ error: 'Failed to fetch report' });
   }
 });
@@ -164,7 +165,7 @@ router.put('/:id', ...guard, async (req, res) => {
     
     res.json({ report: result.rows[0] });
   } catch (error) {
-    console.error('Error updating M&E report:', error);
+    logger.error('Error updating M&E report:', error);
     res.status(500).json({ error: 'Failed to update report' });
   }
 });
@@ -208,7 +209,7 @@ router.post('/:id/submit', ...guard, async (req, res) => {
     
     res.json({ report: result.rows[0] });
   } catch (error) {
-    console.error('Error submitting M&E report:', error);
+    logger.error('Error submitting M&E report:', error);
     res.status(500).json({ error: 'Failed to submit report' });
   }
 });

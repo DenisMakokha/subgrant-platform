@@ -1,3 +1,5 @@
+const logger = require('../../utils/logger');
+
 const { v4: uuidv4 } = require('uuid');
 
 class EventHooksService {
@@ -52,7 +54,7 @@ class EventHooksService {
       try {
         await callback(event.data, event.timestamp);
       } catch (error) {
-        console.error(`Error processing event ${event.type}:`, error);
+        logger.error(`Error processing event ${event.type}:`, error);
       }
     }
 
@@ -123,7 +125,7 @@ class EventHooksService {
 
   registerDefaultHooks() {
     this.subscribe('grant_created', (data) => {
-      console.log('Grant created:', data);
+      logger.info('Grant created:', data);
     });
   }
 

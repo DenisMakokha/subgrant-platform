@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const axios = require('axios');
 const Contract = require('../models/contract');
 const ContractArtifact = require('../models/contractArtifact');
+const logger = require('../utils/logger');
 
 class DocuSignService {
   constructor() {
@@ -24,7 +25,7 @@ class DocuSignService {
 
       // For JWT authentication, we would typically use a library like docusign-esign
       // For this implementation, we'll simulate the authentication
-      console.log('Authenticating with DocuSign...');
+      logger.info('Authenticating with DocuSign...');
       
       // In a real implementation, you would use the DocuSign SDK or make API calls
       // to authenticate with JWT bearer grant
@@ -34,9 +35,9 @@ class DocuSignService {
       this.accountId = 'mock-account-id';
       this.expiresAt = Date.now() + 3600000; // 1 hour from now
       
-      console.log('Successfully authenticated with DocuSign');
+      logger.info('Successfully authenticated with DocuSign');
     } catch (error) {
-      console.error('Error authenticating with DocuSign:', error);
+      logger.error('Error authenticating with DocuSign:', error);
       throw new Error('Failed to authenticate with DocuSign');
     }
   }
@@ -52,14 +53,14 @@ class DocuSignService {
       // For now, we'll simulate the response
       const envelopeId = `mock-envelope-${Date.now()}`;
       
-      console.log(`Created envelope with ID: ${envelopeId}`);
+      logger.info(`Created envelope with ID: ${envelopeId}`);
       
       return {
         envelopeId,
         status: 'sent'
       };
     } catch (error) {
-      console.error('Error creating envelope:', error);
+      logger.error('Error creating envelope:', error);
       throw new Error('Failed to create envelope');
     }
   }
@@ -73,7 +74,7 @@ class DocuSignService {
       // to get the envelope status
       
       // For now, we'll simulate the response
-      console.log(`Getting status for envelope: ${envelopeId}`);
+      logger.info(`Getting status for envelope: ${envelopeId}`);
       
       return {
         envelopeId,
@@ -81,7 +82,7 @@ class DocuSignService {
         recipients: []
       };
     } catch (error) {
-      console.error('Error getting envelope status:', error);
+      logger.error('Error getting envelope status:', error);
       throw new Error('Failed to get envelope status');
     }
   }
@@ -95,7 +96,7 @@ class DocuSignService {
       // to download the signed documents
       
       // For now, we'll simulate the response
-      console.log(`Getting signed documents for envelope: ${envelopeId}`);
+      logger.info(`Getting signed documents for envelope: ${envelopeId}`);
       
       return [
         {
@@ -105,7 +106,7 @@ class DocuSignService {
         }
       ];
     } catch (error) {
-      console.error('Error getting signed documents:', error);
+      logger.error('Error getting signed documents:', error);
       throw new Error('Failed to get signed documents');
     }
   }
@@ -115,12 +116,12 @@ class DocuSignService {
     try {
       // In a real implementation, you would verify the signature using DocuSign's certificate
       // For now, we'll just log the validation attempt
-      console.log('Validating webhook signature...');
+      logger.info('Validating webhook signature...');
       
       // Mock validation - in reality, you would verify the signature
       return true;
     } catch (error) {
-      console.error('Error validating webhook signature:', error);
+      logger.error('Error validating webhook signature:', error);
       return false;
     }
   }
@@ -128,7 +129,7 @@ class DocuSignService {
   // Process webhook event
   async processWebhookEvent(webhookData) {
     try {
-      console.log('Processing DocuSign webhook event:', webhookData);
+      logger.info('Processing DocuSign webhook event:', webhookData);
       
       // Extract envelope ID and status from webhook data
       const envelopeId = webhookData.envelopeId;
@@ -137,7 +138,7 @@ class DocuSignService {
       // Find contract by envelope ID
       const contract = await Contract.findByEnvelopeId(envelopeId);
       if (!contract) {
-        console.log(`No contract found for envelope ID: ${envelopeId}`);
+        logger.info(`No contract found for envelope ID: ${envelopeId}`);
         return {
           success: false,
           message: `No contract found for envelope ID: ${envelopeId}`
@@ -168,7 +169,7 @@ class DocuSignService {
           contractStatus = 'voided';
           break;
         default:
-          console.log(`Unhandled status: ${status}`);
+          logger.info(`Unhandled status: ${status}`);
       }
       
       // Update contract status
@@ -184,7 +185,7 @@ class DocuSignService {
       
       await contract.update(updateData);
       
-      console.log(`Contract ${contract.id} status updated to: ${contractStatus}`);
+      logger.info(`Contract ${contract.id} status updated to: ${contractStatus}`);
       
       return {
         success: true,
@@ -193,7 +194,7 @@ class DocuSignService {
         status: contractStatus
       };
     } catch (error) {
-      console.error('Error processing webhook event:', error);
+      logger.error('Error processing webhook event:', error);
       throw new Error('Failed to process webhook event');
     }
   }
@@ -201,7 +202,7 @@ class DocuSignService {
   // Download and store signed documents
   async downloadAndStoreSignedDocuments(contract, envelopeId) {
     try {
-      console.log(`Downloading signed documents for envelope: ${envelopeId}`);
+      logger.info(`Downloading signed documents for envelope: ${envelopeId}`);
       
       // Get signed documents
       const documents = await this.getSignedDocuments(envelopeId);
@@ -220,9 +221,9 @@ class DocuSignService {
         await ContractArtifact.create(artifactData);
       }
       
-      console.log(`Stored ${documents.length} signed documents for contract ${contract.id}`);
+      logger.info(`Stored ${documents.length} signed documents for contract ${contract.id}`);
     } catch (error) {
-      console.error('Error downloading and storing signed documents:', error);
+      logger.error('Error downloading and storing signed documents:', error);
       throw new Error('Failed to download and store signed documents');
     }
   }

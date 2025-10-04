@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
 const nodemailer = require('nodemailer');
+const logger = require('../utils/logger');
 const { Client } = require('pg');
 
 // Database connection
@@ -38,10 +39,10 @@ router.get('/settings', async (req, res) => {
       };
     });
     
-    console.log('Loading integration settings from database:', integrationSettings);
+    logger.info('Loading integration settings from database:', integrationSettings);
     res.json(integrationSettings);
   } catch (error) {
-    console.error('Error loading integration settings:', error);
+    logger.error('Error loading integration settings:', error);
     res.status(500).json({ error: 'Failed to load integration settings' });
   } finally {
     await client.end();
@@ -54,7 +55,7 @@ router.post('/settings', async (req, res) => {
   
   try {
     const newSettings = req.body;
-    console.log('Saving integration settings:', newSettings);
+    logger.info('Saving integration settings:', newSettings);
     
     // Validate required fields for enabled integrations
     if (newSettings.sendgrid?.enabled && (!newSettings.sendgrid.api_key || !newSettings.sendgrid.from_email)) {
@@ -96,10 +97,10 @@ router.post('/settings', async (req, res) => {
       `, [integrationType, enabled, JSON.stringify(settingsData)]);
     }
     
-    console.log('Integration settings saved successfully to database');
+    logger.info('Integration settings saved successfully to database');
     res.json({ message: 'Integration settings saved successfully', settings: newSettings });
   } catch (error) {
-    console.error('Error saving integration settings:', error);
+    logger.error('Error saving integration settings:', error);
     res.status(500).json({ error: 'Failed to save integration settings' });
   } finally {
     await client.end();
@@ -117,7 +118,7 @@ router.post('/test-email', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields: to, subject, message, integrationType' });
     }
     
-    console.log(`Sending test email via ${integrationType} to ${to}`);
+    logger.info(`Sending test email via ${integrationType} to ${to}`);
     
     // Connect to database and get integration settings
     await client.connect();
@@ -133,7 +134,7 @@ router.post('/test-email', async (req, res) => {
     }
     
     const config = result.rows[0].settings;
-    console.log('Using email config:', { ...config, password: '***' });
+    logger.info('Using email config:', { ...config, password: '***' });
     
     let transporter;
     
@@ -190,18 +191,18 @@ router.post('/test-email', async (req, res) => {
       }
     };
     
-    console.log('Mail options:', JSON.stringify(mailOptions, null, 2));
+    logger.info('Mail options:', JSON.stringify(mailOptions, null, 2));
     
     const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully:', info.messageId);
-    console.log('Full email response:', JSON.stringify(info, null, 2));
+    logger.info('Email sent successfully:', info.messageId);
+    logger.info('Full email response:', JSON.stringify(info, null, 2));
     
     // Verify the transporter configuration
     try {
       await transporter.verify();
-      console.log('SMTP server connection verified successfully');
+      logger.info('SMTP server connection verified successfully');
     } catch (verifyError) {
-      console.error('SMTP server verification failed:', verifyError);
+      logger.error('SMTP server verification failed:', verifyError);
     }
     
     res.json({ 
@@ -216,7 +217,7 @@ router.post('/test-email', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error sending test email:', error);
+    logger.error('Error sending test email:', error);
     res.status(500).json({ error: `Failed to send test email: ${error.message}` });
   } finally {
     await client.end();

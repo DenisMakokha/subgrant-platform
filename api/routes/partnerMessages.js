@@ -1,6 +1,7 @@
 const express = require('express');
 const { requireAuth, requireEmailVerified, getUserOrganization, requireOrgOwnership } = require('../middleware/onboarding');
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -49,7 +50,7 @@ router.get('/', ...guard, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching messages:', error);
+    logger.error('Error fetching messages:', error);
     res.status(500).json({ error: 'Failed to fetch messages' });
   }
 });
@@ -83,7 +84,7 @@ router.post('/:id/read', ...guard, async (req, res) => {
       was_unread: result.rows.length > 0
     });
   } catch (error) {
-    console.error('Error marking message as read:', error);
+    logger.error('Error marking message as read:', error);
     res.status(500).json({ error: 'Failed to mark message as read' });
   }
 });
@@ -104,7 +105,7 @@ router.post('/read-all', ...guard, async (req, res) => {
       message: `Marked ${result.rows.length} messages as read`
     });
   } catch (error) {
-    console.error('Error marking all messages as read:', error);
+    logger.error('Error marking all messages as read:', error);
     res.status(500).json({ error: 'Failed to mark messages as read' });
   }
 });

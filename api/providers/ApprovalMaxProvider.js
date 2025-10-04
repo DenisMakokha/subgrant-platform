@@ -1,4 +1,5 @@
 const ApprovalProviderI = require('../interfaces/ApprovalProviderI');
+const logger = require('../utils/logger');
 
 class ApprovalMaxProvider extends ApprovalProviderI {
   /**
@@ -9,7 +10,7 @@ class ApprovalMaxProvider extends ApprovalProviderI {
   async submit(input) {
     // In a real implementation, this would create an external approval
     // and store the approval_ref
-    console.log(`Submitting to ApprovalMax: ${input.title}`);
+    logger.info(`Submitting to ApprovalMax: ${input.title}`);
     return { approvalRef: `approvalmax-${Date.now()}` };
   }
 
@@ -20,7 +21,7 @@ class ApprovalMaxProvider extends ApprovalProviderI {
    */
   async cancel(approvalRef) {
     // In a real implementation, this would cancel the external approval
-    console.log(`Canceling ApprovalMax approval: ${approvalRef}`);
+    logger.info(`Canceling ApprovalMax approval: ${approvalRef}`);
   }
 }
 

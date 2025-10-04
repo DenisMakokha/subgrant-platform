@@ -5,6 +5,7 @@
 
 const axios = require('axios');
 const db = require('./config/database');
+const logger = require('utils/logger');
 
 const BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000';
 
@@ -27,7 +28,7 @@ class AdminDashboardTester {
   }
 
   async runAllTests() {
-    console.log('🚀 Starting Comprehensive Admin Dashboard Tests...\n');
+    logger.info('🚀 Starting Comprehensive Admin Dashboard Tests...\n');
 
     try {
       // Test 1: System Health Monitoring
@@ -50,12 +51,12 @@ class AdminDashboardTester {
 
       this.printSummary();
     } catch (error) {
-      console.error('❌ Test suite failed:', error);
+      logger.error('❌ Test suite failed:', error);
     }
   }
 
   async testSystemHealth() {
-    console.log('🔍 Testing System Health Monitoring...');
+    logger.info('🔍 Testing System Health Monitoring...');
 
     const tests = [
       {
@@ -92,7 +93,7 @@ class AdminDashboardTester {
   }
 
   async testDashboardStats() {
-    console.log('🔍 Testing Dashboard Statistics...');
+    logger.info('🔍 Testing Dashboard Statistics...');
 
     const tests = [
       {
@@ -122,7 +123,7 @@ class AdminDashboardTester {
   }
 
   async testUserManagement() {
-    console.log('🔍 Testing User Management...');
+    logger.info('🔍 Testing User Management...');
 
     const tests = [
       {
@@ -173,7 +174,7 @@ class AdminDashboardTester {
   }
 
   async testAuditCenter() {
-    console.log('🔍 Testing Audit Center...');
+    logger.info('🔍 Testing Audit Center...');
 
     const tests = [
       {
@@ -237,7 +238,7 @@ class AdminDashboardTester {
   }
 
   async testRoleManagement() {
-    console.log('🔍 Testing Role Management...');
+    logger.info('🔍 Testing Role Management...');
 
     const tests = [
       {
@@ -274,7 +275,7 @@ class AdminDashboardTester {
   }
 
   async testErrorHandling() {
-    console.log('🔍 Testing Error Handling...');
+    logger.info('🔍 Testing Error Handling...');
 
     const tests = [
       {
@@ -378,7 +379,7 @@ class AdminDashboardTester {
   }
 
   async runTests(tests, category) {
-    console.log(`\n📂 ${category} Tests:`);
+    logger.info(`\n📂 ${category} Tests:`);
 
     for (const test of tests) {
       try {
@@ -405,57 +406,57 @@ class AdminDashboardTester {
     });
 
     const status = passed ? '✅' : '❌';
-    console.log(`  ${status} ${name}: ${message}`);
+    logger.info(`  ${status} ${name}: ${message}`);
   }
 
   printSummary() {
-    console.log('\n📊 Test Summary:');
-    console.log(`Total Tests: ${this.testResults.total}`);
-    console.log(`Passed: ${this.testResults.passed}`);
-    console.log(`Failed: ${this.testResults.failed}`);
-    console.log(`Success Rate: ${((this.testResults.passed / this.testResults.total) * 100).toFixed(1)}%`);
+    logger.info('\n📊 Test Summary:');
+    logger.info(`Total Tests: ${this.testResults.total}`);
+    logger.info(`Passed: ${this.testResults.passed}`);
+    logger.info(`Failed: ${this.testResults.failed}`);
+    logger.info(`Success Rate: ${((this.testResults.passed / this.testResults.total) * 100).toFixed(1)}%`);
 
     if (this.testResults.failed > 0) {
-      console.log('\n❌ Failed Tests:');
+      logger.info('\n❌ Failed Tests:');
       this.testResults.tests
         .filter(test => !test.passed)
         .forEach(test => {
-          console.log(`  • ${test.name}: ${test.message}`);
+          logger.info(`  • ${test.name}: ${test.message}`);
         });
     }
 
-    console.log('\n🎉 Testing Complete!');
+    logger.info('\n🎉 Testing Complete!');
   }
 }
 
 // Database connectivity test
 async function testDatabaseConnection() {
-  console.log('🔍 Testing Database Connection...');
+  logger.info('🔍 Testing Database Connection...');
 
   try {
     const result = await db.pool.query('SELECT 1 as test');
     if (result.rows[0].test === 1) {
-      console.log('  ✅ Database connection successful');
+      logger.info('  ✅ Database connection successful');
       return true;
     } else {
-      console.log('  ❌ Database query returned unexpected result');
+      logger.info('  ❌ Database query returned unexpected result');
       return false;
     }
   } catch (error) {
-    console.log(`  ❌ Database connection failed: ${error.message}`);
+    logger.info(`  ❌ Database connection failed: ${error.message}`);
     return false;
   }
 }
 
 // Main test execution
 async function runAdminDashboardTests() {
-  console.log('🧪 Admin Dashboard Testing Suite\n');
-  console.log('=' * 50);
+  logger.info('🧪 Admin Dashboard Testing Suite\n');
+  logger.info('=' * 50);
 
   // Test database connection first
   const dbConnected = await testDatabaseConnection();
   if (!dbConnected) {
-    console.log('\n❌ Cannot proceed with tests - database connection failed');
+    logger.info('\n❌ Cannot proceed with tests - database connection failed');
     process.exit(1);
   }
 

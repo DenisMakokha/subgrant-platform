@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 #!/usr/bin/env node
 
 // Seed ME reports for Sub-Grant Management Platform
@@ -61,10 +63,10 @@ async function insertMeReport(meReport) {
   
   try {
     const result = await client.query(query, values);
-    console.log(`✓ Created ME report: ${meReport.title}`);
+    logger.info(`✓ Created ME report: ${meReport.title}`);
     return result.rows[0];
   } catch (err) {
-    console.error(`✗ Error creating ME report ${meReport.title}:`, err);
+    logger.error(`✗ Error creating ME report ${meReport.title}:`, err);
     throw err;
   }
 }
@@ -74,18 +76,18 @@ async function seedMeReports() {
   try {
     // Connect to the database
     await client.connect();
-    console.log('Connected to the database');
+    logger.info('Connected to the database');
     
     // Insert sample ME reports
-    console.log('Creating sample ME reports...');
+    logger.info('Creating sample ME reports...');
     for (const meReportData of sampleMeReports) {
       await insertMeReport(meReportData);
     }
     
-    console.log('Sample ME reports seeding completed successfully');
+    logger.info('Sample ME reports seeding completed successfully');
     
   } catch (err) {
-    console.error('Error seeding ME reports:', err);
+    logger.error('Error seeding ME reports:', err);
   } finally {
     await client.end();
   }

@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 // Mock database for testing purposes
 const mockData = {
   organizations: [
@@ -109,12 +111,12 @@ const mockDb = {
   },
   
   connect: async () => {
-    console.log('Connected to mock database');
+    logger.info('Connected to mock database');
     return {};
   },
   
   end: async () => {
-    console.log('Disconnected from mock database');
+    logger.info('Disconnected from mock database');
   }
 };
 

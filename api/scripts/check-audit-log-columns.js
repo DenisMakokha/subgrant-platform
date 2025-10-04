@@ -4,6 +4,7 @@
 
 const { Pool } = require('pg');
 const dotenv = require('dotenv');
+const logger = require('../utils/logger');
 
 // Load environment variables
 dotenv.config();
@@ -18,8 +19,8 @@ const dbConfig = {
 };
 
 async function checkAuditLogColumns() {
-  console.log('🔍 Checking audit_log table columns...');
-  console.log('=' .repeat(50));
+  logger.info('🔍 Checking audit_log table columns...');
+  logger.info('=' .repeat(50));
 
   const pool = new Pool(dbConfig);
 
@@ -36,13 +37,13 @@ async function checkAuditLogColumns() {
     `);
 
     if (!tableExists.rows[0].exists) {
-      console.log('❌ audit_log table does not exist');
+      logger.info('❌ audit_log table does not exist');
       client.release();
       await pool.end();
       return;
     }
 
-    console.log('✅ audit_log table exists');
+    logger.info('✅ audit_log table exists');
 
     // Get column information
     const columns = await client.query(`
@@ -52,39 +53,39 @@ async function checkAuditLogColumns() {
       ORDER BY ordinal_position;
     `);
 
-    console.log('\n📋 Table columns:');
+    logger.info('\n📋 Table columns:');
     columns.rows.forEach(col => {
-      console.log(`  ${col.column_name}: ${col.data_type} ${col.is_nullable === 'YES' ? '(nullable)' : '(required)'}`);
+      logger.info(`  ${col.column_name}: ${col.data_type} ${col.is_nullable === 'YES' ? '(nullable)' : '(required)'}`);
     });
 
     // Check if we can insert a test record
-    console.log('\n🧪 Testing insert operation:');
+    logger.info('\n🧪 Testing insert operation:');
     try {
       await client.query(`
         INSERT INTO audit_log (action, entity_type, entity_id, metadata)
         VALUES ('test', 'test', 1, '{"test": true}')
       `);
-      console.log('  ✅ Insert test successful');
+      logger.info('  ✅ Insert test successful');
 
       // Clean up test record
       await client.query(`DELETE FROM audit_log WHERE action = 'test'`);
-      console.log('  ✅ Test cleanup successful');
+      logger.info('  ✅ Test cleanup successful');
     } catch (error) {
-      console.log(`  ❌ Insert test failed: ${error.message}`);
+      logger.info(`  ❌ Insert test failed: ${error.message}`);
     }
 
     client.release();
 
   } catch (error) {
-    console.error('❌ Database query failed:', error.message);
-    console.error('Stack trace:', error.stack);
+    logger.error('❌ Database query failed:', error.message);
+    logger.error('Stack trace:', error.stack);
     process.exit(1);
   } finally {
     await pool.end();
   }
 
-  console.log('\n' + '=' .repeat(50));
-  console.log('✅ Audit log table check completed!');
+  logger.info('\n' + '=' .repeat(50));
+  logger.info('✅ Audit log table check completed!');
 }
 
 // Run the check if this script is executed directly

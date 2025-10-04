@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 /**
  * Approval Integration Service
@@ -25,7 +26,7 @@ async function getWorkflowForEntity(entityType, organizationId = null) {
       );
       
       if (orgResult.rows.length > 0) {
-        console.log(`Using organization-specific workflow for ${entityType} (org: ${organizationId})`);
+        logger.info(`Using organization-specific workflow for ${entityType} (org: ${organizationId})`);
         return orgResult.rows[0].id;
       }
     }
@@ -42,14 +43,14 @@ async function getWorkflowForEntity(entityType, organizationId = null) {
     );
     
     if (defaultResult.rows.length > 0) {
-      console.log(`Using default workflow for ${entityType}`);
+      logger.info(`Using default workflow for ${entityType}`);
       return defaultResult.rows[0].id;
     }
     
-    console.log(`No workflow found for entity type: ${entityType}`);
+    logger.info(`No workflow found for entity type: ${entityType}`);
     return null;
   } catch (error) {
-    console.error(`Error getting workflow for ${entityType}:`, error);
+    logger.error(`Error getting workflow for ${entityType}:`, error);
     return null;
   }
 }
@@ -70,7 +71,7 @@ async function createApprovalRequest({ entityType, entityId, userId, organizatio
     const workflowId = await getWorkflowForEntity(entityType, organizationId);
     
     if (!workflowId) {
-      console.log(`No active workflow found for entity type: ${entityType}`);
+      logger.info(`No active workflow found for entity type: ${entityType}`);
       return null;
     }
     
@@ -119,7 +120,7 @@ async function createApprovalRequest({ entityType, entityId, userId, organizatio
     
     return result.rows[0];
   } catch (error) {
-    console.error('Error creating approval request:', error);
+    logger.error('Error creating approval request:', error);
     throw error;
   }
 }
@@ -141,7 +142,7 @@ async function linkApprovalToEntity(tableName, entityId, approvalRequestId) {
     );
     return true;
   } catch (error) {
-    console.error(`Error linking approval to ${tableName}:`, error);
+    logger.error(`Error linking approval to ${tableName}:`, error);
     return false;
   }
 }
@@ -195,7 +196,7 @@ async function handleApprovalCompletion(approvalRequestId, status) {
     
     return request.rows[0];
   } catch (error) {
-    console.error('Error handling approval completion:', error);
+    logger.error('Error handling approval completion:', error);
     throw error;
   }
 }
@@ -223,7 +224,7 @@ async function getApprovalStatus(entityType, entityId) {
     
     return result.rows[0] || null;
   } catch (error) {
-    console.error('Error getting approval status:', error);
+    logger.error('Error getting approval status:', error);
     return null;
   }
 }

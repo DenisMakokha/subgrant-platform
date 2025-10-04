@@ -1,5 +1,6 @@
 // services/reviewerSummaries.js
 const db = require('../config/database');
+const logger = require('../utils/logger');
 const { ORG_STATUS } = require('../shared/constants/orgStatus');
 
 /**
@@ -17,7 +18,7 @@ async function getReviewerSummaries(role) {
       `);
     } catch (e) {
       // Ignore if cannot alter; subsequent queries may still work without sector breakdown
-      console.warn('Schema ensure (organizations.sector) warning:', e.message || e);
+      logger.warn('Schema ensure (organizations.sector) warning:', e.message || e);
     }
 
     if (role === 'grants_manager') {
@@ -82,7 +83,7 @@ async function getReviewerSummaries(role) {
 
     return null;
   } catch (error) {
-    console.error('Error fetching reviewer summaries:', error);
+    logger.error('Error fetching reviewer summaries:', error);
     return null;
   }
 }

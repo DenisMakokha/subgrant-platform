@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const DocuSignService = require('../services/docusignService');
+const logger = require('../utils/logger');
 
 // Webhook endpoint for DocuSign events
 router.post('/webhook', async (req, res) => {
@@ -20,7 +21,7 @@ router.post('/webhook', async (req, res) => {
       result
     });
   } catch (error) {
-    console.error('Error processing DocuSign webhook:', error);
+    logger.error('Error processing DocuSign webhook:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

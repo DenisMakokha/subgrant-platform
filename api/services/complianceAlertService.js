@@ -50,7 +50,7 @@ class ComplianceAlertService {
       
       return alerts;
     } catch (error) {
-      console.error('Error checking for overdue reports:', error);
+      logger.error('Error checking for overdue reports:', error);
       return [];
     }
   }
@@ -74,7 +74,7 @@ class ComplianceAlertService {
       
       return alerts;
     } catch (error) {
-      console.error('Error checking for document version conflicts:', error);
+      logger.error('Error checking for document version conflicts:', error);
       return [];
     }
   }
@@ -84,6 +84,7 @@ class ComplianceAlertService {
     try {
       // Get audit logs with unusual patterns (multiple budget deletions in short time period)
       const AuditLog = require('../models/auditLog');
+const logger = require('../utils/logger');
       const anomalyLogs = await AuditLog.getAnomalyLogs();
       
       const alerts = anomalyLogs.map(log => ({
@@ -99,7 +100,7 @@ class ComplianceAlertService {
       
       return alerts;
     } catch (error) {
-      console.error('Error checking for audit anomalies:', error);
+      logger.error('Error checking for audit anomalies:', error);
       return [];
     }
   }
@@ -124,7 +125,7 @@ class ComplianceAlertService {
       
       return alerts;
     } catch (error) {
-      console.error('Error checking for upcoming due dates:', error);
+      logger.error('Error checking for upcoming due dates:', error);
       return [];
     }
   }
@@ -149,7 +150,7 @@ class ComplianceAlertService {
       
       return alerts;
     } catch (error) {
-      console.error('Error checking for upcoming expirations:', error);
+      logger.error('Error checking for upcoming expirations:', error);
       return [];
     }
   }
@@ -159,7 +160,7 @@ class ComplianceAlertService {
     // This would typically send notifications via email, SMS, or in-app notifications
     // For now, we'll just log the alerts
     
-    console.log('Compliance Alerts:', alerts);
+    logger.info('Compliance Alerts:', alerts);
     
     // In a real implementation, you might:
     // 1. Send email notifications to admins/auditors
@@ -179,7 +180,7 @@ class ComplianceAlertService {
       
       return [];
     } catch (error) {
-      console.error('Error getting alert history:', error);
+      logger.error('Error getting alert history:', error);
       return [];
     }
   }

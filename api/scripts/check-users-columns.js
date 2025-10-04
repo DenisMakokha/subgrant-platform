@@ -1,4 +1,5 @@
 const path = require('path');
+const logger = require('../utils/logger');
 
 // Load pg and dotenv from api's node_modules
 const { Pool } = require(path.join(__dirname, '../node_modules/pg'));
@@ -19,7 +20,7 @@ async function checkUsersColumns() {
   const client = await pool.connect();
   
   try {
-    console.log('🔍 Checking users table columns...\n');
+    logger.info('🔍 Checking users table columns...\n');
 
     // Get all columns from users table
     const result = await client.query(`
@@ -33,16 +34,16 @@ async function checkUsersColumns() {
       ORDER BY ordinal_position
     `);
 
-    console.log('📋 Users table columns:');
-    console.log('─'.repeat(80));
+    logger.info('📋 Users table columns:');
+    logger.info('─'.repeat(80));
     result.rows.forEach(col => {
-      console.log(`${col.column_name.padEnd(25)} | ${col.data_type.padEnd(20)} | ${col.is_nullable === 'YES' ? 'NULL' : 'NOT NULL'}`);
+      logger.info(`${col.column_name.padEnd(25)} | ${col.data_type.padEnd(20)} | ${col.is_nullable === 'YES' ? 'NULL' : 'NOT NULL'}`);
     });
-    console.log('─'.repeat(80));
-    console.log(`\nTotal columns: ${result.rows.length}`);
+    logger.info('─'.repeat(80));
+    logger.info(`\nTotal columns: ${result.rows.length}`);
 
   } catch (error) {
-    console.error('❌ Error checking columns:', error.message);
+    logger.error('❌ Error checking columns:', error.message);
   } finally {
     client.release();
     await pool.end();

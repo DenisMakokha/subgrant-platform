@@ -1,5 +1,6 @@
 const CreateGrantService = require('../services/grants/createGrantService');
 const GrantsAnalyticsService = require('../services/grants/grantsAnalyticsService');
+const logger = require('../utils/logger');
 
 class GrantsController {
   static async createGrant(req, res) {
@@ -14,7 +15,7 @@ class GrantsController {
         data: grant
       });
     } catch (error) {
-      console.error('Create grant failed:', error);
+      logger.error('Create grant failed:', error);
       res.status(500).json({
         success: false,
         error: error.message
@@ -33,7 +34,7 @@ class GrantsController {
         data: analytics
       });
     } catch (error) {
-      console.error('Get grant analytics failed:', error);
+      logger.error('Get grant analytics failed:', error);
       res.status(500).json({
         success: false,
         error: error.message
@@ -52,7 +53,7 @@ class GrantsController {
         message: 'Analytics refreshed successfully'
       });
     } catch (error) {
-      console.error('Refresh analytics failed:', error);
+      logger.error('Refresh analytics failed:', error);
       res.status(500).json({
         success: false,
         error: error.message

@@ -1,6 +1,7 @@
 const Receipt = require('../models/receipt');
 const { validateReceipt } = require('../middleware/validation');
 const auditLogger = require('../middleware/auditLogger');
+const logger = require('../utils/logger');
 
 class ReceiptController {
   // Create a new receipt
@@ -32,7 +33,7 @@ class ReceiptController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.status(201).json(receipt);
@@ -127,7 +128,7 @@ class ReceiptController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json(updatedReceipt);
@@ -161,7 +162,7 @@ class ReceiptController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
 
       res.json({ message: 'Receipt deleted successfully' });

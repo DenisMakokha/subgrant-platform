@@ -1,6 +1,7 @@
 const express = require('express');
 const { requireAuth, requireEmailVerified, getUserOrganization, requireOrgOwnership } = require('../middleware/onboarding');
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -20,7 +21,7 @@ router.get('/', ...guard, async (req, res) => {
     
     res.json({ applications: result.rows });
   } catch (error) {
-    console.error('Error fetching applications:', error);
+    logger.error('Error fetching applications:', error);
     res.status(500).json({ error: 'Failed to fetch applications' });
   }
 });
@@ -39,7 +40,7 @@ router.post('/', ...guard, async (req, res) => {
     
     res.status(201).json({ application: result.rows[0] });
   } catch (error) {
-    console.error('Error creating application:', error);
+    logger.error('Error creating application:', error);
     res.status(500).json({ error: 'Failed to create application' });
   }
 });
@@ -74,7 +75,7 @@ router.put('/:id', ...guard, async (req, res) => {
     
     res.json({ application: result.rows[0] });
   } catch (error) {
-    console.error('Error updating application:', error);
+    logger.error('Error updating application:', error);
     res.status(500).json({ error: 'Failed to update application' });
   }
 });
@@ -108,7 +109,7 @@ router.post('/:id/submit', ...guard, async (req, res) => {
     
     res.json({ application: result.rows[0] });
   } catch (error) {
-    console.error('Error submitting application:', error);
+    logger.error('Error submitting application:', error);
     res.status(500).json({ error: 'Failed to submit application' });
   }
 });

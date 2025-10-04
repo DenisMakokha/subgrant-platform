@@ -48,9 +48,9 @@ router.post('/section-c',
           ADD COLUMN IF NOT EXISTS last_submitted_at TIMESTAMP
         `);
       } catch (schemaErr) {
-        console.warn('⚠️ Section C GET: org_documents ensure warning:', schemaErr.message || schemaErr);
+        logger.warn('⚠️ Section C GET: org_documents ensure warning:', schemaErr.message || schemaErr);
       }
-      console.log(' SSoT Section C - Received data:', req.body);
+      logger.info(' SSoT Section C - Received data:', req.body);
       
       // Extract user ID from JWT token
       const token = req.headers.authorization?.replace('Bearer ', '');
@@ -61,7 +61,7 @@ router.post('/section-c',
       const decoded = require('jsonwebtoken').verify(token, process.env.JWT_SECRET);
       const userId = decoded.sub;
       
-      console.log(' User ID from token:', userId);
+      logger.info(' User ID from token:', userId);
       
       // Get user's organization
       const existingOrg = await orgRepo.readByUserId(userId);
@@ -69,7 +69,7 @@ router.post('/section-c',
         return res.status(404).json(createApiError(404, { form: ['Organization not found'] }));
       }
       
-      console.log(' Found organization:', existingOrg.id);
+      logger.info(' Found organization:', existingOrg.id);
       
       // Immutability: block any writes when organization is finalized
       if (existingOrg.status === 'finalized') {
@@ -78,7 +78,7 @@ router.post('/section-c',
       
       // Extract data from SSoT envelope format
       const requestData = req.body.data || req.body;
-      console.log('📦 Extracted request data (Section C):', requestData);
+      logger.info('📦 Extracted request data (Section C):', requestData);
 
       // Ensure document enums and requirements table exist (self-healing policy)
       try {
@@ -112,7 +112,7 @@ router.post('/section-c',
           ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         `);
       } catch (reqSchemaErr) {
-        console.warn('⚠️ Section C POST: requirements ensure warning:', reqSchemaErr.message || reqSchemaErr);
+        logger.warn('⚠️ Section C POST: requirements ensure warning:', reqSchemaErr.message || reqSchemaErr);
       }
 
       // Accept various FE formats; normalize to an array of sanitized docs
@@ -176,7 +176,7 @@ router.post('/section-c',
         documents: validDocs,
         status: isSubmitted ? 'submitted' : 'draft'
       };
-      console.log('✅ Document data validated successfully');
+      logger.info('✅ Document data validated successfully');
       
       // Extract etag from request headers or body
       const etag = Number(req.header('If-Match') || req.body?.meta?.etag || existingOrg.version);
@@ -235,9 +235,9 @@ router.post('/section-c',
             END IF;
           END $$;
         `);
-        console.log('✅ Section C schema ensured');
+        logger.info('✅ Section C schema ensured');
       } catch (schemaErr) {
-        console.error('⚠️ Failed ensuring Section C schema:', schemaErr);
+        logger.error('⚠️ Failed ensuring Section C schema:', schemaErr);
       }
 
       // Upsert into org_documents and update organization in a transaction
@@ -259,7 +259,7 @@ router.post('/section-c',
             reqRows.rows.forEach(r => { codeToId[r.code] = r.id; });
           }
         } catch (mapErr) {
-          console.warn('⚠️ Could not build requirement code→id map:', mapErr.message || mapErr);
+          logger.warn('⚠️ Could not build requirement code→id map:', mapErr.message || mapErr);
         }
 
         for (const doc of validatedData.documents) {
@@ -359,7 +359,7 @@ router.post('/section-c',
           });
         } catch (updErr) {
           // If document_responses column missing somehow, update status directly
-          console.warn('⚠️ Repo.update failed; falling back to direct status update:', updErr.message || updErr);
+          logger.warn('⚠️ Repo.update failed; falling back to direct status update:', updErr.message || updErr);
           await client.query(
             'UPDATE organizations SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
             [nextStatus, existingOrg.id]
@@ -369,7 +369,7 @@ router.post('/section-c',
 
         await client.query('COMMIT');
 
-        console.log('✅ Organization documents saved:', {
+        logger.info('✅ Organization documents saved:', {
           id: updatedOrg.id,
           status: updatedOrg.status,
           document_count: validatedData.documents.length
@@ -393,7 +393,7 @@ router.post('/section-c',
               message: `New organization ${updatedOrg.legal_name || ''} submitted for GM review`
             });
           } catch (notifyErr) {
-            console.warn('⚠️ Submission notification failed (non-fatal):', notifyErr.message || notifyErr);
+            logger.warn('⚠️ Submission notification failed (non-fatal):', notifyErr.message || notifyErr);
           }
         }
 
@@ -412,7 +412,7 @@ router.post('/section-c',
       }
       
     } catch (error) {
-      console.error(' SSoT Section C save error:', error);
+      logger.error(' SSoT Section C save error:', error);
 
       if (error.message === 'CONFLICT') {
         return res.status(409).json(createApiError(409, { 
@@ -482,7 +482,7 @@ router.get('/review-status',
         canProceed: organizationStatus === 'finalized'
       });
     } catch (error) {
-      console.error('Get review-status error:', error);
+      logger.error('Get review-status error:', error);
       res.status(500).json({ error: 'Failed to load review status' });
     }
   }
@@ -591,7 +591,7 @@ router.get('/section-c',
           END $$;
         `);
       } catch (schemaEnsureErr) {
-        console.warn('⚠️ Section C GET schema ensure warning:', schemaEnsureErr.message || schemaEnsureErr);
+        logger.warn('⚠️ Section C GET schema ensure warning:', schemaEnsureErr.message || schemaEnsureErr);
       }
 
       // Get all document requirements (seed if empty)
@@ -664,7 +664,7 @@ router.get('/section-c',
       }));
 
     } catch (error) {
-      console.error('Get Section C error:', error);
+      logger.error('Get Section C error:', error);
       res.status(500).json({ error: 'Failed to load document requirements' });
     }
   }
@@ -743,7 +743,7 @@ router.post('/section-c/presign',
       res.json(presignedUrl);
 
     } catch (error) {
-      console.error('Presign URL error:', error);
+      logger.error('Presign URL error:', error);
       res.status(500).json({ error: 'Failed to generate upload URL' });
     }
   }
@@ -815,7 +815,7 @@ router.post('/section-c/save',
           ALTER TABLE organizations ADD COLUMN IF NOT EXISTS document_responses JSONB
         `);
       } catch (schemaErr) {
-        console.error('Section C save: schema ensure failed (non-fatal):', schemaErr.message || schemaErr);
+        logger.error('Section C save: schema ensure failed (non-fatal):', schemaErr.message || schemaErr);
       }
 
       const client = await db.pool.connect();
@@ -864,7 +864,7 @@ router.post('/section-c/save',
       }
 
     } catch (error) {
-      console.error('Save Section C error:', error);
+      logger.error('Save Section C error:', error);
       // Map common errors
       if (error.code === '42P10') {
         return res.status(500).json({ error: 'Missing unique index on (organization_id, requirement_code)' });
@@ -936,6 +936,7 @@ router.post('/section-c/submit',
 
       // Notify GM reviewers
       const NotificationService = require('../services/notificationService');
+const logger = require('../utils/logger');
       await NotificationService.notifyRole('grants_manager', {
         type: 'review_incoming',
         orgId: req.userOrganization.id,
@@ -946,7 +947,7 @@ router.post('/section-c/submit',
       return res.json({ ok: true, nextStep: 'review' });
 
     } catch (error) {
-      console.error('Submit Section C error:', error);
+      logger.error('Submit Section C error:', error);
       res.status(500).json({ error: 'Failed to submit application' });
     }
   }
@@ -968,7 +969,7 @@ router.post('/section-c/complete',
       res.json({ ok: true, fileId: `file_${Date.now()}` });
       
     } catch (error) {
-      console.error('Complete upload error:', error);
+      logger.error('Complete upload error:', error);
       res.status(500).json({ error: 'Failed to complete upload' });
     }
   }

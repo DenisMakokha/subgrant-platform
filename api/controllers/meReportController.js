@@ -2,6 +2,8 @@ const MeReport = require('../models/meReport');
 const { validateMeReport } = require('../middleware/validation');
 const auditLogger = require('../middleware/auditLogger');
 const approvalIntegrationService = require('../services/approvalIntegrationService');
+const logger = require('../utils/logger');
+const activityLogService = require('../services/activityLogService');
 
 class MeReportController {
   // Create a new ME report
@@ -21,6 +23,29 @@ class MeReportController {
 
       const meReport = await MeReport.create(meReportData);
       
+      // Log activity
+      if (req.user && req.user.organizationId) {
+        try {
+          await activityLogService.logActivity({
+            organizationId: req.user.organizationId,
+            userId: req.user.id,
+            activityType: 'report_created',
+            activityCategory: 'report',
+            title: 'M&E Report Created',
+            description: `Created M&E report`,
+            metadata: {
+              reportId: meReport.id,
+              reportType: meReport.report_type
+            },
+            entityType: 'me_report',
+            entityId: meReport.id,
+            severity: 'success'
+          });
+        } catch (activityError) {
+          logger.error('Error logging activity:', activityError);
+        }
+      }
+      
       // Log the ME report creation
       try {
         await auditLogger.create({
@@ -34,7 +59,7 @@ class MeReportController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.status(201).json(meReport);
@@ -138,7 +163,7 @@ class MeReportController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json(updatedMeReport);
@@ -172,7 +197,7 @@ class MeReportController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
 
       res.json({ message: 'ME report deleted successfully' });
@@ -194,6 +219,29 @@ class MeReportController {
         status: 'submitted',
         submitted_at: new Date()
       });
+      
+      // Log activity
+      if (req.user && req.user.organizationId) {
+        try {
+          await activityLogService.logActivity({
+            organizationId: req.user.organizationId,
+            userId: req.user.id,
+            activityType: 'report_submitted',
+            activityCategory: 'report',
+            title: 'M&E Report Submitted',
+            description: `Submitted M&E report for review`,
+            metadata: {
+              reportId: id,
+              reportType: meReport.report_type
+            },
+            entityType: 'me_report',
+            entityId: parseInt(id),
+            severity: 'success'
+          });
+        } catch (activityError) {
+          logger.error('Error logging activity:', activityError);
+        }
+      }
       
       // Create approval request for the report
       let approvalRequest;
@@ -221,7 +269,7 @@ class MeReportController {
           updatedMeReport.approval_request_id = approvalRequest.id;
         }
       } catch (approvalError) {
-        console.error('Error creating approval request for report:', approvalError);
+        logger.error('Error creating approval request for report:', approvalError);
         // Continue without approval - don't fail the report submission
       }
       
@@ -238,7 +286,7 @@ class MeReportController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json(updatedMeReport);
@@ -276,7 +324,7 @@ class MeReportController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       res.json(updatedMeReport);
@@ -308,7 +356,7 @@ class MeReportController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       // In a real implementation, you would generate a PDF file here
@@ -348,7 +396,7 @@ class MeReportController {
           user_agent: req.get('User-Agent')
         });
       } catch (auditError) {
-        console.error('Error creating audit log:', auditError);
+        logger.error('Error creating audit log:', auditError);
       }
       
       // In a real implementation, you would generate an Excel file here

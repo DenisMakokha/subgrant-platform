@@ -4,6 +4,10 @@ const helmet = require('helmet');
 const dotenv = require('dotenv');
 const { logStartup, logShutdown } = require('./services/observabilityService');
 
+// Structured logging
+const logger = require('./utils/logger');
+const correlationId = require('./middleware/correlationId');
+
 // Load environment variables
 dotenv.config();
 
@@ -21,6 +25,9 @@ app.use(helmet({
 })); // Security headers with CORS allowance
 app.use(express.json({ limit: '10mb' })); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true, limit: '10mb' })); // Parse URL-encoded bodies
+
+// Correlation ID tracking (must be early in middleware stack)
+app.use(correlationId);
 
 // Routes
 const authRoutes = require('./routes/auth');
@@ -66,6 +73,7 @@ const emailRoutes = require('./routes/email');
 const budgetSSOTRoutes = require('./routes/budgetSSOT');
 const contractSSOTRoutes = require('./routes/contractSSOT');
 const reportedIssuesRoutes = require('./routes/reportedIssues');
+const dashboardPreferencesRoutes = require('./routes/dashboardPreferences');
 
 // Base route
 app.get('/', (req, res) => {
@@ -123,6 +131,7 @@ app.use('/api/email', emailRoutes);
 app.use('/api/budget-ssot', budgetSSOTRoutes);
 app.use('/api/contract-ssot', contractSSOTRoutes);
 app.use('/api/reported-issues', reportedIssuesRoutes);
+app.use('/api/dashboard', dashboardPreferencesRoutes);
 
 // Partner module routes
 const partnerApplications = require('./routes/partnerApplications');
@@ -137,15 +146,15 @@ app.use('/api/partner', partnerRoutes);
 
 // Simple test endpoint
 app.get('/api/test', (req, res) => {
-  console.log('Test endpoint hit!');
+  logger.info('Test endpoint accessed', { correlationId: req.correlationId });
   res.json({ message: 'Test endpoint working' });
 });
 
 // Working section-a endpoint that bypasses middleware
 app.post('/api/onboarding/section-a', async (req, res) => {
-  console.log('=== DIRECT SECTION A ENDPOINT ===');
-  console.log('Headers:', req.headers.authorization);
-  console.log('Body:', req.body);
+  logger.info('=== DIRECT SECTION A ENDPOINT ===');
+  logger.info('Headers:', req.headers.authorization);
+  logger.info('Body:', req.body);
   
   try {
     const authHeader = req.headers.authorization;
@@ -156,18 +165,18 @@ app.post('/api/onboarding/section-a', async (req, res) => {
     const token = authHeader.substring(7);
     const jwt = require('jsonwebtoken');
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-    console.log('Decoded token:', decoded);
+    logger.info('Decoded token:', decoded);
     
     const db = require('./config/database');
     const userId = decoded.id || decoded.sub;
-    console.log('Using userId for query:', userId);
+    logger.info('Using userId for query:', userId);
     
     const userResult = await db.pool.query(
       'SELECT id, email, organization_id FROM users WHERE id = $1',
       [userId]
     );
     
-    console.log('User from DB:', userResult.rows[0]);
+    logger.info('User from DB:', userResult.rows[0]);
     
     if (!userResult.rows[0]?.organization_id) {
       return res.status(400).json({ 
@@ -192,7 +201,7 @@ app.post('/api/onboarding/section-a', async (req, res) => {
         ADD COLUMN IF NOT EXISTS version INTEGER DEFAULT 0
       `);
     } catch (e) {
-      console.warn('Section A direct: column ensure warning:', e.message || e);
+      logger.warn('Section A direct: column ensure warning:', e.message || e);
     }
     
     // Support SSoT envelope { data, meta }
@@ -228,7 +237,7 @@ app.post('/api/onboarding/section-a', async (req, res) => {
     ];
     
     const result = await db.pool.query(updateQuery, values);
-    console.log('Organization updated:', result.rows[0]);
+    logger.info('Organization updated:', result.rows[0]);
     
     res.json({ 
       success: true, 
@@ -237,16 +246,16 @@ app.post('/api/onboarding/section-a', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Section A error:', error);
+    logger.error('Section A error:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
 // Direct section-b endpoint that bypasses middleware (same pattern as section-a)
 app.post('/api/onboarding/section-b-financial', async (req, res) => {
-  console.log('=== DIRECT SECTION B ENDPOINT ===');
-  console.log('Headers:', req.headers.authorization);
-  console.log('Body:', req.body);
+  logger.info('=== DIRECT SECTION B ENDPOINT ===');
+  logger.info('Headers:', req.headers.authorization);
+  logger.info('Body:', req.body);
   
   try {
     const authHeader = req.headers.authorization;
@@ -257,18 +266,18 @@ app.post('/api/onboarding/section-b-financial', async (req, res) => {
     const token = authHeader.substring(7);
     const jwt = require('jsonwebtoken');
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-    console.log('Decoded token:', decoded);
+    logger.info('Decoded token:', decoded);
     
     const db = require('./config/database');
     const userId = decoded.id || decoded.sub;
-    console.log('Using userId for query:', userId);
+    logger.info('Using userId for query:', userId);
     
     const userResult = await db.pool.query(
       'SELECT id, email, organization_id FROM users WHERE id = $1',
       [userId]
     );
     
-    console.log('User from DB:', userResult.rows[0]);
+    logger.info('User from DB:', userResult.rows[0]);
     
     if (!userResult.rows[0]?.organization_id) {
       return res.status(400).json({ 
@@ -288,7 +297,7 @@ app.post('/api/onboarding/section-b-financial', async (req, res) => {
       otherFunds
     } = req.body;
 
-    console.log('Section B Financial - Received data:', req.body);
+    logger.info('Section B Financial - Received data:', req.body);
 
     // Upsert financial assessment data
     await db.pool.query(`
@@ -335,7 +344,7 @@ app.post('/api/onboarding/section-b-financial', async (req, res) => {
       WHERE id = $1
     `, [orgId]);
 
-    console.log('Section B Financial - Successfully saved for org:', orgId);
+    logger.info('Section B Financial - Successfully saved for org:', orgId);
 
     res.json({ 
       success: true, 
@@ -345,17 +354,17 @@ app.post('/api/onboarding/section-b-financial', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Section B error:', error);
+    logger.error('Section B error:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
 // Temporary direct onboarding endpoint for debugging (bypass partner middleware)
 app.post('/api/debug/section-a', async (req, res) => {
-  console.log('=== DEBUG SECTION A ENDPOINT ===');
-  console.log('Headers:', req.headers);
-  console.log('Body:', req.body);
-  console.log('User from token:', req.user);
+  logger.info('=== DEBUG SECTION A ENDPOINT ===');
+  logger.info('Headers:', req.headers);
+  logger.info('Body:', req.body);
+  logger.info('User from token:', req.user);
   
   try {
     const authHeader = req.headers.authorization;
@@ -366,19 +375,19 @@ app.post('/api/debug/section-a', async (req, res) => {
     const token = authHeader.substring(7);
     const jwt = require('jsonwebtoken');
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-    console.log('Decoded token:', decoded);
+    logger.info('Decoded token:', decoded);
     
     const db = require('./config/database');
     const userId = decoded.id || decoded.sub;
-    console.log('Using userId for query:', userId);
+    logger.info('Using userId for query:', userId);
     
     const userResult = await db.pool.query(
       'SELECT id, email, organization_id FROM users WHERE id = $1',
       [userId]
     );
     
-    console.log('User query result rows:', userResult.rows);
-    console.log('User from DB:', userResult.rows[0]);
+    logger.info('User query result rows:', userResult.rows);
+    logger.info('User from DB:', userResult.rows[0]);
     
     if (userResult.rows.length === 0) {
       return res.status(400).json({ 
@@ -402,7 +411,7 @@ app.post('/api/debug/section-a', async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Debug endpoint error:', error);
+    logger.error('Debug endpoint error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -432,7 +441,7 @@ app.use((req, res) => {
 
 // API error handler - ensure JSON responses on all /api routes
 app.use('/api', (err, req, res, next) => {
-  console.error('API Error:', err);
+  logger.error('API Error:', err);
   res
     .status(err.status || 500)
     .type('application/json')
@@ -444,20 +453,32 @@ logStartup();
 
 // Graceful shutdown
 process.on('SIGINT', () => {
-  console.log('SIGINT received, shutting down gracefully');
+  logger.info('SIGINT received, shutting down gracefully');
   logShutdown();
   process.exit(0);
 });
 
 process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
+  logger.info('SIGTERM received, shutting down gracefully');
   logShutdown();
   process.exit(0);
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+// Start server with WebSocket support
+const http = require('http');
+const logger = require('utils/logger');
+const server = http.createServer(app);
+
+// Initialize WebSocket
+const { initializeWebSocket } = require('./services/websocket');
+initializeWebSocket(server);
+
+server.listen(PORT, () => {
+  logger.info('Server started successfully', { 
+    port: PORT,
+    environment: process.env.NODE_ENV || 'development',
+    websocket: 'initialized'
+  });
 });
 
 module.exports = app;

@@ -1,6 +1,7 @@
 const AWS = require('aws-sdk');
 const crypto = require('crypto');
 const path = require('path');
+const logger = require('../utils/logger');
 
 // Configure AWS SDK
 const s3 = new AWS.S3({
@@ -87,7 +88,7 @@ const generatePresignedUploadUrl = async (organizationId, documentType, fileName
       allowedContentType: ALLOWED_FILE_TYPES[normalizedFileType]
     };
   } catch (error) {
-    console.error('Error generating presigned upload URL:', error);
+    logger.error('Error generating presigned upload URL:', error);
     throw new Error('Failed to generate upload URL');
   }
 };
@@ -108,7 +109,7 @@ const generatePresignedDownloadUrl = async (fileKey) => {
     const url = await s3.getSignedUrlPromise('getObject', params);
     return url;
   } catch (error) {
-    console.error('Error generating presigned download URL:', error);
+    logger.error('Error generating presigned download URL:', error);
     throw new Error('Failed to generate download URL');
   }
 };
@@ -155,7 +156,7 @@ const getFileMetadata = async (fileKey) => {
       metadata: result.Metadata
     };
   } catch (error) {
-    console.error('Error getting file metadata:', error);
+    logger.error('Error getting file metadata:', error);
     throw new Error('Failed to get file metadata');
   }
 };
@@ -175,7 +176,7 @@ const deleteFile = async (fileKey) => {
     await s3.deleteObject(params).promise();
     return true;
   } catch (error) {
-    console.error('Error deleting file:', error);
+    logger.error('Error deleting file:', error);
     throw new Error('Failed to delete file');
   }
 };
@@ -197,7 +198,7 @@ const copyFile = async (sourceKey, destinationKey) => {
     await s3.copyObject(params).promise();
     return true;
   } catch (error) {
-    console.error('Error copying file:', error);
+    logger.error('Error copying file:', error);
     throw new Error('Failed to copy file');
   }
 };
@@ -228,7 +229,7 @@ const listOrganizationFiles = async (organizationId, documentType = null) => {
       etag: obj.ETag
     }));
   } catch (error) {
-    console.error('Error listing files:', error);
+    logger.error('Error listing files:', error);
     throw new Error('Failed to list files');
   }
 };
@@ -263,7 +264,7 @@ const validateUploadCompletion = async (fileKey, organizationId) => {
       }
     };
   } catch (error) {
-    console.error('Error validating upload:', error);
+    logger.error('Error validating upload:', error);
     return { valid: false, error: 'Failed to validate upload' };
   }
 };

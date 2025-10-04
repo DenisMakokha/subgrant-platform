@@ -1,4 +1,5 @@
 const path = require('path');
+const logger = require('../utils/logger');
 
 // Load pg and dotenv from api's node_modules
 const { Pool } = require(path.join(__dirname, '../node_modules/pg'));
@@ -19,7 +20,7 @@ async function checkUserRole() {
   const client = await pool.connect();
   
   try {
-    console.log('🔍 Checking user role...\n');
+    logger.info('🔍 Checking user role...\n');
 
     // Check the specific user
     const result = await client.query(`
@@ -29,14 +30,14 @@ async function checkUserRole() {
     `);
 
     if (result.rows.length > 0) {
-      console.log('📋 User details:');
-      console.log(result.rows[0]);
+      logger.info('📋 User details:');
+      logger.info(result.rows[0]);
     } else {
-      console.log('❌ User not found');
+      logger.info('❌ User not found');
     }
 
     // List all users with their roles
-    console.log('\n📊 All users:');
+    logger.info('\n📊 All users:');
     const allUsers = await client.query(`
       SELECT id, email, first_name, last_name, role, is_active
       FROM users
@@ -44,11 +45,11 @@ async function checkUserRole() {
     `);
     
     allUsers.rows.forEach(user => {
-      console.log(`${user.email.padEnd(30)} | ${user.role.padEnd(30)} | ${user.is_active ? 'Active' : 'Inactive'}`);
+      logger.info(`${user.email.padEnd(30)} | ${user.role.padEnd(30)} | ${user.is_active ? 'Active' : 'Inactive'}`);
     });
 
   } catch (error) {
-    console.error('❌ Error:', error.message);
+    logger.error('❌ Error:', error.message);
   } finally {
     client.release();
     await pool.end();

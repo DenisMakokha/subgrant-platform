@@ -1,4 +1,5 @@
 const axios = require('axios');
+const logger = require('../utils/logger');
 
 class CurrencyService {
   constructor() {
@@ -29,7 +30,7 @@ class CurrencyService {
       
       return rates;
     } catch (error) {
-      console.error('Error fetching exchange rates:', error);
+      logger.error('Error fetching exchange rates:', error);
       throw new Error('Failed to fetch exchange rates');
     }
   }
@@ -67,7 +68,7 @@ class CurrencyService {
       
       return amountInUSD * toRate;
     } catch (error) {
-      console.error('Error converting currency:', error);
+      logger.error('Error converting currency:', error);
       throw new Error(`Failed to convert currency from ${fromCurrency} to ${toCurrency}`);
     }
   }

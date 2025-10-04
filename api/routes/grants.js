@@ -3,6 +3,7 @@ const router = express.Router();
 const CreateGrantService = require('../services/grants/createGrantService');
 const GrantRepository = require('../repositories/grantRepository');
 const GrantSSOTRepository = require('../repositories/grantSSOTRepository');
+const logger = require('../utils/logger');
 
 /**
  * @route POST /api/grants
@@ -37,7 +38,7 @@ router.post('/', async (req, res) => {
       message: 'Grant created successfully'
     });
   } catch (error) {
-    console.error('Error creating grant:', error);
+    logger.error('Error creating grant:', error);
     
     // Handle unique constraint violations
     if (error.code === '23505' && error.constraint === 'grants_grant_number_key') {
@@ -79,7 +80,7 @@ router.get('/', async (req, res) => {
       count: grants.length
     });
   } catch (error) {
-    console.error('Error listing grants:', error);
+    logger.error('Error listing grants:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to retrieve grants'
@@ -113,7 +114,7 @@ router.get('/:id', async (req, res) => {
       data: grant
     });
   } catch (error) {
-    console.error('Error retrieving grant:', error);
+    logger.error('Error retrieving grant:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to retrieve grant'
@@ -153,7 +154,7 @@ router.put('/:id', async (req, res) => {
       message: 'Grant updated successfully'
     });
   } catch (error) {
-    console.error('Error updating grant:', error);
+    logger.error('Error updating grant:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to update grant'
@@ -185,7 +186,7 @@ router.delete('/:id', async (req, res) => {
       message: 'Grant deleted successfully'
     });
   } catch (error) {
-    console.error('Error deleting grant:', error);
+    logger.error('Error deleting grant:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to delete grant'
@@ -213,7 +214,7 @@ router.get('/project/:projectId', async (req, res) => {
       count: grants.length
     });
   } catch (error) {
-    console.error('Error retrieving project grants:', error);
+    logger.error('Error retrieving project grants:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to retrieve project grants'
@@ -247,7 +248,7 @@ router.get('/number/:grantNumber', async (req, res) => {
       data: grant
     });
   } catch (error) {
-    console.error('Error retrieving grant by number:', error);
+    logger.error('Error retrieving grant by number:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to retrieve grant'
@@ -280,7 +281,7 @@ router.post('/generate-number', async (req, res) => {
       data: { grant_number: grantNumber }
     });
   } catch (error) {
-    console.error('Error generating grant number:', error);
+    logger.error('Error generating grant number:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to generate grant number'
@@ -314,7 +315,7 @@ router.post('/suggest-reporting-dates', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error generating reporting date suggestions:', error);
+    logger.error('Error generating reporting date suggestions:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to generate reporting date suggestions'

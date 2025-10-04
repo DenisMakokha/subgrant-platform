@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 async function checkChannelConstraint() {
   try {
@@ -10,14 +11,14 @@ async function checkChannelConstraint() {
     `);
     
     if (constraintResult.rows.length > 0) {
-      console.log('Channel constraint definition:', constraintResult.rows[0].definition);
+      logger.info('Channel constraint definition:', constraintResult.rows[0].definition);
     } else {
-      console.log('Constraint not found');
+      logger.info('Constraint not found');
     }
 
     // Let's also check if there are existing notifications to see what channel values are used
     const existingResult = await db.pool.query('SELECT DISTINCT channel FROM notifications LIMIT 10');
-    console.log('Existing channel values:', existingResult.rows.map(r => r.channel));
+    logger.info('Existing channel values:', existingResult.rows.map(r => r.channel));
 
     // Try different channel values
     const testChannels = ['email', 'sms', 'push', 'web', 'app', 'notification'];
@@ -32,19 +33,19 @@ async function checkChannelConstraint() {
           RETURNING id
         `, [userId, channel, 'test']);
         
-        console.log(`✅ Channel '${channel}' works`);
+        logger.info(`✅ Channel '${channel}' works`);
         
         // Clean up
         await db.pool.query('DELETE FROM notifications WHERE id = $1', [testResult.rows[0].id]);
         
       } catch (error) {
-        console.log(`❌ Channel '${channel}' failed: ${error.message}`);
+        logger.info(`❌ Channel '${channel}' failed: ${error.message}`);
       }
     }
 
     process.exit(0);
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Error:', error);
     process.exit(1);
   }
 }

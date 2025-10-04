@@ -3,18 +3,19 @@ const router = express.Router();
 const Organization = require('../models/organization');
 const db = require('../config/database'); // Fix the db import path
 const authenticateToken = require('../middleware/auth');
+const logger = require('../utils/logger');
 
 // Create a new organization
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    console.log('Organization creation request received');
-    console.log('Request body:', req.body);
-    console.log('User from token:', req.user);
+    logger.info('Organization creation request received');
+    logger.info('Request body:', req.body);
+    logger.info('User from token:', req.user);
     
     const organizationData = req.body;
     const userId = req.user?.id || req.user?.sub;
     
-    console.log('Extracted userId:', userId);
+    logger.info('Extracted userId:', userId);
     
     // Validate required fields
     if (!organizationData.name || !organizationData.email) {
@@ -50,7 +51,7 @@ router.post('/', authenticateToken, async (req, res) => {
       organization
     });
   } catch (error) {
-    console.error('Organization creation error:', error);
+    logger.error('Organization creation error:', error);
     res.status(500).json({ error: error.message });
   }
 });

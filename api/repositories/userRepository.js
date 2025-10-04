@@ -1,4 +1,5 @@
 const User = require('../models/user');
+const logger = require('../utils/logger');
 const { Op } = require('sequelize');
 
 class UserRepository {
@@ -15,7 +16,7 @@ class UserRepository {
       // Default count all
       return await this.countAll();
     } catch (error) {
-      console.error('Error counting users:', error);
+      logger.error('Error counting users:', error);
       return 0;
     }
   }
@@ -28,7 +29,7 @@ class UserRepository {
       const users = await User.findAll();
       return users.length;
     } catch (error) {
-      console.error('Error counting all users:', error);
+      logger.error('Error counting all users:', error);
       return 0;
     }
   }
@@ -43,7 +44,7 @@ class UserRepository {
       const users = await User.findAll();
       return users.filter(user => user.status === status).length;
     } catch (error) {
-      console.error('Error counting users by status:', error);
+      logger.error('Error counting users by status:', error);
       return 0;
     }
   }
@@ -67,7 +68,7 @@ class UserRepository {
       // Default find all
       return await User.findAll();
     } catch (error) {
-      console.error('Error finding users:', error);
+      logger.error('Error finding users:', error);
       return [];
     }
   }
@@ -79,7 +80,7 @@ class UserRepository {
     try {
       return await User.findById(id);
     } catch (error) {
-      console.error('Error finding user by ID:', error);
+      logger.error('Error finding user by ID:', error);
       return null;
     }
   }
@@ -91,7 +92,7 @@ class UserRepository {
     try {
       return await User.findByEmail(email);
     } catch (error) {
-      console.error('Error finding user by email:', error);
+      logger.error('Error finding user by email:', error);
       return null;
     }
   }
@@ -103,7 +104,7 @@ class UserRepository {
     try {
       return await User.create(userData);
     } catch (error) {
-      console.error('Error creating user:', error);
+      logger.error('Error creating user:', error);
       throw error;
     }
   }
@@ -115,7 +116,7 @@ class UserRepository {
     try {
       return await User.update(id, userData);
     } catch (error) {
-      console.error('Error updating user:', error);
+      logger.error('Error updating user:', error);
       throw error;
     }
   }
@@ -127,7 +128,7 @@ class UserRepository {
     try {
       return await User.delete(id);
     } catch (error) {
-      console.error('Error deleting user:', error);
+      logger.error('Error deleting user:', error);
       throw error;
     }
   }
@@ -139,7 +140,7 @@ class UserRepository {
     try {
       return await User.findByOrganization(organizationId);
     } catch (error) {
-      console.error('Error finding users by organization:', error);
+      logger.error('Error finding users by organization:', error);
       return [];
     }
   }
@@ -154,7 +155,7 @@ class UserRepository {
       }
       return await user.validatePassword(password);
     } catch (error) {
-      console.error('Error validating password:', error);
+      logger.error('Error validating password:', error);
       return false;
     }
   }
@@ -169,7 +170,7 @@ class UserRepository {
       }
       return user.hasRole(role);
     } catch (error) {
-      console.error('Error checking user role:', error);
+      logger.error('Error checking user role:', error);
       return false;
     }
   }
@@ -184,7 +185,7 @@ class UserRepository {
       }
       return user.hasAnyRole(roles);
     } catch (error) {
-      console.error('Error checking user roles:', error);
+      logger.error('Error checking user roles:', error);
       return false;
     }
   }

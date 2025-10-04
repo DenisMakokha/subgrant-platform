@@ -6,6 +6,7 @@ const { invalidateCache } = require('../cache/cacheInvalidation');
 const { ValidationError, NotFoundError } = require('../errors');
 const { sanitizeInput } = require('../middleware/sanitization');
 const { logApiCall, logError } = require('../services/observabilityService');
+const adminActivityLogService = require('../services/adminActivityLogService');
 
 // Mock data for demonstration
 // In a real implementation, this would fetch from the database
@@ -147,11 +148,36 @@ exports.createOrUpdateRole = [
       // Invalidate cache for roles
       invalidateCache('roles');
       
+      // Log admin activity
+      await adminActivityLogService.logActivity({
+        adminId: req.user?.id,
+        action: 'create_or_update_role',
+        entityType: 'role',
+        entityId: roleDef.id || null,
+        changes: {
+          before: null, // Would fetch existing role in real implementation
+          after: roleDef
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      });
+      
       // Log successful API call
       logApiCall('POST', '/admin/roles', 200, Date.now() - startTime, req.user.id);
       
       res.json({ message: 'Role created/updated successfully', role: roleDef });
     } catch (error) {
+      // Log failed activity
+      await adminActivityLogService.logActivity({
+        adminId: req.user?.id,
+        action: 'create_or_update_role',
+        entityType: 'role',
+        result: 'error',
+        errorMessage: error.message,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      });
+      
       // Log error
       logError(error, 'createOrUpdateRole', { userId: req.user.id });
       
@@ -171,11 +197,36 @@ exports.publishRole = [
       const { id, version } = req.body;
       // In a real implementation, this would set active true and deactivate prior versions
       
+      // Log admin activity
+      await adminActivityLogService.logActivity({
+        adminId: req.user?.id,
+        action: 'publish_role',
+        entityType: 'role',
+        entityId: id,
+        changes: {
+          before: { active: false, version: version - 1 },
+          after: { active: true, version }
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      });
+      
       // Log successful API call
       logApiCall('POST', '/admin/roles/publish', 200, Date.now() - startTime, req.user.id);
       
       res.json({ message: `Role ${id} version ${version} published successfully` });
     } catch (error) {
+      // Log failed activity
+      await adminActivityLogService.logActivity({
+        adminId: req.user?.id,
+        action: 'publish_role',
+        entityType: 'role',
+        result: 'error',
+        errorMessage: error.message,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      });
+      
       // Log error
       logError(error, 'publishRole', { userId: req.user.id });
       
@@ -194,17 +245,46 @@ exports.deleteRole = [
     try {
       const { roleId } = req.params;
       
+      // Get role data before deletion for logging
+      const roleToDelete = rolesRegistry.find(r => r.id === roleId);
+      
       // In a real implementation, check if role has users assigned
       // If yes, prevent deletion or reassign users
       
       // Invalidate cache
       invalidateCache('roles');
       
+      // Log admin activity
+      await adminActivityLogService.logActivity({
+        adminId: req.user?.id,
+        action: 'delete_role',
+        entityType: 'role',
+        entityId: roleId,
+        changes: {
+          before: roleToDelete || { id: roleId },
+          after: null
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      });
+      
       // Log successful API call
       logApiCall('DELETE', `/admin/roles/${roleId}`, 200, Date.now() - startTime, req.user.id);
       
       res.json({ message: `Role ${roleId} deleted successfully` });
     } catch (error) {
+      // Log failed activity
+      await adminActivityLogService.logActivity({
+        adminId: req.user?.id,
+        action: 'delete_role',
+        entityType: 'role',
+        entityId: req.params.roleId,
+        result: 'error',
+        errorMessage: error.message,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      });
+      
       // Log error
       logError(error, 'deleteRole', { userId: req.user.id, roleId: req.params.roleId });
       
@@ -224,6 +304,9 @@ exports.toggleRoleActive = [
       const { roleId } = req.params;
       const { active } = req.body;
       
+      // Get current state
+      const currentRole = rolesRegistry.find(r => r.id === roleId);
+      
       // In a real implementation, update role active status in database
       const updatedRole = {
         id: roleId,
@@ -234,11 +317,37 @@ exports.toggleRoleActive = [
       // Invalidate cache
       invalidateCache('roles');
       
+      // Log admin activity
+      await adminActivityLogService.logActivity({
+        adminId: req.user?.id,
+        action: 'toggle_role_active',
+        entityType: 'role',
+        entityId: roleId,
+        changes: {
+          before: { active: currentRole?.active },
+          after: { active }
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      });
+      
       // Log successful API call
       logApiCall('PUT', `/admin/roles/${roleId}/toggle`, 200, Date.now() - startTime, req.user.id);
       
       res.json({ message: `Role ${roleId} ${active ? 'activated' : 'deactivated'} successfully`, role: updatedRole });
     } catch (error) {
+      // Log failed activity
+      await adminActivityLogService.logActivity({
+        adminId: req.user?.id,
+        action: 'toggle_role_active',
+        entityType: 'role',
+        entityId: req.params.roleId,
+        result: 'error',
+        errorMessage: error.message,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      });
+      
       // Log error
       logError(error, 'toggleRoleActive', { userId: req.user.id, roleId: req.params.roleId });
       
@@ -257,6 +366,9 @@ exports.cloneRole = [
     try {
       const { roleId } = req.params;
       const { newRoleId, newLabel } = req.body;
+      
+      // Get source role
+      const sourceRole = rolesRegistry.find(r => r.id === roleId);
       
       // In a real implementation:
       // 1. Fetch original role
@@ -278,11 +390,41 @@ exports.cloneRole = [
       // Invalidate cache
       invalidateCache('roles');
       
+      // Log admin activity
+      await adminActivityLogService.logActivity({
+        adminId: req.user?.id,
+        action: 'clone_role',
+        entityType: 'role',
+        entityId: newRoleId,
+        changes: {
+          before: null,
+          after: {
+            sourceRoleId: roleId,
+            newRoleId,
+            newLabel
+          }
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      });
+      
       // Log successful API call
       logApiCall('POST', `/admin/roles/${roleId}/clone`, 200, Date.now() - startTime, req.user.id);
       
       res.json({ message: `Role ${roleId} cloned successfully`, role: clonedRole });
     } catch (error) {
+      // Log failed activity
+      await adminActivityLogService.logActivity({
+        adminId: req.user?.id,
+        action: 'clone_role',
+        entityType: 'role',
+        entityId: req.params.roleId,
+        result: 'error',
+        errorMessage: error.message,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      });
+      
       // Log error
       logError(error, 'cloneRole', { userId: req.user.id, roleId: req.params.roleId });
       

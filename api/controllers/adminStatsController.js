@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const logger = require('../utils/logger');
 const { logApiCall, logError } = require('../services/observabilityService');
 
 /**
@@ -72,7 +73,7 @@ async function getDashboardStatsData() {
       const orgStats = await db.pool.query('SELECT COUNT(*) as total_organizations FROM organizations');
       totalOrganizations = parseInt(orgStats.rows[0].total_organizations) || 0;
     } catch (err) {
-      console.log('Organizations table not found, using 0');
+      logger.info('Organizations table not found, using 0');
     }
 
     // Get project count - with fallback
@@ -81,7 +82,7 @@ async function getDashboardStatsData() {
       const projectStats = await db.pool.query('SELECT COUNT(*) as total_projects FROM projects');
       totalProjects = parseInt(projectStats.rows[0].total_projects) || 0;
     } catch (err) {
-      console.log('⚠️ Projects table does not exist yet');
+      logger.info('⚠️ Projects table does not exist yet');
     }
 
     // Get pending approvals count - with fallback
@@ -94,7 +95,7 @@ async function getDashboardStatsData() {
       `);
       pendingApprovals = parseInt(approvalStats.rows[0].pending_approvals) || 0;
     } catch (err) {
-      console.log('⚠️ Approvals table does not exist yet');
+      logger.info('⚠️ Approvals table does not exist yet');
     }
 
     // Get system alerts from actual system monitoring
@@ -107,7 +108,7 @@ async function getDashboardStatsData() {
       `);
       systemAlerts = parseInt(alertsQuery.rows[0].alert_count) || 0;
     } catch (err) {
-      console.log('⚠️ System alerts table does not exist yet');
+      logger.info('⚠️ System alerts table does not exist yet');
     }
 
     return {
@@ -119,7 +120,7 @@ async function getDashboardStatsData() {
       systemAlerts,
     };
   } catch (error) {
-    console.error('❌ Error getting dashboard stats:', error);
+    logger.error('❌ Error getting dashboard stats:', error);
     throw error;
   }
 }
@@ -172,7 +173,7 @@ async function getRecentActivityData(limit = 10) {
 
     return activities;
   } catch (error) {
-    console.log('⚠️ Audit log table does not exist yet');
+    logger.info('⚠️ Audit log table does not exist yet');
     return [];
   }
 }
@@ -190,7 +191,7 @@ async function getPendingApprovalsCountData() {
 
     return { count: parseInt(result.rows[0].count) || 0 };
   } catch (error) {
-    console.log('⚠️ Approvals table does not exist yet');
+    logger.info('⚠️ Approvals table does not exist yet');
     return { count: 0 };
   }
 }

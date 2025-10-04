@@ -4,6 +4,7 @@
 
 const axios = require('axios');
 const dotenv = require('dotenv');
+const logger = require('../utils/logger');
 
 dotenv.config();
 
@@ -46,7 +47,7 @@ async function makeRequest(method, endpoint, data = null, headers = {}) {
 }
 
 async function testRegistration() {
-  console.log('🔐 Testing user registration...');
+  logger.info('🔐 Testing user registration...');
   
   const result = await makeRequest('POST', '/api/onboarding/auth/register', {
     email: TEST_EMAIL,
@@ -57,18 +58,18 @@ async function testRegistration() {
   });
   
   if (result.success) {
-    console.log('  ✅ Registration successful');
+    logger.info('  ✅ Registration successful');
     testUserId = result.data.user?.id;
     testOrgId = result.data.organization?.id;
     return true;
   } else {
-    console.log('  ❌ Registration failed:', result.error);
+    logger.info('  ❌ Registration failed:', result.error);
     return false;
   }
 }
 
 async function testLogin() {
-  console.log('🔑 Testing user login...');
+  logger.info('🔑 Testing user login...');
   
   const result = await makeRequest('POST', '/api/onboarding/auth/login', {
     email: TEST_EMAIL,
@@ -76,43 +77,43 @@ async function testLogin() {
   });
   
   if (result.success) {
-    console.log('  ✅ Login successful');
+    logger.info('  ✅ Login successful');
     authToken = result.data.token;
-    console.log(`  📋 User role: ${result.data.user.role}`);
-    console.log(`  📋 Organization status: ${result.data.organization?.status}`);
+    logger.info(`  📋 User role: ${result.data.user.role}`);
+    logger.info(`  📋 Organization status: ${result.data.organization?.status}`);
     return true;
   } else {
-    console.log('  ❌ Login failed:', result.error);
+    logger.info('  ❌ Login failed:', result.error);
     return false;
   }
 }
 
 async function testSessionEndpoint() {
-  console.log('📊 Testing /api/session endpoint...');
+  logger.info('📊 Testing /api/session endpoint...');
   
   const result = await makeRequest('GET', '/api/session');
   
   if (result.success) {
-    console.log('  ✅ Session endpoint working');
-    console.log(`  📋 User: ${result.data.user.email} (${result.data.user.role})`);
-    console.log(`  📋 Organization: ${result.data.organization?.status}`);
-    console.log(`  📋 Next step: ${result.data.nextStep}`);
+    logger.info('  ✅ Session endpoint working');
+    logger.info(`  📋 User: ${result.data.user.email} (${result.data.user.role})`);
+    logger.info(`  📋 Organization: ${result.data.organization?.status}`);
+    logger.info(`  📋 Next step: ${result.data.nextStep}`);
     return true;
   } else {
-    console.log('  ❌ Session endpoint failed:', result.error);
+    logger.info('  ❌ Session endpoint failed:', result.error);
     return false;
   }
 }
 
 async function testSectionAEndpoints() {
-  console.log('📝 Testing Section A endpoints...');
+  logger.info('📝 Testing Section A endpoints...');
   
   // Test GET endpoint
   const getResult = await makeRequest('GET', '/api/onboarding/section-a');
   if (getResult.success) {
-    console.log('  ✅ Section A GET endpoint working');
+    logger.info('  ✅ Section A GET endpoint working');
   } else {
-    console.log('  ❌ Section A GET failed:', getResult.error);
+    logger.info('  ❌ Section A GET failed:', getResult.error);
   }
   
   // Test save endpoint
@@ -128,32 +129,32 @@ async function testSectionAEndpoints() {
   
   const saveResult = await makeRequest('POST', '/api/onboarding/section-a/save', saveData);
   if (saveResult.success) {
-    console.log('  ✅ Section A save endpoint working');
+    logger.info('  ✅ Section A save endpoint working');
   } else {
-    console.log('  ❌ Section A save failed:', saveResult.error);
+    logger.info('  ❌ Section A save failed:', saveResult.error);
   }
   
   // Test submit endpoint
   const submitResult = await makeRequest('POST', '/api/onboarding/section-a/submit', saveData);
   if (submitResult.success) {
-    console.log('  ✅ Section A POST (submit) endpoint working');
-    console.log(`  📋 Next step: ${submitResult.data.nextStep}`);
+    logger.info('  ✅ Section A POST (submit) endpoint working');
+    logger.info(`  📋 Next step: ${submitResult.data.nextStep}`);
     return true;
   } else {
-    console.log('  ❌ Section A POST failed:', submitResult.error);
+    logger.info('  ❌ Section A POST failed:', submitResult.error);
     return false;
   }
 }
 
 async function testSectionBEndpoints() {
-  console.log('💰 Testing Section B endpoints...');
+  logger.info('💰 Testing Section B endpoints...');
   
   // Test GET endpoint
   const getResult = await makeRequest('GET', '/api/onboarding/section-b');
   if (getResult.success) {
-    console.log('  ✅ Section B GET endpoint working');
+    logger.info('  ✅ Section B GET endpoint working');
   } else {
-    console.log('  ❌ Section B GET failed:', getResult.error);
+    logger.info('  ❌ Section B GET failed:', getResult.error);
   }
   
   // Test save endpoint
@@ -167,32 +168,32 @@ async function testSectionBEndpoints() {
   
   const saveResult = await makeRequest('POST', '/api/onboarding/section-b/save', saveData);
   if (saveResult.success) {
-    console.log('  ✅ Section B save endpoint working');
+    logger.info('  ✅ Section B save endpoint working');
   } else {
-    console.log('  ❌ Section B save failed:', saveResult.error);
+    logger.info('  ❌ Section B save failed:', saveResult.error);
   }
   
   // Test submit endpoint
   const submitResult = await makeRequest('POST', '/api/onboarding/section-b/submit', saveData);
   if (submitResult.success) {
-    console.log('  ✅ Section B submit endpoint working');
-    console.log(`  📋 Next step: ${submitResult.data.nextStep}`);
+    logger.info('  ✅ Section B submit endpoint working');
+    logger.info(`  📋 Next step: ${submitResult.data.nextStep}`);
     return true;
   } else {
-    console.log('  ❌ Section B submit failed:', submitResult.error);
+    logger.info('  ❌ Section B submit failed:', submitResult.error);
     return false;
   }
 }
 
 async function testSectionCEndpoints() {
-  console.log('📁 Testing Section C endpoints...');
+  logger.info('📁 Testing Section C endpoints...');
   
   // Test GET endpoint
   const getResult = await makeRequest('GET', '/api/onboarding/section-c');
   if (getResult.success) {
-    console.log('  ✅ Section C GET endpoint working');
+    logger.info('  ✅ Section C GET endpoint working');
   } else {
-    console.log('  ❌ Section C GET failed:', getResult.error);
+    logger.info('  ❌ Section C GET failed:', getResult.error);
   }
   
   // Test save endpoint
@@ -209,51 +210,51 @@ async function testSectionCEndpoints() {
   
   const saveResult = await makeRequest('POST', '/api/onboarding/section-c/save', saveData);
   if (saveResult.success) {
-    console.log('  ✅ Section C save endpoint working');
+    logger.info('  ✅ Section C save endpoint working');
   } else {
-    console.log('  ❌ Section C save failed:', saveResult.error);
+    logger.info('  ❌ Section C save failed:', saveResult.error);
   }
   
   // Test final submit endpoint (moves to under_review)
   const submitResult = await makeRequest('POST', '/api/onboarding/section-c/submit', {});
   if (submitResult.success) {
-    console.log('  ✅ Section C final submit endpoint working');
-    console.log(`  📋 Next step: ${submitResult.data.nextStep}`);
+    logger.info('  ✅ Section C final submit endpoint working');
+    logger.info(`  📋 Next step: ${submitResult.data.nextStep}`);
     return true;
   } else {
-    console.log('  ❌ Section C final submit failed:', submitResult.error);
+    logger.info('  ❌ Section C final submit failed:', submitResult.error);
     return false;
   }
 }
 
 async function testStateTransitions() {
-  console.log('🔄 Testing state transitions...');
+  logger.info('🔄 Testing state transitions...');
   
   // Check current session after all submissions
   const sessionResult = await makeRequest('GET', '/api/session');
   if (sessionResult.success) {
     const orgStatus = sessionResult.data.organization?.status;
-    console.log(`  📋 Current organization status: ${orgStatus}`);
+    logger.info(`  📋 Current organization status: ${orgStatus}`);
     
     if (orgStatus === 'under_review') {
-      console.log('  ✅ Organization correctly moved to under_review status');
+      logger.info('  ✅ Organization correctly moved to under_review status');
       return true;
     } else {
-      console.log(`  ❌ Expected under_review, got ${orgStatus}`);
+      logger.info(`  ❌ Expected under_review, got ${orgStatus}`);
       return false;
     }
   } else {
-    console.log('  ❌ Failed to check final status:', sessionResult.error);
+    logger.info('  ❌ Failed to check final status:', sessionResult.error);
     return false;
   }
 }
 
 async function runAPITests() {
-  console.log('🚀 Running Backend API Tests for Linear Onboarding Flow');
-  console.log('=' .repeat(70));
-  console.log(`📡 API Base URL: ${API_BASE_URL}`);
-  console.log(`📧 Test Email: ${TEST_EMAIL}`);
-  console.log('');
+  logger.info('🚀 Running Backend API Tests for Linear Onboarding Flow');
+  logger.info('=' .repeat(70));
+  logger.info(`📡 API Base URL: ${API_BASE_URL}`);
+  logger.info(`📧 Test Email: ${TEST_EMAIL}`);
+  logger.info('');
   
   const tests = [
     { name: 'Registration', fn: testRegistration },
@@ -273,24 +274,24 @@ async function runAPITests() {
       const result = await test.fn();
       if (result) {
         passed++;
-        console.log(`✅ ${test.name} test passed\n`);
+        logger.info(`✅ ${test.name} test passed\n`);
       } else {
         failed++;
-        console.log(`❌ ${test.name} test failed\n`);
+        logger.info(`❌ ${test.name} test failed\n`);
       }
     } catch (error) {
       failed++;
-      console.log(`❌ ${test.name} test error: ${error.message}\n`);
+      logger.info(`❌ ${test.name} test error: ${error.message}\n`);
     }
   }
   
-  console.log('=' .repeat(70));
-  console.log(`📊 Test Results: ${passed} passed, ${failed} failed`);
+  logger.info('=' .repeat(70));
+  logger.info(`📊 Test Results: ${passed} passed, ${failed} failed`);
   
   if (failed === 0) {
-    console.log('🎉 All API tests passed successfully!');
+    logger.info('🎉 All API tests passed successfully!');
   } else {
-    console.log('⚠️  Some API tests failed. Check the output above for details.');
+    logger.info('⚠️  Some API tests failed. Check the output above for details.');
   }
   
   return failed === 0;

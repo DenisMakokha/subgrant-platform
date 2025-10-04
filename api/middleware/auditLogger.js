@@ -1,4 +1,5 @@
 const AuditLog = require('../models/auditLog');
+const logger = require('../utils/logger');
 
 // Middleware to log actions
 const auditLogger = (action, entityType) => {
@@ -67,7 +68,7 @@ const auditLogger = (action, entityType) => {
       
       next();
     } catch (error) {
-      console.error('Error in audit logger middleware:', error);
+      logger.error('Error in audit logger middleware:', error);
       next();
     }
   };
@@ -89,7 +90,7 @@ async function createAuditLogEntry(actorId, action, entityType, entityId, before
     
     await AuditLog.create(auditData);
   } catch (error) {
-    console.error('Error creating audit log entry:', error);
+    logger.error('Error creating audit log entry:', error);
   }
 }
 
@@ -98,7 +99,7 @@ auditLogger.create = async function(auditData) {
   try {
     return await AuditLog.create(auditData);
   } catch (error) {
-    console.error('Error creating audit log entry:', error);
+    logger.error('Error creating audit log entry:', error);
     throw error;
   }
 };
@@ -108,7 +109,7 @@ auditLogger.getAuditLogsForEntity = async function(entityType, entityId) {
   try {
     return await AuditLog.findByEntity(entityType, entityId);
   } catch (error) {
-    console.error('Error fetching audit logs for entity:', error);
+    logger.error('Error fetching audit logs for entity:', error);
     throw error;
   }
 };
@@ -118,7 +119,7 @@ auditLogger.getAuditLogsForActor = async function(actorId) {
   try {
     return await AuditLog.findByActor(actorId);
   } catch (error) {
-    console.error('Error fetching audit logs for actor:', error);
+    logger.error('Error fetching audit logs for actor:', error);
     throw error;
   }
 };
@@ -128,7 +129,7 @@ auditLogger.getAuditLogsByAction = async function(action) {
   try {
     return await AuditLog.findByAction(action);
   } catch (error) {
-    console.error('Error fetching audit logs by action:', error);
+    logger.error('Error fetching audit logs by action:', error);
     throw error;
   }
 };
@@ -138,7 +139,7 @@ auditLogger.getAllAuditLogs = async function(filters = {}, limit = 50, offset = 
   try {
     return await AuditLog.findAll(filters, limit, offset);
   } catch (error) {
-    console.error('Error fetching audit logs:', error);
+    logger.error('Error fetching audit logs:', error);
     throw error;
   }
 };
@@ -148,7 +149,7 @@ auditLogger.getAuditLogCount = async function(filters = {}) {
   try {
     return await AuditLog.getCount(filters);
   } catch (error) {
-    console.error('Error fetching audit log count:', error);
+    logger.error('Error fetching audit log count:', error);
     throw error;
   }
 };

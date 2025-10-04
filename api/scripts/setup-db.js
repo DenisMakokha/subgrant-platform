@@ -7,6 +7,7 @@ const { Client } = require('pg');
 const dotenv = require('dotenv');
 const fs = require('fs');
 const path = require('path');
+const logger = require('../utils/logger');
 
 // Load environment variables
 dotenv.config();
@@ -30,21 +31,21 @@ const appConfig = {
 };
 
 async function createDatabaseAndUser() {
-  console.log('Creating database and user...');
+  logger.info('Creating database and user...');
   
   const client = new Client(superuserConfig);
   
   try {
     await client.connect();
-    console.log('Connected to PostgreSQL as superuser');
+    logger.info('Connected to PostgreSQL as superuser');
     
     // Create database
     try {
       await client.query(`CREATE DATABASE ${appConfig.database}`);
-      console.log(`✓ Database '${appConfig.database}' created successfully`);
+      logger.info(`✓ Database '${appConfig.database}' created successfully`);
     } catch (err) {
       if (err.message.includes('already exists')) {
-        console.log(`✓ Database '${appConfig.database}' already exists`);
+        logger.info(`✓ Database '${appConfig.database}' already exists`);
       } else {
         throw err;
       }
@@ -53,13 +54,13 @@ async function createDatabaseAndUser() {
     // Create user
     try {
       await client.query(`CREATE USER ${appConfig.user} WITH PASSWORD '${appConfig.password}'`);
-      console.log(`✓ User '${appConfig.user}' created successfully`);
+      logger.info(`✓ User '${appConfig.user}' created successfully`);
     } catch (err) {
       if (err.message.includes('already exists')) {
-        console.log(`✓ User '${appConfig.user}' already exists`);
+        logger.info(`✓ User '${appConfig.user}' already exists`);
         // Update password if user exists
         await client.query(`ALTER USER ${appConfig.user} WITH PASSWORD '${appConfig.password}'`);
-        console.log(`✓ Password for user '${appConfig.user}' updated`);
+        logger.info(`✓ Password for user '${appConfig.user}' updated`);
       } else {
         throw err;
       }
@@ -67,10 +68,10 @@ async function createDatabaseAndUser() {
     
     // Grant privileges
     await client.query(`GRANT ALL PRIVILEGES ON DATABASE ${appConfig.database} TO ${appConfig.user}`);
-    console.log(`✓ Privileges granted to user '${appConfig.user}'`);
+    logger.info(`✓ Privileges granted to user '${appConfig.user}'`);
     
   } catch (err) {
-    console.error('Error creating database and user:', err.message);
+    logger.error('Error creating database and user:', err.message);
     process.exit(1);
   } finally {
     await client.end();
@@ -78,7 +79,7 @@ async function createDatabaseAndUser() {
 }
 
 async function enableUUIDExtension() {
-  console.log('Enabling UUID extension...');
+  logger.info('Enabling UUID extension...');
   
   const client = new Client({
     ...appConfig,
@@ -87,14 +88,14 @@ async function enableUUIDExtension() {
   
   try {
     await client.connect();
-    console.log(`Connected to database '${appConfig.database}'`);
+    logger.info(`Connected to database '${appConfig.database}'`);
     
     // Enable UUID extension
     await client.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
-    console.log('✓ UUID extension enabled');
+    logger.info('✓ UUID extension enabled');
     
   } catch (err) {
-    console.error('Error enabling UUID extension:', err.message);
+    logger.error('Error enabling UUID extension:', err.message);
     process.exit(1);
   } finally {
     await client.end();
@@ -102,7 +103,7 @@ async function enableUUIDExtension() {
 }
 
 async function initializeTables() {
-  console.log('Initializing database tables...');
+  logger.info('Initializing database tables...');
   
   // Read and execute the init-db.js script
   try {
@@ -118,18 +119,18 @@ async function initializeTables() {
       // Run the init script
       require('./init-db.js');
     } else {
-      console.error('Database initialization script not found');
+      logger.error('Database initialization script not found');
       process.exit(1);
     }
   } catch (err) {
-    console.error('Error initializing tables:', err.message);
+    logger.error('Error initializing tables:', err.message);
     process.exit(1);
   }
 }
 
 async function main() {
-  console.log('Sub-Grant Management Platform Database Setup');
-  console.log('============================================\n');
+  logger.info('Sub-Grant Management Platform Database Setup');
+  logger.info('============================================\n');
   
   try {
     // Create database and user
@@ -138,13 +139,13 @@ async function main() {
     // Enable UUID extension
     await enableUUIDExtension();
     
-    console.log('\nDatabase setup completed successfully!');
-    console.log('\nNext steps:');
-    console.log('1. Run the table initialization script: node scripts/init-db.js');
-    console.log('2. Start the API server: npm start');
+    logger.info('\nDatabase setup completed successfully!');
+    logger.info('\nNext steps:');
+    logger.info('1. Run the table initialization script: node scripts/init-db.js');
+    logger.info('2. Start the API server: npm start');
     
   } catch (err) {
-    console.error('Setup failed:', err.message);
+    logger.error('Setup failed:', err.message);
     process.exit(1);
   }
 }

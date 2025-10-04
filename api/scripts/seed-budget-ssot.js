@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 const dotenv = require('dotenv');
+const logger = require('../utils/logger');
 
 // Load environment variables
 dotenv.config();
@@ -110,7 +111,7 @@ async function seedBudgetSSOT() {
         template.active
       ]);
       
-      console.log(`Inserted/Updated budget template: ${template.name}`);
+      logger.info(`Inserted/Updated budget template: ${template.name}`);
     }
     
     // Insert budget line categories
@@ -132,14 +133,14 @@ async function seedBudgetSSOT() {
         category.active
       ]);
       
-      console.log(`Inserted/Updated budget line category: ${category.name}`);
+      logger.info(`Inserted/Updated budget line category: ${category.name}`);
     }
     
     await client.query('COMMIT');
-    console.log('Budget SSOT seed data inserted successfully');
+    logger.info('Budget SSOT seed data inserted successfully');
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error seeding budget SSOT data:', error);
+    logger.error('Error seeding budget SSOT data:', error);
     throw error;
   } finally {
     client.release();
@@ -149,10 +150,10 @@ async function seedBudgetSSOT() {
 // Run the seed function
 seedBudgetSSOT()
   .then(() => {
-    console.log('Budget SSOT seeding completed');
+    logger.info('Budget SSOT seeding completed');
     process.exit(0);
   })
   .catch((error) => {
-    console.error('Budget SSOT seeding failed:', error);
+    logger.error('Budget SSOT seeding failed:', error);
     process.exit(1);
   });

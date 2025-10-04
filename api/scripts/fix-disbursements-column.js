@@ -2,6 +2,7 @@ const { Pool } = require('pg');
 const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
+const logger = require('../utils/logger');
 
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
@@ -17,14 +18,14 @@ async function runMigration() {
   const client = await pool.connect();
   
   try {
-    console.log('🔧 Adding partner_budget_id column to disbursements...\n');
+    logger.info('🔧 Adding partner_budget_id column to disbursements...\n');
     
     const sqlPath = path.join(__dirname, 'migrations', 'add-partner-budget-id-to-disbursements.sql');
     const sql = fs.readFileSync(sqlPath, 'utf8');
     
     await client.query(sql);
     
-    console.log('✅ Column added successfully!\n');
+    logger.info('✅ Column added successfully!\n');
     
     // Verify
     const result = await client.query(`
@@ -35,12 +36,12 @@ async function runMigration() {
     `);
     
     if (result.rows.length > 0) {
-      console.log('✓ Verified: partner_budget_id column exists');
-      console.log(`  Type: ${result.rows[0].data_type}`);
+      logger.info('✓ Verified: partner_budget_id column exists');
+      logger.info(`  Type: ${result.rows[0].data_type}`);
     }
     
   } catch (error) {
-    console.error('❌ Migration failed:', error.message);
+    logger.error('❌ Migration failed:', error.message);
     process.exit(1);
   } finally {
     client.release();

@@ -1,4 +1,5 @@
 const Project = require('../models/project');
+const logger = require('../utils/logger');
 
 class RenewalAlertService {
   // Check for projects that need renewal alerts
@@ -50,7 +51,7 @@ class RenewalAlertService {
       
       return alerts;
     } catch (error) {
-      console.error('Error checking for renewal alerts:', error);
+      logger.error('Error checking for renewal alerts:', error);
       return [];
     }
   }
@@ -71,7 +72,7 @@ class RenewalAlertService {
       
       return userAlerts;
     } catch (error) {
-      console.error('Error getting renewal alerts for user:', error);
+      logger.error('Error getting renewal alerts for user:', error);
       return [];
     }
   }
@@ -84,12 +85,12 @@ class RenewalAlertService {
       // In a real implementation, you would send these alerts via email, SMS, or in-app notifications
       // For now, we'll just log them
       if (alerts.length > 0) {
-        console.log(`Sending ${alerts.length} renewal alerts:`);
+        logger.info(`Sending ${alerts.length} renewal alerts:`);
         alerts.forEach(alert => {
-          console.log(`- ${alert.severity.toUpperCase()}: ${alert.message}`);
+          logger.info(`- ${alert.severity.toUpperCase()}: ${alert.message}`);
         });
       } else {
-        console.log('No renewal alerts to send');
+        logger.info('No renewal alerts to send');
       }
       
       return { 
@@ -97,7 +98,7 @@ class RenewalAlertService {
         alertCount: alerts.length 
       };
     } catch (error) {
-      console.error('Error sending renewal alerts:', error);
+      logger.error('Error sending renewal alerts:', error);
       return { 
         message: 'Error processing renewal alerts', 
         alertCount: 0 

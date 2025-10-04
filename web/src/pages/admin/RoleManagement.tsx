@@ -33,8 +33,27 @@ const RoleManagement: React.FC = () => {
   const fetchRoles = async () => {
     try {
       setLoading(true);
-      const data = await adminApi.roles.getAllRoles();
-      setRoles(data as Role[]);
+      // Use new wizard API endpoint
+      const response = await fetch('/api/admin/wizard/roles', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch roles');
+      }
+
+      const result = await response.json();
+      if (result.success && result.data) {
+        // Parse JSON fields
+        const parsedRoles = result.data.map((role: any) => ({
+          ...role,
+          capabilities: typeof role.caps === 'string' ? JSON.parse(role.caps) : role.caps,
+          scopes: typeof role.scopes === 'string' ? JSON.parse(role.scopes) : role.scopes
+        }));
+        setRoles(parsedRoles);
+      } else {
+        throw new Error('Invalid response format');
+      }
     } catch (error) {
       console.error('Error fetching roles:', error);
       toast.error('Failed to load roles. Using mock data for demonstration.');

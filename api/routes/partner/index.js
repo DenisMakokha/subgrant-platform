@@ -9,6 +9,7 @@ const { requireOnboardingCompleteOrBlock } = require('../../middleware/partnerOn
 
 // Import route handlers
 const onboardingRouter = require('./onboarding');
+const logger = require('../../utils/logger');
 
 const router = express.Router();
 
@@ -75,7 +76,7 @@ router.get('/dashboard', async (req, res) => {
     
     res.json(dashboardData);
   } catch (error) {
-    console.error('Partner dashboard error:', error);
+    logger.error('Partner dashboard error:', error);
     res.status(500).json({ error: 'Failed to load dashboard data' });
   }
 });

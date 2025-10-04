@@ -1,6 +1,7 @@
 const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
+const logger = require('utils/logger');
 
 const pool = new Pool({
   user: process.env.DB_USER || 'subgrant_user',
@@ -12,22 +13,22 @@ const pool = new Pool({
 
 async function runMigration() {
   try {
-    console.log('Connecting to PostgreSQL database...');
+    logger.info('Connecting to PostgreSQL database...');
     const client = await pool.connect();
     
-    console.log('Testing connection...');
+    logger.info('Testing connection...');
     await client.query('SELECT 1');
-    console.log('✅ Database connected successfully');
+    logger.info('✅ Database connected successfully');
     
-    console.log('Running organizations table migration...');
+    logger.info('Running organizations table migration...');
     const sqlPath = path.join(__dirname, 'scripts', 'migrate-organizations.sql');
     const sql = fs.readFileSync(sqlPath, 'utf8');
     
     await client.query(sql);
-    console.log('✅ Organizations migration completed successfully!');
+    logger.info('✅ Organizations migration completed successfully!');
     
     // Also add owner_user_id column if it doesn't exist
-    console.log('Adding owner_user_id column...');
+    logger.info('Adding owner_user_id column...');
     await client.query(`
       ALTER TABLE organizations 
       ADD COLUMN IF NOT EXISTS owner_user_id UUID;
@@ -40,25 +41,25 @@ async function runMigration() {
       FOREIGN KEY (owner_user_id) REFERENCES users(id);
     `);
     
-    console.log('✅ Owner user ID column added successfully!');
+    logger.info('✅ Owner user ID column added successfully!');
     
     client.release();
     
   } catch (error) {
-    console.error('❌ Migration failed:');
-    console.error('Error:', error.message);
-    console.error('Code:', error.code);
+    logger.error('❌ Migration failed:');
+    logger.error('Error:', error.message);
+    logger.error('Code:', error.code);
     
     if (error.code === 'ECONNREFUSED') {
-      console.error('PostgreSQL server is not running');
+      logger.error('PostgreSQL server is not running');
     } else if (error.code === '28P01') {
-      console.error('Authentication failed - check username/password');
+      logger.error('Authentication failed - check username/password');
     } else if (error.code === '3D000') {
-      console.error('Database does not exist');
+      logger.error('Database does not exist');
     }
   } finally {
     await pool.end();
-    console.log('Database connection closed');
+    logger.info('Database connection closed');
   }
 }
 

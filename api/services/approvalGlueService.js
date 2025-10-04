@@ -5,6 +5,7 @@ const PartnerBudgetRepository = require('../repositories/partnerBudgetRepository
 const ContractRepository = require('../repositories/contractRepository');
 const ApprovalRepository = require('../repositories/approvalRepository');
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 /**
  * Apply approval to a fund request
@@ -21,7 +22,7 @@ async function applyFundRequestApproval(entityId, client) {
   // - Sending notifications
   // - Updating related entities
   
-  console.log(`Applied approval to fund request ${entityId}`);
+  logger.info(`Applied approval to fund request ${entityId}`);
 }
 
 /**
@@ -34,7 +35,7 @@ async function rejectFundRequest(entityId, client) {
   // Update fund request status to rejected
   await FundRequestRepository.updateStatus(entityId, 'rejected', client);
   
-  console.log(`Rejected fund request ${entityId}`);
+  logger.info(`Rejected fund request ${entityId}`);
 }
 
 /**
@@ -47,7 +48,7 @@ async function applyPartnerBudgetApproval(entityId, client) {
   // Update partner budget status to approved
   await PartnerBudgetRepository.transitionStatus(entityId, 'APPROVED', null, client);
   
-  console.log(`Applied approval to partner budget ${entityId}`);
+  logger.info(`Applied approval to partner budget ${entityId}`);
 }
 
 /**
@@ -60,7 +61,7 @@ async function rejectPartnerBudget(entityId, client) {
   // Update partner budget status to rejected
   await PartnerBudgetRepository.transitionStatus(entityId, 'REJECTED', null, client);
   
-  console.log(`Rejected partner budget ${entityId}`);
+  logger.info(`Rejected partner budget ${entityId}`);
 }
 
 /**
@@ -73,7 +74,7 @@ async function applyContractApproval(entityId, client) {
   // Update contract status to approved
   await ContractRepository.updateStatus(entityId, 'APPROVED', client);
   
-  console.log(`Applied approval to contract ${entityId}`);
+  logger.info(`Applied approval to contract ${entityId}`);
 }
 
 /**
@@ -86,7 +87,7 @@ async function rejectContract(entityId, client) {
   // Update contract status to rejected
   await ContractRepository.updateStatus(entityId, 'REJECTED', client);
   
-  console.log(`Rejected contract ${entityId}`);
+  logger.info(`Rejected contract ${entityId}`);
 }
 
 /**
@@ -133,7 +134,7 @@ async function handleApprovalDecision(approvalId, decision, userId, comment) {
           await applyContractApproval(approval.entityId, client);
           break;
         default:
-          console.warn(`Unknown entity type for approval: ${approval.entityType}`);
+          logger.warn(`Unknown entity type for approval: ${approval.entityType}`);
       }
     } else {
       switch (approval.entityType) {
@@ -147,12 +148,12 @@ async function handleApprovalDecision(approvalId, decision, userId, comment) {
           await rejectContract(approval.entityId, client);
           break;
         default:
-          console.warn(`Unknown entity type for approval: ${approval.entityType}`);
+          logger.warn(`Unknown entity type for approval: ${approval.entityType}`);
       }
     }
     
     await client.query('COMMIT');
-    console.log(`Handled ${decision} decision for approval ${approvalId}`);
+    logger.info(`Handled ${decision} decision for approval ${approvalId}`);
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;

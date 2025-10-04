@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const logger = require('../utils/logger');
 const { ValidationError, NotFoundError } = require('../errors');
 const { sanitizeInput } = require('../middleware/sanitization');
 const { logApiCall, logError } = require('../services/observabilityService');
@@ -48,7 +49,7 @@ exports.getWorkflows = [
       
       // Return empty array if table doesn't exist (graceful degradation)
       if (error.code === '42P01') { // PostgreSQL: undefined_table
-        console.warn('approval_workflows table does not exist, returning empty array');
+        logger.warn('approval_workflows table does not exist, returning empty array');
         logApiCall('GET', '/api/approvals/workflows', 200, Date.now() - startTime, req.user.id);
         return res.json([]);
       }

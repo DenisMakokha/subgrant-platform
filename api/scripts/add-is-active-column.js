@@ -1,4 +1,5 @@
 const path = require('path');
+const logger = require('../utils/logger');
 
 // Load pg and dotenv from api's node_modules
 const { Pool } = require(path.join(__dirname, '../node_modules/pg'));
@@ -19,7 +20,7 @@ async function addIsActiveColumn() {
   const client = await pool.connect();
   
   try {
-    console.log('🔧 Adding is_active column to users table...\n');
+    logger.info('🔧 Adding is_active column to users table...\n');
 
     // Check if column exists
     const checkResult = await client.query(`
@@ -30,26 +31,26 @@ async function addIsActiveColumn() {
     `);
 
     if (checkResult.rows.length > 0) {
-      console.log('✅ is_active column already exists in users table');
+      logger.info('✅ is_active column already exists in users table');
     } else {
       // Add the column
       await client.query(`
         ALTER TABLE users 
         ADD COLUMN is_active BOOLEAN DEFAULT true NOT NULL
       `);
-      console.log('✅ Added is_active column to users table');
+      logger.info('✅ Added is_active column to users table');
 
       // Create index
       await client.query(`
         CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active)
       `);
-      console.log('✅ Created index on is_active column');
+      logger.info('✅ Created index on is_active column');
 
       // Add comment
       await client.query(`
         COMMENT ON COLUMN users.is_active IS 'Indicates whether the user account is active and can log in'
       `);
-      console.log('✅ Added column comment');
+      logger.info('✅ Added column comment');
     }
 
     // Verify the column
@@ -64,8 +65,8 @@ async function addIsActiveColumn() {
       AND column_name = 'is_active'
     `);
 
-    console.log('\n📋 Column details:');
-    console.log(verifyResult.rows[0]);
+    logger.info('\n📋 Column details:');
+    logger.info(verifyResult.rows[0]);
 
     // Count active vs inactive users
     const countResult = await client.query(`
@@ -76,16 +77,16 @@ async function addIsActiveColumn() {
       GROUP BY is_active
     `);
 
-    console.log('\n📊 User status counts:');
+    logger.info('\n📊 User status counts:');
     countResult.rows.forEach(row => {
-      console.log(`  ${row.is_active ? 'Active' : 'Inactive'}: ${row.count}`);
+      logger.info(`  ${row.is_active ? 'Active' : 'Inactive'}: ${row.count}`);
     });
 
-    console.log('\n✅ Migration completed successfully!');
+    logger.info('\n✅ Migration completed successfully!');
 
   } catch (error) {
-    console.error('❌ Error adding is_active column:', error.message);
-    console.error(error);
+    logger.error('❌ Error adding is_active column:', error.message);
+    logger.error(error);
   } finally {
     client.release();
     await pool.end();

@@ -1,6 +1,7 @@
 const { Pool } = require('pg');
 const dotenv = require('dotenv');
 const mockDb = require('./mockDatabase');
+const logger = require('../utils/logger');
 
 // Load environment variables
 dotenv.config();
@@ -9,15 +10,15 @@ dotenv.config();
 const useMockDatabase = process.env.USE_MOCK_DATABASE === 'true';
 
 if (useMockDatabase) {
-  console.log('Using mock database for testing');
+  logger.info('Using mock database for testing');
   module.exports = {
     pool: mockDb,
     testConnection: async () => {
       try {
         await mockDb.connect();
-        console.log('Mock database connection successful');
+        logger.info('Mock database connection successful');
       } catch (error) {
-        console.error('Mock database connection failed:', error.message);
+        logger.error('Mock database connection failed:', error.message);
         process.exit(1);
       }
     }
@@ -42,10 +43,10 @@ if (useMockDatabase) {
   const testConnection = async () => {
     try {
       const client = await pool.connect();
-      console.log('Database connection successful');
+      logger.info('Database connection successful');
       client.release();
     } catch (error) {
-      console.error('Database connection failed:', error.message);
+      logger.error('Database connection failed:', error.message);
       process.exit(1);
     }
   };

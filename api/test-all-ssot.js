@@ -1,7 +1,7 @@
 const request = require('supertest');
 const app = require('./server');
 
-console.log('🧪 Testing All SSOT Implementations...\n');
+logger.info('🧪 Testing All SSOT Implementations...\n');
 
 // Mock user for testing
 const mockUser = {
@@ -12,7 +12,7 @@ const mockUser = {
 
 // Test data keys
 async function testDataKeys() {
-  console.log('📊 Testing Data Keys...');
+  logger.info('📊 Testing Data Keys...');
   
   const dataKeys = [
     'budget.pb.summary',
@@ -49,20 +49,20 @@ async function testDataKeys() {
         .set('Authorization', 'Bearer test-token');
 
       if (response.status === 200 || response.status === 404) {
-        console.log(`✅ ${key} - ${response.status === 200 ? 'Implemented' : 'Handled (404)'}`);
+        logger.info(`✅ ${key} - ${response.status === 200 ? 'Implemented' : 'Handled (404)'}`);
       } else {
-        console.log(`❌ ${key} - Error: ${response.status}`);
+        logger.info(`❌ ${key} - Error: ${response.status}`);
       }
     } catch (error) {
-      console.log(`⚠️ ${key} - Error: ${error.message}`);
+      logger.info(`⚠️ ${key} - Error: ${error.message}`);
     }
   }
-  console.log('');
+  logger.info('');
 }
 
 // Test action keys
 async function testActionKeys() {
-  console.log('⚡ Testing Action Keys...');
+  logger.info('⚡ Testing Action Keys...');
   
   const actionTests = [
     {
@@ -149,28 +149,28 @@ async function testActionKeys() {
         .set('Authorization', 'Bearer test-token');
 
       if (response.status === 201 || response.status === 200) {
-        console.log(`✅ ${test.key} - Implemented`);
+        logger.info(`✅ ${test.key} - Implemented`);
       } else {
-        console.log(`❌ ${test.key} - Error: ${response.status}`);
+        logger.info(`❌ ${test.key} - Error: ${response.status}`);
       }
     } catch (error) {
-      console.log(`⚠️ ${test.key} - Error: ${error.message}`);
+      logger.info(`⚠️ ${test.key} - Error: ${error.message}`);
     }
   }
-  console.log('');
+  logger.info('');
 }
 
 // Test specific implementations
 async function testSpecificImplementations() {
-  console.log('🔍 Testing Specific Implementations...');
+  logger.info('🔍 Testing Specific Implementations...');
   
   // Test reconciliation service
   try {
     const ReconciliationService = require('./services/reconciliationService');
     const summary = await ReconciliationService.getReconciliationSummary('00000000-0000-0000-0000-000000000004');
-    console.log(`✅ Reconciliation Service - Working (${summary.lines.length} lines)`);
+    logger.info(`✅ Reconciliation Service - Working (${summary.lines.length} lines)`);
   } catch (error) {
-    console.log(`❌ Reconciliation Service - Error: ${error.message}`);
+    logger.info(`❌ Reconciliation Service - Error: ${error.message}`);
   }
 
   // Test fund request repository
@@ -180,44 +180,45 @@ async function testSpecificImplementations() {
       '00000000-0000-0000-0000-000000000003',
       '00000000-0000-0000-0000-000000000002'
     );
-    console.log(`✅ Fund Request Repository - Working (${requests.length} requests)`);
+    logger.info(`✅ Fund Request Repository - Working (${requests.length} requests)`);
   } catch (error) {
-    console.log(`❌ Fund Request Repository - Error: ${error.message}`);
+    logger.info(`❌ Fund Request Repository - Error: ${error.message}`);
   }
 
   // Test notification service
   try {
     const NotificationService = require('./services/notificationService');
+const logger = require('utils/logger');
     const notifications = await NotificationService.getUserNotifications('00000000-0000-0000-0000-000000000001');
-    console.log(`✅ Notification Service - Working (${notifications.length} notifications)`);
+    logger.info(`✅ Notification Service - Working (${notifications.length} notifications)`);
   } catch (error) {
-    console.log(`❌ Notification Service - Error: ${error.message}`);
+    logger.info(`❌ Notification Service - Error: ${error.message}`);
   }
 
-  console.log('');
+  logger.info('');
 }
 
 // Run all tests
 async function runAllTests() {
-  console.log('🚀 Starting Comprehensive SSOT Test Suite...\n');
+  logger.info('🚀 Starting Comprehensive SSOT Test Suite...\n');
   
   await testDataKeys();
   await testActionKeys();
   await testSpecificImplementations();
   
-  console.log('🎉 SSOT Implementation Test Complete!');
-  console.log('\n📋 Summary:');
-  console.log('   ✅ All SSOT data keys implemented');
-  console.log('   ✅ All SSOT action keys implemented');
-  console.log('   ✅ Reconciliation system complete');
-  console.log('   ✅ Fund request system complete');
-  console.log('   ✅ Notification system complete');
-  console.log('   ✅ Budget system complete');
-  console.log('   ✅ Contract system complete');
-  console.log('   ✅ Report system complete');
-  console.log('   ✅ Approval system complete');
-  console.log('   ✅ Admin system complete');
-  console.log('\n🎯 Status: ALL SSOT SYSTEMS IMPLEMENTED AND READY');
+  logger.info('🎉 SSOT Implementation Test Complete!');
+  logger.info('\n📋 Summary:');
+  logger.info('   ✅ All SSOT data keys implemented');
+  logger.info('   ✅ All SSOT action keys implemented');
+  logger.info('   ✅ Reconciliation system complete');
+  logger.info('   ✅ Fund request system complete');
+  logger.info('   ✅ Notification system complete');
+  logger.info('   ✅ Budget system complete');
+  logger.info('   ✅ Contract system complete');
+  logger.info('   ✅ Report system complete');
+  logger.info('   ✅ Approval system complete');
+  logger.info('   ✅ Admin system complete');
+  logger.info('\n🎯 Status: ALL SSOT SYSTEMS IMPLEMENTED AND READY');
 }
 
 // Run the tests

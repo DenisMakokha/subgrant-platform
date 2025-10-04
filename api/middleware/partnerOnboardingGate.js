@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 /**
  * Partner Onboarding Gate Middleware
  * Blocks partner API access until onboarding is complete
@@ -22,7 +24,7 @@ function requireOnboardingCompleteOrBlock(req, res, next) {
   const status = req.org?.status;
   const isFinalized = status === ORG_STATUS.FINALIZED;
   
-  console.log('Onboarding Gate Check:', {
+  logger.info('Onboarding Gate Check:', {
     orgId: req.org?.id,
     status: status,
     isFinalized: isFinalized,
@@ -37,13 +39,13 @@ function requireOnboardingCompleteOrBlock(req, res, next) {
 
   // Allow onboarding routes to proceed
   if (req.path.startsWith('/onboarding')) {
-    console.log('Allowing onboarding route:', req.path);
+    logger.info('Allowing onboarding route:', req.path);
     return next();
   }
 
   // Block everything else for partners until finalized
   // Use 423 (Locked) with a standard code for the FE to intercept
-  console.log('Blocking partner route - onboarding required:', req.path);
+  logger.info('Blocking partner route - onboarding required:', req.path);
   
   return res.status(423).json({
     error: 'Onboarding required',

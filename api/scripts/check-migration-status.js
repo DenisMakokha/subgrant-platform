@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const logger = require('../utils/logger');
 
 async function checkMigrationStatus() {
   const client = await db.pool.connect();
@@ -59,7 +60,7 @@ async function checkMigrationStatus() {
       'email_digests'
     ];
     
-    console.log('Checking migration status...\n');
+    logger.info('Checking migration status...\n');
     
     for (const table of tablesToCheck) {
       try {
@@ -72,12 +73,12 @@ async function checkMigrationStatus() {
         `, [table]);
         
         if (result.rows[0].exists) {
-          console.log(`✅ ${table} table exists`);
+          logger.info(`✅ ${table} table exists`);
         } else {
-          console.log(`❌ ${table} table does not exist`);
+          logger.info(`❌ ${table} table does not exist`);
         }
       } catch (error) {
-        console.log(`❌ Error checking ${table} table:`, error.message);
+        logger.info(`❌ Error checking ${table} table:`, error.message);
       }
     }
     
@@ -90,7 +91,7 @@ async function checkMigrationStatus() {
       'notifications_legacy'
     ];
     
-    console.log('\nChecking legacy tables (indicates Q1 SSOT cutover was executed)...\n');
+    logger.info('\nChecking legacy tables (indicates Q1 SSOT cutover was executed)...\n');
     
     for (const table of legacyTablesToCheck) {
       try {
@@ -103,12 +104,12 @@ async function checkMigrationStatus() {
         `, [table]);
         
         if (result.rows[0].exists) {
-          console.log(`✅ ${table} table exists (Q1 migration was executed)`);
+          logger.info(`✅ ${table} table exists (Q1 migration was executed)`);
         } else {
-          console.log(`❌ ${table} table does not exist (Q1 migration may not have been executed)`);
+          logger.info(`❌ ${table} table does not exist (Q1 migration may not have been executed)`);
         }
       } catch (error) {
-        console.log(`❌ Error checking ${table} table:`, error.message);
+        logger.info(`❌ Error checking ${table} table:`, error.message);
       }
     }
     
@@ -123,16 +124,16 @@ async function checkMigrationStatus() {
       `);
       
       if (result.rows[0].exists) {
-        console.log('\n✅ notif_event_catalog table exists (Notifications migration was executed)');
+        logger.info('\n✅ notif_event_catalog table exists (Notifications migration was executed)');
       } else {
-        console.log('\n❌ notif_event_catalog table does not exist (Notifications migration may not have been executed)');
+        logger.info('\n❌ notif_event_catalog table does not exist (Notifications migration may not have been executed)');
       }
     } catch (error) {
-      console.log('\n❌ Error checking notif_event_catalog table:', error.message);
+      logger.info('\n❌ Error checking notif_event_catalog table:', error.message);
     }
     
   } catch (error) {
-    console.error('Error checking migration status:', error.message);
+    logger.error('Error checking migration status:', error.message);
   } finally {
     client.release();
   }

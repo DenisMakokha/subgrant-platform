@@ -15,7 +15,38 @@ import {
   ApprovalQueueWidget,
   ComplianceStatusWidget,
   RecentIssuesWidget,
-  UpcomingReportsWidget
+  UpcomingReportsWidget,
+  // Admin Widgets
+  AdminUsersCountWidget,
+  AdminOrgsCountWidget,
+  AdminProjectsCountWidget,
+  AdminBudgetTotalWidget,
+  AdminRecentActivitiesWidget,
+  AdminPendingApprovalsWidget,
+  AdminSystemHealthWidget,
+  AdminUserGrowthWidget,
+  // Partner Widgets
+  PartnerActiveProjectsWidget,
+  PartnerBudgetCeilingWidget,
+  PartnerBudgetSpentWidget,
+  PartnerReportsDueWidget,
+  PartnerRecentDisbursementsWidget,
+  PartnerUpcomingReportsWidget,
+  PartnerBudgetUtilizationWidget,
+  PartnerComplianceStatusWidget,
+  // Finance Widgets
+  FinanceTotalDisbursementsWidget,
+  FinancePendingPaymentsWidget,
+  FinanceBudgetVarianceWidget,
+  FinancePaymentScheduleWidget,
+  FinanceReconciliationStatusWidget,
+  // Grants Widgets
+  GrantsApplicationsPendingWidget,
+  GrantsProjectsActiveWidget,
+  GrantsComplianceRateWidget,
+  GrantsApprovalQueueWidget,
+  GrantsPartnerPerformanceWidget,
+  GrantsApplicationStatusWidget
 } from '../../components/dashboard/widgets/specific';
 import { KPIWidget } from '../../components/dashboard/widgets/base';
 
@@ -83,8 +114,44 @@ export default function UniversalDashboard() {
     }
   }, [dashboard]);
 
-  // Widget component mapping
+  // Widget component mapping - Maps database widget IDs to React components
   const widgetComponents: Record<string, React.ComponentType<any>> = {
+    // Admin Widgets
+    'admin_users_count': AdminUsersCountWidget,
+    'admin_orgs_count': AdminOrgsCountWidget,
+    'admin_projects_count': AdminProjectsCountWidget,
+    'admin_budget_total': AdminBudgetTotalWidget,
+    'admin_recent_activities': AdminRecentActivitiesWidget,
+    'admin_pending_approvals': AdminPendingApprovalsWidget,
+    'admin_system_health': AdminSystemHealthWidget,
+    'admin_user_growth': AdminUserGrowthWidget,
+    
+    // Partner Widgets
+    'partner_active_projects': PartnerActiveProjectsWidget,
+    'partner_budget_ceiling': PartnerBudgetCeilingWidget,
+    'partner_budget_spent': PartnerBudgetSpentWidget,
+    'partner_reports_due': PartnerReportsDueWidget,
+    'partner_recent_disbursements': PartnerRecentDisbursementsWidget,
+    'partner_upcoming_reports': PartnerUpcomingReportsWidget,
+    'partner_budget_utilization': PartnerBudgetUtilizationWidget,
+    'partner_compliance_status': PartnerComplianceStatusWidget,
+    
+    // Finance Widgets
+    'finance_total_disbursements': FinanceTotalDisbursementsWidget,
+    'finance_pending_payments': FinancePendingPaymentsWidget,
+    'finance_budget_variance': FinanceBudgetVarianceWidget,
+    'finance_payment_schedule': FinancePaymentScheduleWidget,
+    'finance_reconciliation_status': FinanceReconciliationStatusWidget,
+    
+    // Grants Widgets
+    'grants_applications_pending': GrantsApplicationsPendingWidget,
+    'grants_projects_active': GrantsProjectsActiveWidget,
+    'grants_compliance_rate': GrantsComplianceRateWidget,
+    'grants_approval_queue': GrantsApprovalQueueWidget,
+    'grants_partner_performance': GrantsPartnerPerformanceWidget,
+    'grants_application_status': GrantsApplicationStatusWidget,
+    
+    // Legacy component name mappings for backward compatibility
     BudgetSummaryWidget,
     ProjectTimelineWidget,
     ApprovalQueueWidget,

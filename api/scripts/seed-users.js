@@ -1,6 +1,7 @@
 // Seed script to create test users for development
 const { Client } = require('pg');
 const bcrypt = require('bcryptjs');
+const logger = require('../utils/logger');
 require('dotenv').config();
 
 // Database connection configuration
@@ -52,7 +53,7 @@ async function createUser(userData) {
     const existingUser = await client.query(checkQuery, [userData.email]);
     
     if (existingUser.rows.length > 0) {
-      console.log(`User ${userData.email} already exists, skipping...`);
+      logger.info(`User ${userData.email} already exists, skipping...`);
       return;
     }
     
@@ -77,10 +78,10 @@ async function createUser(userData) {
     ];
     
     const result = await client.query(insertQuery, values);
-    console.log(`✓ Created user: ${result.rows[0].email} (ID: ${result.rows[0].id})`);
+    logger.info(`✓ Created user: ${result.rows[0].email} (ID: ${result.rows[0].id})`);
     
   } catch (error) {
-    console.error(`✗ Error creating user ${userData.email}:`, error.message);
+    logger.error(`✗ Error creating user ${userData.email}:`, error.message);
   }
 }
 
@@ -89,16 +90,16 @@ async function seedUsers() {
   try {
     // Connect to the database
     await client.connect();
-    console.log('Connected to the database');
+    logger.info('Connected to the database');
 
     // Create test users
     for (const userData of testUsers) {
       await createUser(userData);
     }
 
-    console.log('User seeding completed successfully');
+    logger.info('User seeding completed successfully');
   } catch (err) {
-    console.error('Error seeding users:', err);
+    logger.error('Error seeding users:', err);
   } finally {
     await client.end();
   }

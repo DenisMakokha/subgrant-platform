@@ -20,7 +20,7 @@ router.get('/disbursements', ...guard, async (req, res) => {
     
     res.json({ disbursements: result.rows });
   } catch (error) {
-    console.error('Error fetching disbursements:', error);
+    logger.error('Error fetching disbursements:', error);
     res.status(500).json({ error: 'Failed to fetch disbursements' });
   }
 });
@@ -40,7 +40,7 @@ router.get('/contracts', ...guard, async (req, res) => {
     
     res.json({ contracts: result.rows });
   } catch (error) {
-    console.error('Error fetching contracts:', error);
+    logger.error('Error fetching contracts:', error);
     res.status(500).json({ error: 'Failed to fetch contracts' });
   }
 });
@@ -66,6 +66,7 @@ router.get('/contracts/:id/download', ...guard, async (req, res) => {
     
     // Generate download URL using storage service
     const storage = require('../services/storage');
+const logger = require('../utils/logger');
     const downloadUrl = await storage.generateDownloadUrl(file.file_key);
     
     res.json({
@@ -74,7 +75,7 @@ router.get('/contracts/:id/download', ...guard, async (req, res) => {
       content_type: file.content_type
     });
   } catch (error) {
-    console.error('Error generating contract download:', error);
+    logger.error('Error generating contract download:', error);
     res.status(500).json({ error: 'Failed to generate download URL' });
   }
 });

@@ -5,6 +5,7 @@
 
 const { Client } = require('pg');
 const bcrypt = require('bcryptjs');
+const logger = require('../utils/logger');
 require('dotenv').config();
 
 // Database connection configuration
@@ -117,10 +118,10 @@ async function insertUser(user) {
   
   try {
     const result = await client.query(query, values);
-    console.log(`✓ Created/Updated user: ${user.email} (${user.role})`);
+    logger.info(`✓ Created/Updated user: ${user.email} (${user.role})`);
     return result.rows[0];
   } catch (err) {
-    console.error(`✗ Error creating user ${user.email}:`, err);
+    logger.error(`✗ Error creating user ${user.email}:`, err);
     throw err;
   }
 }
@@ -145,17 +146,17 @@ async function createDefaultOrganization() {
   try {
     const result = await client.query(query, values);
     if (result.rows.length > 0) {
-      console.log('✓ Created default organization');
+      logger.info('✓ Created default organization');
       return result.rows[0];
     } else {
-      console.log('✓ Default organization already exists');
+      logger.info('✓ Default organization already exists');
       // Get the existing organization
       const existingQuery = 'SELECT * FROM organizations LIMIT 1';
       const existingResult = await client.query(existingQuery);
       return existingResult.rows[0];
     }
   } catch (err) {
-    console.error('✗ Error creating default organization:', err);
+    logger.error('✗ Error creating default organization:', err);
     throw err;
   }
 }
@@ -174,10 +175,10 @@ async function associatePartnerUserWithOrganization(userId, organizationId) {
   try {
     const result = await client.query(query, values);
     if (result.rows.length > 0) {
-      console.log('✓ Associated partner user with organization');
+      logger.info('✓ Associated partner user with organization');
     }
   } catch (err) {
-    console.error('✗ Error associating partner user with organization:', err);
+    logger.error('✗ Error associating partner user with organization:', err);
     throw err;
   }
 }
@@ -187,13 +188,13 @@ async function seedTestData() {
   try {
     // Connect to the database
     await client.connect();
-    console.log('Connected to the database');
+    logger.info('Connected to the database');
     
     // Create default organization
     const organization = await createDefaultOrganization();
     
     // Insert test users
-    console.log('Creating test users...');
+    logger.info('Creating test users...');
     const users = [];
     for (const userData of testUsers) {
       const user = await insertUser(userData);
@@ -206,15 +207,15 @@ async function seedTestData() {
       await associatePartnerUserWithOrganization(partnerUser.id, organization.id);
     }
     
-    console.log('Test data seeding completed successfully');
-    console.log('\nTest Credentials:');
-    console.log('==================');
+    logger.info('Test data seeding completed successfully');
+    logger.info('\nTest Credentials:');
+    logger.info('==================');
     testUsers.forEach(user => {
-      console.log(`${user.role}: ${user.email} / ${user.password}`);
+      logger.info(`${user.role}: ${user.email} / ${user.password}`);
     });
     
   } catch (err) {
-    console.error('Error seeding test data:', err);
+    logger.error('Error seeding test data:', err);
   } finally {
     await client.end();
   }
